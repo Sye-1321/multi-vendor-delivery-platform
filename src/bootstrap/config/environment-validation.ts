@@ -29,7 +29,7 @@ export const environmentValidationSchema = Joi.object({
   JWT_VERIFICATION_TOKEN_SECRET: secret,
   JWT_VERIFICATION_TOKEN_EXPIRATION_TIME: Joi.string().default('15m'),
 
-  GUEST_EMAIL: Joi.string().email().default('guest@example.invalid'),
+  GUEST_EMAIL: Joi.string().email().default('guest@example.com'),
   SMTP_SERVICE: Joi.string().default('gmail'),
   SMTP_USER: Joi.string().allow('').optional(),
   SMTP_PASSWORD: Joi.string().allow('').optional(),
