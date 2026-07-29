@@ -64,9 +64,11 @@ import { AccessControlService } from 'src/shared/services/access_control.service
 import { RoleService } from 'src/shared/services/role_service';
 import { OrderEventPublisher } from './realtime/order-event.publisher';
 import { OrderGateway } from './realtime/order.gateway';
+import { NotificationModule } from 'src/notifications/notification.module';
 
 @Module({
   imports: [
+    NotificationModule,
     MongooseModule.forFeature([
       { name: UserDataModel.name, schema: UserSchema },
       { name: OrderDataModel.name, schema: OrderSchema },

@@ -35,6 +35,7 @@ import {
 } from 'src/delivery-person/constants/constants';
 import { IOrderTransition } from './interfaces/order.interface';
 import { OrderEventPublisher } from './realtime/order-event.publisher';
+import { NotificationOutboxService } from 'src/notifications/notification-outbox.service';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -56,6 +57,7 @@ export class OrderService implements IOrderService {
     private readonly cartRepository: CartRepository,
     private readonly orderMapper: OrderMapper,
     private readonly orderEvents: OrderEventPublisher,
+    private readonly notificationOutbox: NotificationOutboxService,
   ) {}
 
   async createOrder(
@@ -157,6 +159,11 @@ export class OrderService implements IOrderService {
           );
         }
 
+        const initialTransition = this.createOrderTransition(
+          context,
+          null,
+          OrderStatus.PENDING,
+        );
         const order = Order.create({
           userId: contextUser.id,
           restaurantId: restaurantObjectId,
@@ -165,9 +172,7 @@ export class OrderService implements IOrderService {
           paymentStatus: PaymentStatus.PENDING,
           totalPrice,
           cart,
-          timeline: [
-            this.createOrderTransition(context, null, OrderStatus.PENDING),
-          ],
+          timeline: [initialTransition],
           audit,
         }).getValue();
         const savedOrderResult = await this.orderRepository.createOrder(
@@ -182,7 +187,13 @@ export class OrderService implements IOrderService {
           );
         }
 
-        return savedOrderResult.getValue();
+        const createdOrder = savedOrderResult.getValue();
+        await this.notificationOutbox.enqueueOrderStatusChange(
+          createdOrder,
+          initialTransition,
+          session,
+        );
+        return createdOrder;
       });
 
       if (!savedOrder) {
@@ -392,6 +403,11 @@ export class OrderService implements IOrderService {
       auditModifiedBy: context.email,
       auditModifiedDateTime: new Date().toISOString(),
     };
+    const orderTransition = this.createOrderTransition(
+      context,
+      OrderStatus.OUT_FOR_DELIVERY,
+      OrderStatus.DELIVERED,
+    );
     const session = await this.orderRepository.startSession();
 
     try {
@@ -420,11 +436,7 @@ export class OrderService implements IOrderService {
             status: OrderStatus.DELIVERED,
             paymentStatus: PaymentStatus.PAID,
           },
-          this.createOrderTransition(
-            context,
-            OrderStatus.OUT_FOR_DELIVERY,
-            OrderStatus.DELIVERED,
-          ),
+          orderTransition,
           { session },
         );
 
@@ -435,7 +447,13 @@ export class OrderService implements IOrderService {
           );
         }
 
-        return transition.getValue();
+        const deliveredOrder = transition.getValue();
+        await this.notificationOutbox.enqueueOrderStatusChange(
+          deliveredOrder,
+          orderTransition,
+          session,
+        );
+        return deliveredOrder;
       });
 
       if (!updatedOrder) {
@@ -502,6 +520,11 @@ export class OrderService implements IOrderService {
       auditModifiedBy: context.email,
       auditModifiedDateTime: new Date().toISOString(),
     };
+    const orderTransition = this.createOrderTransition(
+      context,
+      OrderStatus.PREPARED,
+      OrderStatus.OUT_FOR_DELIVERY,
+    );
     const session = await this.orderRepository.startSession();
 
     try {
@@ -532,11 +555,7 @@ export class OrderService implements IOrderService {
             deliveryPersonId: claimed.getValue().id,
             status: OrderStatus.OUT_FOR_DELIVERY,
           },
-          this.createOrderTransition(
-            context,
-            OrderStatus.PREPARED,
-            OrderStatus.OUT_FOR_DELIVERY,
-          ),
+          orderTransition,
           { session },
         );
 
@@ -547,7 +566,13 @@ export class OrderService implements IOrderService {
           );
         }
 
-        return transition.getValue();
+        const assignedOrder = transition.getValue();
+        await this.notificationOutbox.enqueueOrderStatusChange(
+          assignedOrder,
+          orderTransition,
+          session,
+        );
+        return assignedOrder;
       });
 
       if (!updatedOrder) {
@@ -570,27 +595,55 @@ export class OrderService implements IOrderService {
     nextStatus: OrderStatus,
     context: Context,
   ): Promise<Order> {
-    const result = await this.orderRepository.transitionOrder(
-      orderId,
+    const transition = this.createOrderTransition(
+      context,
       expectedStatus,
-      {
-        status: nextStatus,
-        auditModifiedBy: context.email,
-        auditModifiedDateTime: new Date().toISOString(),
-      },
-      this.createOrderTransition(context, expectedStatus, nextStatus),
+      nextStatus,
     );
+    const session = await this.orderRepository.startSession();
 
-    if (!result.isSuccess) {
-      throwApplicationError(
-        HttpStatus.CONFLICT,
-        `Order status changed before it could move from ${expectedStatus} to ${nextStatus}.`,
-      );
+    try {
+      const order = await session.withTransaction(async () => {
+        const result = await this.orderRepository.transitionOrder(
+          orderId,
+          expectedStatus,
+          {
+            status: nextStatus,
+            auditModifiedBy: context.email,
+            auditModifiedDateTime: new Date().toISOString(),
+          },
+          transition,
+          { session },
+        );
+
+        if (!result.isSuccess) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            `Order status changed before it could move from ${expectedStatus} to ${nextStatus}.`,
+          );
+        }
+
+        const transitionedOrder = result.getValue();
+        await this.notificationOutbox.enqueueOrderStatusChange(
+          transitionedOrder,
+          transition,
+          session,
+        );
+        return transitionedOrder;
+      });
+
+      if (!order) {
+        return throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'The order transition did not return an order.',
+        );
+      }
+
+      this.orderEvents.publish(order, context.correlationId);
+      return order;
+    } finally {
+      await session.endSession();
     }
-
-    const order = result.getValue();
-    this.orderEvents.publish(order, context.correlationId);
-    return order;
   }
 
   private createOrderTransition(
