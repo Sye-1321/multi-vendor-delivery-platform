@@ -285,9 +285,32 @@ export class MenuItemService implements IMenuItemService {
     );
   }
 
-  async getMenuItemsByIds(itemIds: Types.ObjectId[]) {
-    const result = await this.menuItemRepository.getMenuItemsByIds(itemIds);
-    return result.getValue();
+  async getMenuItemsByIds(
+    restaurantId: Types.ObjectId,
+    itemIds: Types.ObjectId[],
+  ): Promise<MenuItem[]> {
+    const uniqueItemCount = new Set(itemIds.map((id) => id.toString())).size;
+    const result = await this.menuItemRepository.getMenuItemsByIds(
+      restaurantId,
+      itemIds,
+    );
+
+    if (!result.isSuccess) {
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'One or more menu items are not available to this restaurant.',
+      );
+    }
+
+    const menuItems = result.getValue();
+    if (menuItems.length !== uniqueItemCount) {
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'One or more menu items are not available to this restaurant.',
+      );
+    }
+
+    return menuItems;
   }
 
   private updateMenuItemData(

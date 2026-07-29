@@ -28,7 +28,10 @@ export interface IMenuItemRepository
     id: Types.ObjectId,
     updateData: Partial<MenuItemDataModel>,
   ): Promise<Result<MenuItem>>;
-  getMenuItemsByIds(itemIds: Types.ObjectId[]): Promise<Result<MenuItem[]>>;
+  getMenuItemsByIds(
+    restaurantId: Types.ObjectId,
+    itemIds: Types.ObjectId[],
+  ): Promise<Result<MenuItem[]>>;
   getAvailableMenuItemsByIds(
     restaurantId: Types.ObjectId,
     itemIds: Types.ObjectId[],
