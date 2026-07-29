@@ -13,6 +13,12 @@ export class OrderParser {
       status: order.status,
       totalPrice: order.totalPrice,
       paymentStatus: order.paymentStatus,
+      timeline: order.timeline.map(({ from, to, actorRole, occurredAt }) => ({
+        from,
+        to,
+        actorRole,
+        occurredAt,
+      })),
       deliveryPerson: order.deliveryPerson
         ? DeliveryPersonParser.createDeliveryPersonResponse(
             order.deliveryPerson,

@@ -7,6 +7,7 @@ import { IOrderRepository } from './interfaces/order-repository';
 import { OrderDataModel, OrderDocument } from './schemas/order.schema';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { Result } from 'src/domain/result/result';
+import { IOrderTransition } from 'src/order/interfaces/order.interface';
 
 @Injectable()
 export class OrderRepository
@@ -102,6 +103,7 @@ export class OrderRepository
     orderId: Types.ObjectId,
     expectedStatus: OrderDataModel['status'],
     updateData: Partial<OrderDataModel>,
+    transition: IOrderTransition,
     options?: { session?: ClientSession },
   ): Promise<Result<Order>> {
     const updatedDocument = await this.DocumentModel.findOneAndUpdate(
@@ -109,7 +111,10 @@ export class OrderRepository
         _id: orderId,
         status: expectedStatus,
       },
-      { $set: updateData },
+      {
+        $set: updateData,
+        $push: { timeline: transition },
+      },
       {
         new: true,
         session: options?.session,
