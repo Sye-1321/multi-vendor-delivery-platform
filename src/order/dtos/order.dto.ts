@@ -1,10 +1,15 @@
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsArray,
   IsEnum,
+  IsInt,
+  IsMongoId,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -21,31 +26,25 @@ export class CreateDeliveryAddressDTO {
 }
 
 export class CreateCartItemDTO {
-  @IsString()
-  @IsNotEmpty()
-  cartItemId: string;
+  @IsMongoId()
+  menuItemId: string;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
   quantity: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  subTotal: number;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   customizations?: string;
 }
 
 export class CreateCartDTO {
-  @IsNumber()
-  @IsNotEmpty()
-  totalPrice: number;
-
   @ValidateNested({ each: true })
   @Type(() => CreateCartItemDTO)
   @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
   cartItems: CreateCartItemDTO[];
 }
 

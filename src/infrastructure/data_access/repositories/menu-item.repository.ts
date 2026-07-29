@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model, Types } from 'mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import {
   MenuItemDataModel,
   MenuItemDocument,
@@ -146,6 +146,27 @@ export class MenuItemRepository
     }
 
     const items = itemDocs.map((doc) => this.menuItemMapper.toDomain(doc));
+    return Result.ok(items);
+  }
+
+  async getAvailableMenuItemsByIds(
+    restaurantId: Types.ObjectId,
+    itemIds: Types.ObjectId[],
+    options?: { session?: ClientSession },
+  ): Promise<Result<MenuItem[]>> {
+    const query = this.DocumentModel.find({
+      _id: { $in: itemIds },
+      restaurantId,
+      availability: true,
+    });
+
+    if (options?.session) {
+      query.session(options.session);
+    }
+
+    const itemDocs = await query.exec();
+    const items = itemDocs.map((doc) => this.menuItemMapper.toDomain(doc));
+
     return Result.ok(items);
   }
 }

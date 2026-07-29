@@ -1,4 +1,4 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { OrderMapper } from './order.mapper';
 import { TYPES } from './../application/constants/types';
@@ -24,6 +24,8 @@ import { Context } from 'src/infrastructure/context/context';
 import { CreateOrderDTO } from './dtos/order.dto';
 import { IOrderRepository } from 'src/infrastructure/data_access/repositories/interfaces/order-repository';
 import { IOrderService } from './interfaces/order.service.interface';
+import { IMenuItemRepository } from 'src/infrastructure/data_access/repositories/interfaces/menu-item-repository';
+import { MenuItem } from 'src/menu-item/menu-item';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -37,6 +39,8 @@ export class OrderService implements IOrderService {
     private readonly deliveryPersonService: DeliveryPersonService,
     @Inject(TYPES.IOrderRepository)
     private readonly orderRepository: IOrderRepository,
+    @Inject(TYPES.IMenuItemRepository)
+    private readonly menuItemRepository: IMenuItemRepository,
     private readonly cartItemMapper: CartItemMapper,
     private readonly cartItemRepository: CartItemRepository,
     private readonly cartMapper: CartMapper,
@@ -50,74 +54,137 @@ export class OrderService implements IOrderService {
   ): Promise<Result<IOrderResponseDTO>> {
     const context = this.contextService.getContext();
     const contextUser = await this.userService.getContextUser();
+    const restaurantIdValue = restaurantId.toString();
+
+    if (!Types.ObjectId.isValid(restaurantIdValue)) {
+      throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid restaurant ID.');
+    }
+
+    const restaurantObjectId = new Types.ObjectId(restaurantIdValue);
     const session = await this.orderRepository.startSession();
-
     try {
-      session.startTransaction();
-      const audit = Audit.createInsertContext(context);
+      const savedOrder = await session.withTransaction(async () => {
+        const audit = Audit.createInsertContext(context);
+        const cartItems = orderData.cart.cartItems;
+        const uniqueMenuItemIds = [
+          ...new Set(cartItems.map((item) => item.menuItemId)),
+        ].map((id) => new Types.ObjectId(id));
 
-      const cartItems = orderData.cart.cartItems;
+        const menuItemsResult =
+          await this.menuItemRepository.getAvailableMenuItemsByIds(
+            restaurantObjectId,
+            uniqueMenuItemIds,
+            { session },
+          );
+        const menuItems = menuItemsResult.getValue();
 
-      const selectedItems = cartItems.map((item) =>
-        CartItem.create({
-          menuItemId: new Types.ObjectId(item.cartItemId),
-          quantity: item.quantity,
-          subTotal: item.subTotal,
-          customizations: item.customizations,
+        if (
+          !menuItemsResult.isSuccess ||
+          menuItems.length !== uniqueMenuItemIds.length
+        ) {
+          throwApplicationError(
+            HttpStatus.BAD_REQUEST,
+            'One or more menu items are unavailable for this restaurant.',
+          );
+        }
+
+        const menuItemsById = new Map(
+          menuItems.map((item) => [item.id.toString(), item]),
+        );
+        let totalPriceInMinorUnits = 0;
+
+        const selectedItems = cartItems.map((item) => {
+          const menuItem = this.getMenuItemOrThrow(
+            menuItemsById,
+            item.menuItemId,
+          );
+
+          const subTotalInMinorUnits =
+            this.toMinorUnits(menuItem.price) * item.quantity;
+          totalPriceInMinorUnits += subTotalInMinorUnits;
+
+          return CartItem.create({
+            menuItemId: menuItem.id,
+            quantity: item.quantity,
+            subTotal: this.fromMinorUnits(subTotalInMinorUnits),
+            customizations: item.customizations,
+            audit,
+          }).getValue();
+        });
+
+        const selectedCartItemsDataModel = selectedItems.map((item) =>
+          this.cartItemMapper.toPersistence(item),
+        );
+        const insertedItems =
+          await this.cartItemRepository.insertManyWithSession(
+            selectedCartItemsDataModel,
+            { session },
+          );
+
+        if (!insertedItems.isSuccess) {
+          throwApplicationError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Could not persist the order items.',
+          );
+        }
+
+        const totalPrice = this.fromMinorUnits(totalPriceInMinorUnits);
+        const cart = Cart.create({
+          userId: contextUser.id,
+          totalPrice,
+          cartItems: selectedItems,
+          audit: Audit.createInsertContext(context),
+        }).getValue();
+        const insertedCart = await this.cartRepository.create(
+          this.cartMapper.toPersistence(cart),
+          { session },
+        );
+
+        if (!insertedCart.isSuccess) {
+          throwApplicationError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Could not persist the order cart.',
+          );
+        }
+
+        const order = Order.create({
+          userId: contextUser.id,
+          restaurantId: restaurantObjectId,
+          deliveryAddress: orderData.deliveryAddress,
+          status: OrderStatus.PENDING,
+          paymentStatus: PaymentStatus.PENDING,
+          totalPrice,
+          cart,
           audit,
-        }).getValue(),
-      );
-      const selectedCartItemsDataModel = selectedItems.map((item) =>
-        this.cartItemMapper.toPersistence(item),
-      );
-      const insertedItems = await this.cartItemRepository.insertManyWithSession(
-        selectedCartItemsDataModel,
-      );
-      if (!insertedItems.isSuccess) {
+        }).getValue();
+        const savedOrderResult = await this.orderRepository.createOrder(
+          this.orderMapper.toPersistence(order),
+          { session },
+        );
+
+        if (!savedOrderResult.isSuccess) {
+          throwApplicationError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Could not persist the order.',
+          );
+        }
+
+        return savedOrderResult.getValue();
+      });
+
+      if (!savedOrder) {
         throwApplicationError(
           HttpStatus.INTERNAL_SERVER_ERROR,
-          `Could not create an order`,
+          'The order transaction completed without a saved order.',
         );
       }
 
-      const cartAudit = Audit.createInsertContext(context);
-      const cart = Cart.create({
-        userId: contextUser.id,
-        totalPrice: orderData.cart.totalPrice,
-        cartItems: selectedItems,
-        audit: cartAudit,
-      }).getValue();
-      const cartDataModel = this.cartMapper.toPersistence(cart);
-      const insertedCart = await this.cartRepository.create(cartDataModel);
-      if (!insertedCart.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          `Could not create cart`,
-        );
+      return Result.ok(OrderParser.createOrderResponse(savedOrder));
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
       }
 
-      const order = Order.create({
-        userId: contextUser.id,
-        restaurantId: new Types.ObjectId(restaurantId),
-        deliveryAddress: orderData.deliveryAddress,
-        status: OrderStatus.PENDING,
-        paymentStatus: PaymentStatus.PENDING,
-        totalPrice: orderData.cart.totalPrice,
-        cart: insertedCart.getValue(),
-        audit,
-      }).getValue();
-      const orderDataModel = this.orderMapper.toPersistence(order);
-      const savedOrder = await this.orderRepository.createOrder(orderDataModel);
-      if (!savedOrder.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          `Could not create order`,
-        );
-      }
-      await session.commitTransaction();
-      return Result.ok(OrderParser.createOrderResponse(savedOrder.getValue()));
-    } catch {
-      await session.abortTransaction();
       return Result.fail(
         'Failed to create order.',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -125,6 +192,30 @@ export class OrderService implements IOrderService {
     } finally {
       await session.endSession();
     }
+  }
+
+  private toMinorUnits(amount: number): number {
+    return Math.round((amount + Number.EPSILON) * 100);
+  }
+
+  private fromMinorUnits(amount: number): number {
+    return amount / 100;
+  }
+
+  private getMenuItemOrThrow(
+    menuItemsById: Map<string, MenuItem>,
+    menuItemId: string,
+  ): MenuItem {
+    const menuItem = menuItemsById.get(menuItemId);
+
+    if (!menuItem) {
+      return throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'A selected menu item is unavailable.',
+      );
+    }
+
+    return menuItem;
   }
 
   async cancelOrder(
