@@ -20,6 +20,7 @@ import { RequestContextModule } from './infrastructure/context/request-context.m
 import { RequestContextMiddleware } from './infrastructure/middlewares/request-context.middleware';
 import { RequestLoggingMiddleware } from './infrastructure/middlewares/request-logging.middleware';
 import { ObservabilityModule } from './infrastructure/logger/observability.module';
+import { NotificationModule } from './notifications/notification.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { ObservabilityModule } from './infrastructure/logger/observability.modul
     RestaurantReviewModule,
     MenuItemModule,
     MenuModule,
+    NotificationModule,
     OrderModule,
   ],
   providers: [
