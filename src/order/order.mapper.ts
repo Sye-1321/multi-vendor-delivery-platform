@@ -4,6 +4,8 @@ import { CartMapper } from 'src/cart/cart.mapper';
 import { Injectable } from '@nestjs/common';
 import { AuditMapper } from 'src/audit/audit.mapper';
 import { DeliveryPersonMapper } from 'src/delivery-person/delivery-person.mapper';
+import { Types } from 'mongoose';
+import { DeliveryPersonDataModel } from 'src/infrastructure/data_access/repositories/schemas/delivery-person.schema';
 
 @Injectable()
 export class OrderMapper {
@@ -23,13 +25,18 @@ export class OrderMapper {
       status,
       totalPrice,
       paymentStatus,
-      deliveryPerson,
       deliveryPersonId,
     } = doc;
 
-    const deliveryPersonDomain = deliveryPerson
-      ? this.deliveryPersonMapper.toDomain(deliveryPerson)
+    const populatedDeliveryPerson =
+      deliveryPersonId && !(deliveryPersonId instanceof Types.ObjectId)
+        ? (deliveryPersonId as unknown as DeliveryPersonDataModel)
+        : null;
+    const deliveryPersonDomain = populatedDeliveryPerson
+      ? this.deliveryPersonMapper.toDomain(populatedDeliveryPerson)
       : null;
+    const resolvedDeliveryPersonId =
+      populatedDeliveryPerson?._id ?? deliveryPersonId;
 
     const entity = Order.create(
       {
@@ -40,7 +47,7 @@ export class OrderMapper {
         totalPrice,
         paymentStatus,
         status,
-        deliveryPersonId,
+        deliveryPersonId: resolvedDeliveryPersonId,
         deliveryPerson: deliveryPersonDomain,
         audit: this.auditMapper.toDomain(doc),
       },
