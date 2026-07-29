@@ -339,7 +339,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
   private createDocument(document: any, options?: { session?: ClientSession }) {
     const doc = new this.DocumentModel({
       ...document,
-      _id: new Types.ObjectId(),
+      _id: document._id ?? new Types.ObjectId(),
     });
 
     if (options?.session) {
