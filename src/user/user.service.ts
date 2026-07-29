@@ -132,7 +132,7 @@ export class UserService extends AuthService implements IUserService {
     }
 
     const { id, email, role } = user;
-    const userProps: IUserPayload = { userId: id, email, role: role as string };
+    const userProps: IUserPayload = { userId: id, email, role };
     const tokens = await this.generateAuthTokens(userProps);
     this.updateUserRefreshToken(user, tokens);
     return Result.ok(

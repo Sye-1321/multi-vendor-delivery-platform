@@ -1,12 +1,6 @@
-import {
-  Module,
-  MiddlewareConsumer,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { MenuController } from './menu.controller';
 import { MenuService } from './menu.service';
 import { MenuRepository } from 'src/infrastructure/data_access/repositories/menu.repository';
@@ -26,7 +20,6 @@ import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
 import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
 import { UserService } from 'src/user/user.service';
-import { ContextService } from 'src/infrastructure/context/context.service';
 import { EmailService } from 'src/infrastructure/email/email-service';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
 import { MenuItemService } from 'src/menu-item/menu-item.service';
@@ -68,7 +61,6 @@ import { RoleService } from 'src/shared/services/role_service';
     { provide: TYPES.IAccessControlService, useClass: AccessControlService },
     { provide: TYPES.IRoleService, useClass: RoleService },
     { provide: TYPES.IEmailService, useClass: EmailService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IMenuService, useClass: MenuService },
     { provide: TYPES.IMenuRepository, useClass: MenuRepository },
@@ -89,13 +81,4 @@ import { RoleService } from 'src/shared/services/role_service';
     RestaurantReviewMapper,
   ],
 })
-export class MenuModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ContextMiddleWare)
-      .forRoutes(
-        { path: 'me/menus', method: RequestMethod.ALL },
-        { path: 'me/menus/:id', method: RequestMethod.ALL },
-      );
-  }
-}
+export class MenuModule {}

@@ -1,13 +1,7 @@
-import {
-  forwardRef,
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-} from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
 import { AuditMapper } from './../audit/audit.mapper';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import {
   RestaurantReviewDataModel,
   RestaurantReviewSchema,
@@ -26,7 +20,6 @@ import { RestaurantReviewController } from './restaurant-review.controller';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
-import { ContextService } from 'src/infrastructure/context/context.service';
 import { UserService } from 'src/user/user.service';
 import { EmailService } from 'src/infrastructure/email/email-service';
 
@@ -43,7 +36,6 @@ import { EmailService } from 'src/infrastructure/email/email-service';
   providers: [
     { provide: TYPES.IAuthService, useClass: AuthService },
     { provide: TYPES.IEmailService, useClass: EmailService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.IUserService, useClass: UserService },
     {
       provide: TYPES.IRestaurantReviewService,
@@ -61,8 +53,4 @@ import { EmailService } from 'src/infrastructure/email/email-service';
   ],
   controllers: [RestaurantReviewController],
 })
-export class RestaurantReviewModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ContextMiddleWare).forRoutes(RestaurantReviewController);
-  }
-}
+export class RestaurantReviewModule {}

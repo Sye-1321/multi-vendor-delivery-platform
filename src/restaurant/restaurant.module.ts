@@ -1,8 +1,7 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
 import { AuditMapper } from './../audit/audit.mapper';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import {
   RestaurantDataModel,
   RestaurantSchema,
@@ -18,7 +17,6 @@ import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
-import { ContextService } from 'src/infrastructure/context/context.service';
 import { CompanyService } from 'src/company/company.service';
 import { MenuMapper } from 'src/menu/menu.mapper';
 import { CompanyMapper } from 'src/company/company.mapper';
@@ -58,7 +56,6 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IAuthService, useClass: AuthService },
     { provide: TYPES.IEmailService, useClass: EmailService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
     { provide: TYPES.ICompanyService, useClass: CompanyService },
     { provide: TYPES.IAccessControlService, useClass: AccessControlService },
@@ -77,14 +74,4 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
   ],
   exports: [TYPES.IRestaurantService],
 })
-export class RestaurantModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ContextMiddleWare)
-      .exclude()
-      // .exclude(
-      //   { path: 'restaurants', method: RequestMethod.GET },
-      //   { path: 'restaurants/:id', method: RequestMethod.GET },)
-      .forRoutes(RestaurantController);
-  }
-}
+export class RestaurantModule {}

@@ -1,15 +1,28 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { Context } from '../context/context';
 import { IContextService } from './context-service.interface';
+import { AuthenticatedPrincipal } from './context';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class ContextService implements IContextService {
-  private _context: Context;
-  setContext(context: Context) {
-    this._context = context;
+  private readonly storage = new AsyncLocalStorage<Context>();
+
+  run(context: Context, callback: () => void): void {
+    this.storage.run(context, callback);
+  }
+
+  setPrincipal(principal: AuthenticatedPrincipal, authToken?: string): void {
+    this.getContext().setPrincipal(principal, authToken);
   }
 
   getContext(): Context {
-    return this._context;
+    const context = this.storage.getStore();
+
+    if (!context) {
+      throw new Error('Request context is not available');
+    }
+
+    return context;
   }
 }

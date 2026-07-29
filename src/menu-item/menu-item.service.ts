@@ -23,8 +23,6 @@ import { Connection } from 'mongoose';
 
 @Injectable()
 export class MenuItemService implements IMenuItemService {
-  private context: Context;
-
   constructor(
     @Inject(TYPES.IContextService)
     private readonly contextService: IContextService,
@@ -34,8 +32,10 @@ export class MenuItemService implements IMenuItemService {
     private readonly restaurantService: IRestaurantService,
     @InjectConnection() private readonly connection: Connection,
     private readonly menuItemMapper: MenuItemMapper,
-  ) {
-    this.context = this.contextService.getContext();
+  ) {}
+
+  private get context(): Context {
+    return this.contextService.getContext();
   }
 
   private async getRestaurantIdForCurrentAdmin(): Promise<Types.ObjectId> {

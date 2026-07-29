@@ -28,8 +28,6 @@ import { RestaurantStatus } from './constants/constants';
 
 @Injectable()
 export class RestaurantService implements IRestaurantService {
-  private context: Context;
-
   constructor(
     @Inject(TYPES.IContextService)
     private readonly contextService: IContextService,
@@ -40,8 +38,10 @@ export class RestaurantService implements IRestaurantService {
     private readonly companyService: ICompanyService,
     private readonly restaurantMapper: RestaurantMapper,
     @InjectConnection() private readonly connection: Connection,
-  ) {
-    this.context = this.contextService.getContext();
+  ) {}
+
+  private get context(): Context {
+    return this.contextService.getContext();
   }
 
   async getRestaurants(): Promise<Result<IRestaurantResponse[]>> {

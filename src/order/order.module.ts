@@ -1,9 +1,7 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { TYPES } from './../application/constants/types';
-import { ContextService } from './../infrastructure/context/context.service';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { AuthService } from './../infrastructure/auth/auth.service';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
 import { RestaurantRepository } from 'src/infrastructure/data_access/repositories/restaurant.repository';
@@ -80,7 +78,6 @@ import { RoleService } from 'src/shared/services/role_service';
   ],
   controllers: [OrderController],
   providers: [
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IAuthService, useClass: AuthService },
     { provide: TYPES.IAccessControlService, useClass: AccessControlService },
@@ -117,8 +114,4 @@ import { RoleService } from 'src/shared/services/role_service';
     UserMapper,
   ],
 })
-export class OrderModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ContextMiddleWare).exclude().forRoutes(OrderController);
-  }
-}
+export class OrderModule {}

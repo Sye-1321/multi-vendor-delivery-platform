@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CompanyController } from './company.controller';
 import { CompanyService } from './company.service';
@@ -9,8 +9,6 @@ import {
 } from 'src/infrastructure/data_access/repositories/schemas/company.schema';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
 import { TYPES } from './../application/constants/types';
-import { ContextService } from './../infrastructure/context/context.service';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { CompanyRepository } from 'src/infrastructure/data_access/repositories/company.repository';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/infrastructure/email/email-service';
@@ -37,7 +35,6 @@ import { AuditMapper } from 'src/audit/audit.mapper';
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IAuthService, useClass: AuthService },
     { provide: TYPES.IEmailService, useClass: EmailService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
     { provide: TYPES.ICompanyService, useClass: CompanyService },
     { provide: TYPES.IUserService, useClass: UserService },
@@ -52,8 +49,4 @@ import { AuditMapper } from 'src/audit/audit.mapper';
   ],
   exports: [TYPES.ICompanyService],
 })
-export class CompanyModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ContextMiddleWare).exclude().forRoutes(CompanyController);
-  }
-}
+export class CompanyModule {}
