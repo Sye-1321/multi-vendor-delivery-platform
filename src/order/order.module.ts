@@ -62,6 +62,8 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
 import { MenuItemRepository } from 'src/infrastructure/data_access/repositories/menu-item.repository';
 import { AccessControlService } from 'src/shared/services/access_control.service';
 import { RoleService } from 'src/shared/services/role_service';
+import { OrderEventPublisher } from './realtime/order-event.publisher';
+import { OrderGateway } from './realtime/order.gateway';
 
 @Module({
   imports: [
@@ -109,6 +111,8 @@ import { RoleService } from 'src/shared/services/role_service';
     CompanyMapper,
     OrderMapper,
     RestaurantMapper,
+    OrderEventPublisher,
+    OrderGateway,
     JwtService,
     AuditMapper,
     UserMapper,

@@ -84,6 +84,18 @@ export class RestaurantRepository
     return Result.ok(restaurant);
   }
 
+  async isRestaurantAdmin(
+    restaurantId: Types.ObjectId,
+    restaurantAdminId: Types.ObjectId,
+  ): Promise<boolean> {
+    const restaurant = await this.restaurantModel.exists({
+      _id: restaurantId,
+      restaurantAdminId,
+    });
+
+    return restaurant !== null;
+  }
+
   async createRestaurant(
     restaurantDataModel: Partial<RestaurantDataModel>,
   ): Promise<Result<Restaurant>> {
