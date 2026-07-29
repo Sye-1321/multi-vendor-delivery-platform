@@ -1,6 +1,10 @@
 import { Types } from 'mongoose';
 import { Cart } from 'src/cart/cart';
-import { ISavedAddress, IOrder } from './interfaces/order.interface';
+import {
+  ISavedAddress,
+  IOrder,
+  IOrderTransition,
+} from './interfaces/order.interface';
 import { Entity } from 'src/domain/entity/entity';
 import { OrderStatus, PaymentStatus } from './constants/constants';
 import { DeliveryPerson } from 'src/delivery-person/delivery-person';
@@ -17,6 +21,7 @@ export class Order extends Entity<IOrder> {
   private _paymentStatus: PaymentStatus;
   private _deliveryPerson: DeliveryPerson | null;
   private _deliveryPersonId: Types.ObjectId | null;
+  private readonly _timeline: IOrderTransition[];
   private _audit: Audit;
 
   constructor(id: Types.ObjectId, props: IOrder) {
@@ -30,6 +35,7 @@ export class Order extends Entity<IOrder> {
     this._paymentStatus = props.paymentStatus;
     this._deliveryPerson = props.deliveryPerson ?? null;
     this._deliveryPersonId = props.deliveryPersonId ?? null;
+    this._timeline = props.timeline ?? [];
     this._audit = props.audit;
   }
 
@@ -103,6 +109,10 @@ export class Order extends Entity<IOrder> {
 
   set deliveryPersonId(deliveryPersonId: Types.ObjectId | null) {
     this._deliveryPersonId = deliveryPersonId;
+  }
+
+  get timeline(): readonly IOrderTransition[] {
+    return this._timeline;
   }
 
   get audit(): Audit {

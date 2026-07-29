@@ -26,6 +26,7 @@ export class OrderMapper {
       totalPrice,
       paymentStatus,
       deliveryPersonId,
+      timeline,
     } = doc;
 
     const populatedDeliveryPerson =
@@ -49,6 +50,7 @@ export class OrderMapper {
         status,
         deliveryPersonId: resolvedDeliveryPersonId,
         deliveryPerson: deliveryPersonDomain,
+        timeline,
         audit: this.auditMapper.toDomain(doc),
       },
       _id,
@@ -70,6 +72,7 @@ export class OrderMapper {
       status,
       deliveryPerson,
       deliveryPersonId,
+      timeline,
     } = order;
 
     const {
@@ -92,6 +95,7 @@ export class OrderMapper {
       deliveryPersonId: deliveryPerson
         ? deliveryPerson.id
         : (deliveryPersonId ?? null),
+      timeline: [...timeline],
       totalPrice,
       auditCreatedBy,
       auditCreatedDateTime,

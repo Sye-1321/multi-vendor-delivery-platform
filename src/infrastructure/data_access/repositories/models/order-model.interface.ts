@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { CartDataModel } from '../schemas/cart.schema';
 import { OrderStatus, PaymentStatus } from 'src/order/constants/constants';
+import { IOrderTransition } from 'src/order/interfaces/order.interface';
 
 export interface IOrderDataModel {
   readonly userId: Types.ObjectId;
@@ -14,4 +15,5 @@ export interface IOrderDataModel {
   readonly totalPrice: number;
   readonly paymentStatus: PaymentStatus;
   readonly deliveryPersonId: Types.ObjectId | null;
+  readonly timeline: IOrderTransition[];
 }

@@ -33,6 +33,7 @@ import {
   AvailabilityStatus,
   DeliveryPersonOwnership,
 } from 'src/delivery-person/constants/constants';
+import { IOrderTransition } from './interfaces/order.interface';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -162,6 +163,9 @@ export class OrderService implements IOrderService {
           paymentStatus: PaymentStatus.PENDING,
           totalPrice,
           cart,
+          timeline: [
+            this.createOrderTransition(context, null, OrderStatus.PENDING),
+          ],
           audit,
         }).getValue();
         const savedOrderResult = await this.orderRepository.createOrder(
@@ -413,6 +417,11 @@ export class OrderService implements IOrderService {
             status: OrderStatus.DELIVERED,
             paymentStatus: PaymentStatus.PAID,
           },
+          this.createOrderTransition(
+            context,
+            OrderStatus.OUT_FOR_DELIVERY,
+            OrderStatus.DELIVERED,
+          ),
           { session },
         );
 
@@ -519,6 +528,11 @@ export class OrderService implements IOrderService {
             deliveryPersonId: claimed.getValue().id,
             status: OrderStatus.OUT_FOR_DELIVERY,
           },
+          this.createOrderTransition(
+            context,
+            OrderStatus.PREPARED,
+            OrderStatus.OUT_FOR_DELIVERY,
+          ),
           { session },
         );
 
@@ -559,6 +573,7 @@ export class OrderService implements IOrderService {
         auditModifiedBy: context.email,
         auditModifiedDateTime: new Date().toISOString(),
       },
+      this.createOrderTransition(context, expectedStatus, nextStatus),
     );
 
     if (!result.isSuccess) {
@@ -569,6 +584,28 @@ export class OrderService implements IOrderService {
     }
 
     return result.getValue();
+  }
+
+  private createOrderTransition(
+    context: Context,
+    from: OrderStatus | null,
+    to: OrderStatus,
+  ): IOrderTransition {
+    if (!context.userId || !context.role) {
+      return throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Authenticated order transition context is unavailable.',
+      );
+    }
+
+    return {
+      from,
+      to,
+      actorId: new Types.ObjectId(context.userId),
+      actorRole: context.role,
+      occurredAt: new Date().toISOString(),
+      correlationId: context.correlationId,
+    };
   }
 
   async getOrdersByUser(): Promise<Result<IOrderResponseDTO[]>> {

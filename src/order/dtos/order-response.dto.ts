@@ -3,6 +3,14 @@ import { IAudit } from 'src/infrastructure/database/mongoDB/base-document.interf
 import { OrderStatus, PaymentStatus } from '../constants/constants';
 import { IDeliveryPersonResponse } from 'src/delivery-person/interfaces/deliveryperson-response.interface';
 import { ISavedAddress } from '../interfaces/order.interface';
+import { Role } from 'src/application/constants/constants';
+
+export interface IOrderTimelineEntryDTO {
+  from: OrderStatus | null;
+  to: OrderStatus;
+  actorRole: Role;
+  occurredAt: string;
+}
 
 export interface IOrderResponseDTO extends IAudit {
   id: Types.ObjectId;
@@ -13,4 +21,5 @@ export interface IOrderResponseDTO extends IAudit {
   deliveryPerson: IDeliveryPersonResponse | null;
   paymentStatus: PaymentStatus;
   totalPrice: number;
+  timeline: IOrderTimelineEntryDTO[];
 }
