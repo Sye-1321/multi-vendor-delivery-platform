@@ -326,17 +326,30 @@ The backend applies several security controls:
 Clone the repository:
 
 ```bash
-git clone https://github.com/Sye-1321/Multi-Tenanat-Delivery-App.git
-cd Multi-Tenanat-Delivery-App
+git clone https://github.com/Sye-1321/Multi-Tenant-Delivery-App.git
+cd Multi-Tenant-Delivery-App
 ```
 
 Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
-Configure the required environment variables for the database, authentication tokens, email service and application settings.
+Create the local environment file:
+
+```bash
+cp .env.example .env
+```
+
+Start the MongoDB replica set used by transactional order operations:
+
+```bash
+docker compose up -d
+```
+
+The example credentials are intended only for local development. Replace all
+token secrets in deployed environments.
 
 Start the application in development mode:
 
@@ -356,24 +369,28 @@ Run the production build:
 npm run start:prod
 ```
 
+The versioned API is available under `/api/v1`. Health endpoints are exposed at
+`/api/v1/health/live` and `/api/v1/health/ready`.
+
 ## Testing
 
-Run unit tests:
+Run the complete local verification sequence:
+
+```bash
+npm run verify
+```
+
+Run the focused test suite independently:
 
 ```bash
 npm run test
 ```
 
-Run tests with coverage:
+Apply formatting or lint fixes explicitly:
 
 ```bash
-npm run test:cov
-```
-
-Run end-to-end tests:
-
-```bash
-npm run test:e2e
+npm run format
+npm run lint:fix
 ```
 
 ## Current Scope
