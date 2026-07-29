@@ -14,6 +14,7 @@ import {
   URLPaths,
 } from 'src/application/constants/constants';
 import { Result } from 'src/domain/result/result';
+import { StructuredLogger } from '../logger/structured-logger.service';
 
 @Injectable()
 export class EmailService implements IEmailService {
@@ -22,6 +23,7 @@ export class EmailService implements IEmailService {
   constructor(
     private readonly configService: ConfigService,
     @Inject(TYPES.IAuthService) private readonly authService: IAuthService,
+    private readonly logger: StructuredLogger,
   ) {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -130,24 +132,16 @@ export class EmailService implements IEmailService {
     try {
       const from = this.configService.get<string>('SMTP_USER');
 
-      console.log('Attempting to send email:', {
-        from,
-        to,
+      this.logger.info('email.delivery.started', {
         subject,
-        text: message,
       });
 
       await this.transporter.sendMail({ from, to, subject, text: message });
+      this.logger.info('email.delivery.completed', { subject });
 
       return Result.ok<void>(undefined, 'Email has been successfully sent.');
     } catch (error) {
-      console.error('Failed to send email:', {
-        message: error?.message,
-        stack: error?.stack,
-        name: error?.name,
-        code: error?.code,
-        response: error?.response,
-      });
+      this.logger.error('email.delivery.failed', error, { subject });
 
       return Result.fail<void>(
         `An error occurred while sending the email: ${error?.message || 'Unknown error'}`,

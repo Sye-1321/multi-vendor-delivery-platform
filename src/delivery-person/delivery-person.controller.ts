@@ -65,7 +65,6 @@ export class DeliveryPersonController {
     @Body() body: CreateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
-    console.log('hello');
     return this.deliveryPersonService.createRestaurantDeliveryPerson(
       body,
       profileImage,

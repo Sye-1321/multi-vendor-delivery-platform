@@ -60,7 +60,6 @@ export class SystemReviewRepository
     id: Types.ObjectId,
     updateData: Partial<SystemReviewDataModel>,
   ): Promise<Result<SystemReview>> {
-    console.log(updateData, 'updateData');
     const updated = await this.DocumentModel.findByIdAndUpdate(
       id,
       { $set: updateData },

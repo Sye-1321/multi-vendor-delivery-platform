@@ -49,7 +49,6 @@ export class SystemReviewService {
       },
       new Types.ObjectId(),
     ).getValue();
-    console.log(systemReview, 'System Review');
     const systemReviewDataModel =
       this.systemReviewMapper.toPersistence(systemReview);
     const systemReviewResult =

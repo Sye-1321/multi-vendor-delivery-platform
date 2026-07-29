@@ -101,8 +101,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
         ? documents.map((document) => this.mapper.toDomain(document))
         : [];
       return Result.ok(entities);
-    } catch (error) {
-      console.error(error);
+    } catch {
       return Result.fail(
         'Error fetching documents from the database',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -233,8 +232,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
         this.mapper.toDomain(doc),
       );
       return Result.ok(entities);
-    } catch (error) {
-      console.error(error);
+    } catch {
       return Result.fail(
         'Error inserting documents into the database',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -264,8 +262,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
         documentIds = insertedDocIds.map((id) => this.stringToObjectId(id));
       }
       return Result.ok(documentIds);
-    } catch (error) {
-      console.error(error);
+    } catch {
       return Result.fail(
         'Error inserting documents with session',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -286,8 +283,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
       }
       const entity: TEntity = this.mapper.toDomain(document as any);
       return Result.ok(entity);
-    } catch (error) {
-      console.error(error);
+    } catch {
       return Result.fail(
         'Error updating document in the database',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -327,8 +323,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
         this.mapper.toDomain(doc),
       );
       return Result.ok(entities);
-    } catch (error) {
-      console.error(error);
+    } catch {
       return Result.fail(
         'Error updating documents in the database',
         HttpStatus.INTERNAL_SERVER_ERROR,
