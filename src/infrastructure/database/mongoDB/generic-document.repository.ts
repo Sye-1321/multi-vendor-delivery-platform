@@ -110,7 +110,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
     }
   }
 
-  async pagination(
+  pagination(
     query: FilterQuery<T>,
     select: ProjectionType<T | null>,
     options: QueryOptions<T>,
@@ -244,12 +244,13 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
 
   async insertManyWithSession(
     docs: any,
-    options?: QueryOptions<T>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Types.ObjectId[]>> {
     try {
       let documentIds: Types.ObjectId[] = [];
       const documentsToSave = docs.map((doc) => this.createDocument(doc));
       const documents = await this.DocumentModel.insertMany(documentsToSave, {
+        ...options,
         rawResult: true,
       });
       if (documents.insertedCount < docs.length) {

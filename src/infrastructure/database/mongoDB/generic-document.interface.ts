@@ -62,6 +62,6 @@ export interface IGenericDocument<TEntity, T> {
 
   insertManyWithSession(
     docs: any,
-    options?: QueryOptions<T>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Types.ObjectId[]>>;
 }
