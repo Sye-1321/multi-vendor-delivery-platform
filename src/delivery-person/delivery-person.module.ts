@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
 import { DeliveryPersonController } from './delivery-person.controller';
@@ -16,7 +16,6 @@ import {
   RestaurantDataModel,
   RestaurantSchema,
 } from 'src/infrastructure/data_access/repositories/schemas/restaurant.schema';
-import { ContextMiddleWare } from 'src/infrastructure/middlewares/context.middleware';
 import { DeliveryPersonService } from './delivery-person.service';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
@@ -25,7 +24,6 @@ import { AccessControlService } from 'src/shared/services/access_control.service
 import { RoleService } from 'src/shared/services/role_service';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
-import { ContextService } from 'src/infrastructure/context/context.service';
 import { RestaurantMapper } from 'src/restaurant/restaurant.mapper';
 import { AuditMapper } from 'src/audit/audit.mapper';
 import { MenuMapper } from 'src/menu/menu.mapper';
@@ -61,7 +59,6 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IAuthService, useClass: AuthService },
     { provide: TYPES.IEmailService, useClass: EmailService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IAccessControlService, useClass: AccessControlService },
     { provide: TYPES.IRoleService, useClass: RoleService },
@@ -82,8 +79,4 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
     DeliveryPersonRepository,
   ],
 })
-export class DeliveryPersonModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ContextMiddleWare).forRoutes(DeliveryPersonController);
-  }
-}
+export class DeliveryPersonModule {}

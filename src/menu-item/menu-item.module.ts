@@ -1,12 +1,6 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { MenuItemController } from './menu-item.controller';
 import { MenuItemMapper } from './menu-item.mapper';
 import {
@@ -21,7 +15,6 @@ import { UserModule } from 'src/user/user.module';
 import { RestaurantModule } from 'src/restaurant/restaurant.module';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
 import { EmailService } from 'src/infrastructure/email/email-service';
-import { ContextService } from 'src/infrastructure/context/context.service';
 import { UserService } from 'src/user/user.service';
 import { MenuItemService } from './menu-item.service';
 import { MenuItemRepository } from 'src/infrastructure/data_access/repositories/menu-item.repository';
@@ -66,7 +59,6 @@ import { MenuMapper } from 'src/menu/menu.mapper';
     { provide: TYPES.IEmailService, useClass: EmailService },
     { provide: TYPES.IAccessControlService, useClass: AccessControlService },
     { provide: TYPES.IRoleService, useClass: RoleService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IMenuItemService, useClass: MenuItemService },
     { provide: TYPES.IMenuItemRepository, useClass: MenuItemRepository },
@@ -86,13 +78,4 @@ import { MenuMapper } from 'src/menu/menu.mapper';
   ],
   exports: [MenuItemMapper],
 })
-export class MenuItemModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ContextMiddleWare)
-      .forRoutes(
-        { path: 'me/menu-items', method: RequestMethod.ALL },
-        { path: 'me/menu-items/:id', method: RequestMethod.ALL },
-      );
-  }
-}
+export class MenuItemModule {}

@@ -29,8 +29,6 @@ import { SaveFileLocally } from 'src/application/saveFileLocally';
 
 @Injectable()
 export class CompanyService implements ICompanyService {
-  private context: Context;
-
   constructor(
     @Inject(TYPES.IContextService)
     private readonly contextService: IContextService,
@@ -39,8 +37,10 @@ export class CompanyService implements ICompanyService {
     private readonly companyRepository: ICompanyRepository,
     @InjectConnection() private readonly connection: Connection,
     private readonly companyMapper: CompanyMapper,
-  ) {
-    this.context = this.contextService.getContext();
+  ) {}
+
+  private get context(): Context {
+    return this.contextService.getContext();
   }
 
   async createCompany(

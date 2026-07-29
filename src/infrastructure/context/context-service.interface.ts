@@ -1,6 +1,7 @@
-import { Context } from './context';
+import { AuthenticatedPrincipal, Context } from './context';
 
 export interface IContextService {
-  setContext(context: Context);
+  run(context: Context, callback: () => void): void;
+  setPrincipal(principal: AuthenticatedPrincipal, authToken?: string): void;
   getContext(): Context;
 }

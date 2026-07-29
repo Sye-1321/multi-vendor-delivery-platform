@@ -42,10 +42,8 @@
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
-    "cls-hooked": "^4.2.2",
     "dotenv": "^16.4.7",
     "joi": "^17.13.3",
-    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.13.1",
     "nodemailer": "^6.10.0",
     "passport": "^0.7.0",
@@ -96,6 +94,9 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

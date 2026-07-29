@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -10,7 +10,6 @@ import { DeliveryPersonModule } from './delivery-person/delivery-person.module';
 import { ApplicationExceptionsFilter } from './infrastructure/filters/exception.filter';
 import { TYPES } from './application/constants/types';
 import { ApplicationLogger } from './infrastructure/logger/logger';
-import { ContextService } from './infrastructure/context/context.service';
 import { SystemReviewModule } from './system-review/system-review.module';
 import { RestaurantReviewModule } from './restaurant-review/restaurant-review.module';
 import { MenuItemModule } from './menu-item/menu-item.module';
@@ -20,6 +19,8 @@ import { LoggerService } from './infrastructure/filters/logger.service';
 import configuration from './bootstrap/config/configuration';
 import { environmentValidationSchema } from './bootstrap/config/environment-validation';
 import { HealthModule } from './health/health.module';
+import { RequestContextModule } from './infrastructure/context/request-context.module';
+import { RequestContextMiddleware } from './infrastructure/middlewares/request-context.middleware';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { HealthModule } from './health/health.module';
       }),
       inject: [ConfigService],
     }),
+    RequestContextModule,
     HealthModule,
     AuthModule,
     UserModule,
@@ -61,7 +63,10 @@ import { HealthModule } from './health/health.module';
     },
     LoggerService,
     { provide: TYPES.IApplicationLogger, useClass: ApplicationLogger },
-    { provide: TYPES.IContextService, useClass: ContextService },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestContextMiddleware).forRoutes('*');
+  }
+}

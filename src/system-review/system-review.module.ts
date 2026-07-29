@@ -1,18 +1,11 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
 import { AuditMapper } from './../audit/audit.mapper';
-import { ContextService } from './../infrastructure/context/context.service';
 import {
   SystemReviewDataModel,
   SystemReviewSchema,
 } from 'src/infrastructure/data_access/repositories/schemas/system-review.schema';
-import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { SystemReviewRepository } from 'src/infrastructure/data_access/repositories/system-review.repository';
 import {
   UserDataModel,
@@ -38,7 +31,6 @@ import { AuthService } from 'src/infrastructure/auth/auth.service';
   controllers: [SystemReviewController],
   providers: [
     { provide: TYPES.IAuthService, useClass: AuthService },
-    { provide: TYPES.IContextService, useClass: ContextService },
     { provide: TYPES.IUserService, useClass: UserService },
     { provide: TYPES.IEmailService, useClass: EmailService },
     { provide: TYPES.ISystemReviewService, useClass: SystemReviewService },
@@ -53,11 +45,4 @@ import { AuthService } from 'src/infrastructure/auth/auth.service';
     SystemReviewMapper,
   ],
 })
-export class SystemReviewModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ContextMiddleWare)
-      .exclude({ path: 'reviews', method: RequestMethod.GET })
-      .forRoutes(SystemReviewController);
-  }
-}
+export class SystemReviewModule {}

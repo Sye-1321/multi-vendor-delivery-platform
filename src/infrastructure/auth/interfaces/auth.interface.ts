@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { Role } from 'src/application/constants/constants';
 
 export interface IAuthStrategy {
   validate(request: Request, payload: any): unknown;
@@ -6,7 +7,7 @@ export interface IAuthStrategy {
 
 interface IPayload {
   email: string;
-  role: string;
+  role: Role;
 }
 
 export interface IUserPayload extends IPayload {
