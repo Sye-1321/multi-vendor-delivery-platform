@@ -36,7 +36,7 @@ import { HealthModule } from './health/health.module';
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
+      useFactory: (config: ConfigService) => ({
         uri: config.getOrThrow<string>('database.uri'),
         serverSelectionTimeoutMS: 5_000,
       }),

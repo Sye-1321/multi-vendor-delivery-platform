@@ -63,7 +63,7 @@ export class ContextMiddleWare implements NestMiddleware {
         const decoded = jwt.verify(token, secret) as any;
         email = decoded.email || email;
         role = decoded.role || '';
-      } catch (error) {
+      } catch {
         throwApplicationError(
           HttpStatus.UNAUTHORIZED,
           APIResponseMessage.invalidToken,

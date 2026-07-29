@@ -116,7 +116,7 @@ export class OrderService implements IOrderService {
       }
       await session.commitTransaction();
       return Result.ok(OrderParser.createOrderResponse(savedOrder.getValue()));
-    } catch (error) {
+    } catch {
       await session.abortTransaction();
       return Result.fail(
         'Failed to create order.',

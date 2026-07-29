@@ -25,7 +25,6 @@ import { RestaurantReviewService } from './restaurant-review.service';
 import { RestaurantReviewController } from './restaurant-review.controller';
 import { JwtService } from '@nestjs/jwt';
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
-import { SystemReviewMapper } from 'src/system-review/system-review.mapper';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
 import { ContextService } from 'src/infrastructure/context/context.service';
 import { UserService } from 'src/user/user.service';

@@ -1,11 +1,6 @@
 import {
   IsString,
-  IsEnum,
-  IsOptional,
-  IsPhoneNumber,
-  IsUrl,
   IsBoolean,
-  IsNumber,
   ValidateNested,
   MinLength,
   IsEmail,
@@ -14,7 +9,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { RestaurantStatus } from '../constants/constants';
 
 export class SavedAddressDTO {
   @IsString()

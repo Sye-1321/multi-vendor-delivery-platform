@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import mongoose, { Document, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { IRestaurantDataModel } from '../models/restaurant-model.interface';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
@@ -8,7 +8,6 @@ import { UserDataModel } from './user.schema';
 import { Type } from 'class-transformer';
 import { RestaurantReviewDataModel } from './restaurant-review.schema';
 import { MenuDataModel } from './menu.schema';
-import { Company } from 'src/company/company';
 
 export type RestaurantDocument = RestaurantDataModel & Document;
 

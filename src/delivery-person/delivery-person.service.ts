@@ -282,7 +282,7 @@ export class DeliveryPersonService implements IDeliveryPersonService {
         DeliveryPersonParser.createDeliveryPersonResponse(updated.getValue()),
         'Delivery person updated successfully',
       );
-    } catch (error) {
+    } catch {
       return Result.fail(
         'Delivery person update failed',
         HttpStatus.EXPECTATION_FAILED,

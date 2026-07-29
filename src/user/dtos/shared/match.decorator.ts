@@ -11,7 +11,7 @@ export class PasswordsMatchConstraint implements ValidatorConstraintInterface {
     return confirmPassword === newPassword;
   }
 
-  defaultMessage(args: ValidationArguments): string {
+  defaultMessage(): string {
     return 'Passwords do not match.';
   }
 }

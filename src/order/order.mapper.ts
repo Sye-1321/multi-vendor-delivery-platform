@@ -1,4 +1,3 @@
-import { IOrderDataModel } from 'src/infrastructure/data_access/repositories/models/order-model.interface';
 import { Order } from './order';
 import { OrderDataModel } from 'src/infrastructure/data_access/repositories/schemas/order.schema';
 import { CartMapper } from 'src/cart/cart.mapper';

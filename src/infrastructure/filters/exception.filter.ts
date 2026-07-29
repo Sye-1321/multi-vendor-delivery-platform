@@ -27,8 +27,8 @@ export class ApplicationExceptionsFilter extends BaseExceptionFilter {
     const { body } = request;
     let props: any;
     if (body && Object.hasOwnProperty.call(body, 'password')) {
-      const { password, ...prop } = body;
-      props = prop;
+      props = { ...body };
+      delete props.password;
     }
     const { statusCode, message } = this.getException(exception);
     const responseBody: IExceptionResponse = {

@@ -14,10 +14,11 @@ export const schemaValidationError: z.ZodErrorMap = (error, ctx) => {
         return { message: `${error.path[1]} should be an array` };
       }
       break;
-    case z.ZodIssueCode.invalid_enum_value:
+    case z.ZodIssueCode.invalid_enum_value: {
       const options: (string | number)[] = error.options;
       const errorMessage = options.toString().replace(',', ' or ');
       return { message: `${error.path[1]} should be ${errorMessage}` };
+    }
     case z.ZodIssueCode.too_small:
       if (error.type === 'array') {
         return {

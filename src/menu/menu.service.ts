@@ -141,7 +141,9 @@ export class MenuService implements IMenuService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const list = result.getValue().map(MenuParser.createMenuResponse);
+    const list = result
+      .getValue()
+      .map((menu) => MenuParser.createMenuResponse(menu));
     return Result.ok(list);
   }
 
@@ -232,7 +234,9 @@ export class MenuService implements IMenuService {
   ): Promise<Result<IMenuResponse[]>> {
     const result =
       await this.menuRepository.getMenusByRestaurantId(restaurantId);
-    const list = result.getValue().map(MenuParser.createMenuResponse);
+    const list = result
+      .getValue()
+      .map((menu) => MenuParser.createMenuResponse(menu));
     return Result.ok(list);
   }
 

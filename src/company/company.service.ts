@@ -200,58 +200,55 @@ export class CompanyService implements ICompanyService {
     props: UpdateCompanyDTO,
     logoFile?: Express.Multer.File,
   ): Promise<Result<ICompanyResponse>> {
-    try {
-      const companyAdmin: User = await this.userService.getContextUser();
-      const companyResult = await this.companyRepository.getCompanyByOwner(
-        companyAdmin.id,
-      );
+    const companyAdmin: User = await this.userService.getContextUser();
+    const companyResult = await this.companyRepository.getCompanyByOwner(
+      companyAdmin.id,
+    );
 
-      if (!companyResult.isSuccess) {
-        throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
-      }
-
-      const company = companyResult.getValue();
-      const data: any = {
-        auditModifiedBy: this.context.email,
-        auditModifiedDateTime: new Date().toISOString(),
-        ...props,
-      };
-
-      if (logoFile) {
-        const logo = await SaveFileLocally(logoFile, 'company-logos');
-        data.logo = logo;
-      }
-
-      this.updateCompanyData(data, company, this.context);
-
-      if ((props as any).companyAdminData) {
-        this.updateCompanyAdmin(
-          (props as any).companyAdminData,
-          company.owner,
-          this.context,
-        );
-      }
-
-      await this.updateCompanyById(company.id, data);
-
-      const refreshedCompanyResult =
-        await this.companyRepository.getCompanyById(company.id);
-      if (!refreshedCompanyResult.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Failed to retrieve updated company',
-        );
-      }
-
-      const refreshedCompany = refreshedCompanyResult.getValue();
-
-      return Result.ok(
-        CompanyParser.createCompanyResponse(refreshedCompany),
-        'Company updated successfully',
-      );
-    } catch (error) {
-      throw error;
+    if (!companyResult.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
     }
+
+    const company = companyResult.getValue();
+    const data: any = {
+      auditModifiedBy: this.context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+      ...props,
+    };
+
+    if (logoFile) {
+      const logo = await SaveFileLocally(logoFile, 'company-logos');
+      data.logo = logo;
+    }
+
+    this.updateCompanyData(data, company, this.context);
+
+    if ((props as any).companyAdminData) {
+      this.updateCompanyAdmin(
+        (props as any).companyAdminData,
+        company.owner,
+        this.context,
+      );
+    }
+
+    await this.updateCompanyById(company.id, data);
+
+    const refreshedCompanyResult = await this.companyRepository.getCompanyById(
+      company.id,
+    );
+    if (!refreshedCompanyResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to retrieve updated company',
+      );
+    }
+
+    const refreshedCompany = refreshedCompanyResult.getValue();
+
+    return Result.ok(
+      CompanyParser.createCompanyResponse(refreshedCompany),
+      'Company updated successfully',
+    );
   }
 
   private updateCompanyData(

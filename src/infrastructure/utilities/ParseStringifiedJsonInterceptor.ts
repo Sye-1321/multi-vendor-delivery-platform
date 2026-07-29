@@ -30,7 +30,9 @@ export class ParseStringifiedJsonInterceptor implements NestInterceptor {
           } else if (this.isJsonString(value)) {
             try {
               req.body[key] = JSON.parse(value);
-            } catch {}
+            } catch {
+              continue;
+            }
           }
         }
       }

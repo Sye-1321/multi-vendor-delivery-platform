@@ -3,7 +3,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { CompanyController } from './company.controller';
 import { CompanyService } from './company.service';
 import { CompanyMapper } from './company.mapper';
-import { CompanyParser } from './company.parser';
 import {
   CompanyDataModel,
   CompanySchema,
@@ -11,10 +10,8 @@ import {
 import { UserRepository } from 'src/infrastructure/data_access/repositories/user.repository';
 import { TYPES } from './../application/constants/types';
 import { ContextService } from './../infrastructure/context/context.service';
-import { UserModule } from 'src/user/user.module';
 import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { CompanyRepository } from 'src/infrastructure/data_access/repositories/company.repository';
-import { AuditModule } from 'src/audit/audit.module';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/infrastructure/email/email-service';
 import { AccessControlService } from 'src/shared/services/access_control.service';

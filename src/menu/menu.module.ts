@@ -20,7 +20,6 @@ import {
   UserDataModel,
   UserSchema,
 } from 'src/infrastructure/data_access/repositories/schemas/user.schema';
-import { MenuItemModule } from 'src/menu-item/menu-item.module';
 import { AuditMapper } from 'src/audit/audit.mapper';
 import { UserMapper } from 'src/user/user.mapper';
 import { JwtService } from '@nestjs/jwt';

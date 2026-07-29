@@ -54,7 +54,7 @@ export class RoleGuard implements CanActivate {
       // Check if the current role has the required role
       const isAuthorized = this.accessControlService.isAuthorized({
         currentRole: this.context.role as Role,
-        requiredRole: role as Role,
+        requiredRole: role,
       });
 
       console.log(`⚡ Is Authorized for Role ${role}? ${isAuthorized}`);

@@ -19,7 +19,7 @@ export class UserParser {
       id: user.id,
       name: user.name,
       email: user.email,
-      phoneNumber: user.phoneNumber as string,
+      phoneNumber: user.phoneNumber,
       role: user.role as string,
       savedAddress: user.savedAddress,
       status: user.status as string,

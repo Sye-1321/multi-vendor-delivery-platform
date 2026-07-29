@@ -1,5 +1,5 @@
 import { User } from 'src/user/user';
-import { UserDataModel, UserDocument } from '../schemas/user.schema';
+import { UserDataModel } from '../schemas/user.schema';
 import { FilterQuery, Types } from 'mongoose';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 import { Result } from 'src/domain/result/result';

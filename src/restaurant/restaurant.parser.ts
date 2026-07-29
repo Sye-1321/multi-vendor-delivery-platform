@@ -1,4 +1,3 @@
-import { CompanyParser } from 'src/company/company.parser';
 import { IRestaurantResponse } from './interfaces/restaurant-response.interface';
 import { Restaurant } from './restaurant';
 import { UserParser } from 'src/user/user.parser';
