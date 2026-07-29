@@ -10,7 +10,10 @@ interface HealthResponse {
 
 @Controller('health')
 export class HealthController {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(
+    @InjectConnection()
+    private readonly connection: Pick<Connection, 'readyState'>,
+  ) {}
 
   @Get('live')
   liveness(): HealthResponse {
