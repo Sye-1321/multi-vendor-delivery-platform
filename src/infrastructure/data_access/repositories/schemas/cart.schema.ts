@@ -13,10 +13,18 @@ export class CartDataModel extends BaseDocument implements ICartDataModel {
   @Type(() => UserDataModel)
   userId: Types.ObjectId;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: Number, required: true })
   totalPrice: number;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId }] })
+  @Prop({
+    type: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: CartItemDataModel.name,
+      },
+    ],
+    required: true,
+  })
   @Type(() => CartItemDataModel)
   cartItems: CartItemDataModel[];
 }

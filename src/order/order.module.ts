@@ -60,6 +60,7 @@ import {
 import { RestaurantReviewMapper } from 'src/restaurant-review/restaurant-review.mapper';
 import { MenuMapper } from 'src/menu/menu.mapper';
 import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
+import { MenuItemRepository } from 'src/infrastructure/data_access/repositories/menu-item.repository';
 import { AccessControlService } from 'src/shared/services/access_control.service';
 import { RoleService } from 'src/shared/services/role_service';
 
@@ -88,6 +89,7 @@ import { RoleService } from 'src/shared/services/role_service';
     { provide: TYPES.IRestaurantService, useClass: RestaurantService },
     { provide: TYPES.IOrderRepository, useClass: OrderRepository },
     { provide: TYPES.IOrderService, useClass: OrderService },
+    { provide: TYPES.IMenuItemRepository, useClass: MenuItemRepository },
     { provide: TYPES.ICompanyService, useClass: CompanyService },
     { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
     { provide: TYPES.IDeliveryPersonService, useClass: DeliveryPersonService },

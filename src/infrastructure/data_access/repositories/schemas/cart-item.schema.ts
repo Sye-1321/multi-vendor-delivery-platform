@@ -12,7 +12,11 @@ export class CartItemDataModel
   extends BaseDocument
   implements ICartItemDataModel
 {
-  @Prop({ type: mongoose.Schema.Types.ObjectId })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: MenuItemDataModel.name,
+    required: true,
+  })
   @Type(() => MenuItemDataModel)
   menuItemId: Types.ObjectId;
 
