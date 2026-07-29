@@ -4,19 +4,25 @@ import { HttpStatus } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { CreateDeliveryPersonWithProfileImageDTO } from '../dtos/delivery-person.dto';
 import { Audit } from 'src/domain/audit/audit';
-import { DeliveryPersonOwnership, AvailabilityStatus, DeliveryPersonStatus } from '../constants/constants';
+import {
+  DeliveryPersonOwnership,
+  AvailabilityStatus,
+  DeliveryPersonStatus,
+} from '../constants/constants';
 
 export class DeliveryPersonFactory {
   static createDeliveryPerson(
     props: CreateDeliveryPersonWithProfileImageDTO,
     audit: Audit,
-    restaurantId?: Types.ObjectId
+    restaurantId?: Types.ObjectId,
   ): DeliveryPerson {
     const baseData = {
       profileImage: props.profileImage,
       name: props.name,
       phoneNumber: props.phoneNumber,
-      deliveryType: restaurantId ? DeliveryPersonOwnership.RESTAURANT : DeliveryPersonOwnership.SYSTEM,
+      deliveryType: restaurantId
+        ? DeliveryPersonOwnership.RESTAURANT
+        : DeliveryPersonOwnership.SYSTEM,
       savedAddress: props.savedAddress,
       audit,
       availabilityStatus: AvailabilityStatus.AVAILABLE,
@@ -43,7 +49,7 @@ export class DeliveryPersonFactory {
     if (!strategy) {
       throwApplicationError(
         HttpStatus.BAD_REQUEST,
-        'Invalid delivery person creation strategy.'
+        'Invalid delivery person creation strategy.',
       );
     }
 

@@ -5,7 +5,9 @@ import { DeliveryPersonDataModel } from 'src/infrastructure/data_access/reposito
 import { DeliveryPerson } from './delivery-person';
 
 @Injectable()
-export class DeliveryPersonMapper implements IMapper<DeliveryPerson, DeliveryPersonDataModel> {
+export class DeliveryPersonMapper
+  implements IMapper<DeliveryPerson, DeliveryPersonDataModel>
+{
   constructor(private readonly auditMapper: AuditMapper) {}
 
   toPersistence(entity: DeliveryPerson): DeliveryPersonDataModel {

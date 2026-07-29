@@ -46,7 +46,9 @@ export class CreateCompanyDTO {
 
   @IsString()
   @IsNotEmpty()
-  @Matches(/^251\d{9}$/, { message: 'Phone number must start with 251 followed by 9 digits' })
+  @Matches(/^251\d{9}$/, {
+    message: 'Phone number must start with 251 followed by 9 digits',
+  })
   phoneNumber: string;
 
   @ValidateNested()
@@ -66,7 +68,9 @@ export class UpdateCompanyDTO {
 
   @IsOptional()
   @IsString()
-  @Matches(/^251\d{9}$/, { message: 'Phone number must start with 251 followed by 9 digits' })
+  @Matches(/^251\d{9}$/, {
+    message: 'Phone number must start with 251 followed by 9 digits',
+  })
   phoneNumber?: string;
 
   @IsOptional()

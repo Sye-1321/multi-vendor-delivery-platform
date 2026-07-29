@@ -10,11 +10,10 @@ export const APIResponseMessage = {
   roleHeader: 'x-user-role',
   invalidToken: 'Invalid authentication token.',
   emailVerificationError: 'Error sending verification email',
-  passwordResetError: 'Error sending password reset email', 
+  passwordResetError: 'Error sending password reset email',
   completeYourRegistrationError: 'Error sending finish registration email',
-  emailChangeError: 'Error sending email change request email'
+  emailChangeError: 'Error sending email change request email',
 };
-
 
 export const saltRounds = 10;
 
@@ -38,12 +37,11 @@ export const RoleOrder: Record<Role, number> = {
 
 export const ROLE_KEY = 'role';
 
-
 export const EmailSubjects = {
   emailVerification: 'Email Verification Request',
   passwordReset: 'Password Reset Request',
   emailChange: 'Email Change Request',
-  completeRegistration: 'Complete Your Registration'
+  completeRegistration: 'Complete Your Registration',
 };
 
 export const BASE_URL = 'http://localhost:5173/almost-there';
@@ -51,5 +49,5 @@ export const BASE_URL = 'http://localhost:5173/almost-there';
 export const URLPaths = {
   verifyEmail: '/verify-email',
   passwordResetConfirm: '/password-reset-confirm',
-  verifyNewEmail: '/verify-new-email'
+  verifyNewEmail: '/verify-new-email',
 };

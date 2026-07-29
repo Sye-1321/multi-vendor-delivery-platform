@@ -24,7 +24,6 @@ export class MenuItem extends Entity<IMenuItem> {
     this._audit = props.audit;
   }
 
-
   get restaurantId(): Types.ObjectId {
     return this._restaurantId;
   }

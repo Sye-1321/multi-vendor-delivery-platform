@@ -2,7 +2,10 @@ import { tokenExpiresIn } from '../application/constants/constants';
 import { ISignUpTokens } from '../infrastructure/auth/interfaces/auth.interface';
 import { AuditParser } from '../audit/audit.parser';
 import { User } from './user';
-import { IUserResponse, IUserSignedInResponseDTO } from './interfaces/user-response.interface';
+import {
+  IUserResponse,
+  IUserSignedInResponseDTO,
+} from './interfaces/user-response.interface';
 
 export type IUserResponseDTO = IUserResponse | IUserSignedInResponseDTO;
 
@@ -39,4 +42,4 @@ export class UserParser {
     }
     return usersResponse;
   }
-} 
+}

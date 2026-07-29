@@ -18,7 +18,11 @@ export class MenuDataModel extends BaseDocument implements IMenuDataModel {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' })
   restaurantId: Types.ObjectId;
 
-  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: MenuItemDataModel.name }] })
+  @Prop({
+    type: [
+      { type: mongoose.Schema.Types.ObjectId, ref: MenuItemDataModel.name },
+    ],
+  })
   @Type(() => MenuItemDataModel)
   menuItems: MenuItemDataModel[];
 }

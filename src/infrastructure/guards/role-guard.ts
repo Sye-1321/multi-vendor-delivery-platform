@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { IAccessControlService } from 'src/shared/interfaces/access_control_service.interface';
@@ -13,13 +18,17 @@ export class RoleGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
-    @Inject(TYPES.IAccessControlService) private readonly accessControlService: IAccessControlService,
-    @Inject(TYPES.IContextService) private readonly contextService: IContextService,
+    @Inject(TYPES.IAccessControlService)
+    private readonly accessControlService: IAccessControlService,
+    @Inject(TYPES.IContextService)
+    private readonly contextService: IContextService,
   ) {
     this.context = this.contextService.getContext();
   }
 
-  canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate(
+    context: ExecutionContext,
+  ): boolean | Promise<boolean> | Observable<boolean> {
     // Log the required roles for the current route handler
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLE_KEY, [
       context.getHandler(),
@@ -38,7 +47,9 @@ export class RoleGuard implements CanActivate {
 
     for (const role of requiredRoles) {
       // Log each role being checked
-      console.log(`⚡ Checking if current role ${this.context.role} is authorized for required role ${role}`);
+      console.log(
+        `⚡ Checking if current role ${this.context.role} is authorized for required role ${role}`,
+      );
 
       // Check if the current role has the required role
       const isAuthorized = this.accessControlService.isAuthorized({

@@ -10,7 +10,10 @@ import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/g
 import { Result } from 'src/domain/result/result';
 
 @Injectable()
-export class CartRepository extends GenericDocumentRepository<Cart, CartDocument> implements ICartRepository{
+export class CartRepository
+  extends GenericDocumentRepository<Cart, CartDocument>
+  implements ICartRepository
+{
   cartMapper: CartMapper;
   constructor(
     @InjectModel(CartDataModel.name) cartDataModel: Model<CartDocument>,
@@ -20,13 +23,24 @@ export class CartRepository extends GenericDocumentRepository<Cart, CartDocument
     super(cartDataModel, connection, mapper);
   }
 
-  async updateCartItemSelectedItems(cartItems: Cart[]): Promise<Result<Cart[]>> {
+  async updateCartItemSelectedItems(
+    cartItems: Cart[],
+  ): Promise<Result<Cart[]>> {
     try {
-      const document = cartItems.map((doc) => this.cartMapper.toPersistence(doc));
-      const selectedItemsToUpdate = document.map((doc) => ({ _id: doc._id, cartItems: doc.cartItems }));
+      const document = cartItems.map((doc) =>
+        this.cartMapper.toPersistence(doc),
+      );
+      const selectedItemsToUpdate = document.map((doc) => ({
+        _id: doc._id,
+        cartItems: doc.cartItems,
+      }));
       const result = await this.updateMany(
         { _id: { $in: document.map((doc) => doc._id) } },
-        { $set: { cartItems: selectedItemsToUpdate.map((item) => item.cartItems) } },
+        {
+          $set: {
+            cartItems: selectedItemsToUpdate.map((item) => item.cartItems),
+          },
+        },
       );
       if (!result.isSuccess) {
         throwApplicationError(HttpStatus.BAD_REQUEST, '');

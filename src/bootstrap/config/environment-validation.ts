@@ -8,11 +8,19 @@ export const environmentValidationSchema = Joi.object({
     .default('development'),
   APP_NAME: Joi.string().trim().default('multi-vendor-delivery-platform'),
   PORT: Joi.number().port().default(4000),
-  API_PREFIX: Joi.string().trim().pattern(/^[a-z0-9-]+$/).default('api'),
-  API_VERSION: Joi.string().trim().pattern(/^v[1-9]\d*$/).default('v1'),
+  API_PREFIX: Joi.string()
+    .trim()
+    .pattern(/^[a-z0-9-]+$/)
+    .default('api'),
+  API_VERSION: Joi.string()
+    .trim()
+    .pattern(/^v[1-9]\d*$/)
+    .default('v1'),
   CORS_ORIGINS: Joi.string().default('http://localhost:3000'),
 
-  DATABASE_URL: Joi.string().uri({ scheme: ['mongodb', 'mongodb+srv'] }).required(),
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: ['mongodb', 'mongodb+srv'] })
+    .required(),
 
   JWT_ACCESS_TOKEN_SECRET: secret,
   JWT_ACCESS_TOKEN_EXPIRATION_TIME: Joi.string().default('15m'),

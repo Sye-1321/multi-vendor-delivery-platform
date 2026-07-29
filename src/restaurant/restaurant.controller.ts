@@ -42,7 +42,7 @@ export class RestaurantController {
 
   @Get('restaurants/:id')
   async getRestaurantById(
-  @Param('id') restaurantId: Types.ObjectId,
+    @Param('id') restaurantId: Types.ObjectId,
   ): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.getRestaurantById(restaurantId);
   }
@@ -67,7 +67,8 @@ export class RestaurantController {
   )
   async updateRestaurant(
     @Body() updateData: UpdateRestaurantDTO,
-    @UploadedFiles() files: {
+    @UploadedFiles()
+    files: {
       logo?: Express.Multer.File[];
       image?: Express.Multer.File[];
     },
@@ -86,7 +87,6 @@ export class RestaurantController {
     return this.restaurantService.getRestaurantsByCompany();
   }
 
-
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Get('company/restaurants/:id')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
@@ -96,7 +96,6 @@ export class RestaurantController {
     return this.restaurantService.getCompanyRestaurantById(restaurantId);
   }
 
-  
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Put('company/restaurants/:id')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
@@ -106,7 +105,6 @@ export class RestaurantController {
   ): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.changeRestaurantAdmin(restaurantId, data);
   }
-
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
@@ -130,11 +128,12 @@ export class RestaurantController {
     const image = files.image?.[0];
 
     if (!logo || !image) {
-      return Result.fail('Both logo and image are required', HttpStatus.BAD_REQUEST);
+      return Result.fail(
+        'Both logo and image are required',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
     return this.restaurantService.createRestaurant(data, logo, image);
   }
-
-
 }

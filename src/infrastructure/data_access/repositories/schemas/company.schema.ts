@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 import { UserDataModel } from './user.schema';
-import { Type } from 'class-transformer'; 
+import { Type } from 'class-transformer';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
 import { ICompanyData } from '../models/company-model.interface';
 
@@ -28,9 +28,9 @@ export class CompanyDataModel extends BaseDocument implements ICompanyData {
   @Prop({
     type: {
       city: { type: String, required: true },
-      subCity: { type: String, required: true }
+      subCity: { type: String, required: true },
     },
-    required: true
+    required: true,
   })
   savedAddress: {
     city: string;

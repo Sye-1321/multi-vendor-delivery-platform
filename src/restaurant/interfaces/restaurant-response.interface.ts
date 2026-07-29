@@ -5,9 +5,9 @@ import { RestaurantStatus } from '../constants/constants';
 import { IMenuResponse } from 'src/menu/interfaces/menu-reponse.interface';
 import { IRestaurantReviewResponse } from 'src/restaurant-review/interfaces/restaurant-review-response.interface';
 
-export interface ISavedAddress{
-  city: string,
-  subCity: string
+export interface ISavedAddress {
+  city: string;
+  subCity: string;
 }
 
 export interface IRestaurantResponse extends IAudit {

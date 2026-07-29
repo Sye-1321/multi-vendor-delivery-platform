@@ -41,7 +41,9 @@ export class CreateDeliveryPersonWithProfileImageDTO extends CreateDeliveryPerso
   profileImage: string;
 }
 
-export class UpdateDeliveryPersonDTO extends PartialType(CreateDeliveryPersonDTO) {
+export class UpdateDeliveryPersonDTO extends PartialType(
+  CreateDeliveryPersonDTO,
+) {
   @IsOptional()
   @IsString()
   @MinLength(3)

@@ -87,7 +87,10 @@ export class OrderController {
     @Param('orderId') orderId: Types.ObjectId,
     @Param('deliveryPersonId') deliveryPersonId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
-    return await this.orderService.assignDeliveryPerson(orderId, deliveryPersonId);
+    return await this.orderService.assignDeliveryPerson(
+      orderId,
+      deliveryPersonId,
+    );
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

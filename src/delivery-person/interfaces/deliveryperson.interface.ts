@@ -1,10 +1,14 @@
 import { Types } from 'mongoose';
-import { AvailabilityStatus, DeliveryPersonOwnership, DeliveryPersonStatus } from '../constants/constants';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+  DeliveryPersonStatus,
+} from '../constants/constants';
 import { Audit } from 'src/domain/audit/audit';
 
-export interface ISavedAddress{
-  city: string,
-  subCity: string
+export interface ISavedAddress {
+  city: string;
+  subCity: string;
 }
 
 export interface IDeliveryPerson {
@@ -13,9 +17,8 @@ export interface IDeliveryPerson {
   phoneNumber: string;
   availabilityStatus: AvailabilityStatus;
   status: DeliveryPersonStatus;
-  deliveryType: DeliveryPersonOwnership,
-  restaurantId?: Types.ObjectId,
-  savedAddress: ISavedAddress,
+  deliveryType: DeliveryPersonOwnership;
+  restaurantId?: Types.ObjectId;
+  savedAddress: ISavedAddress;
   audit: Audit;
 }
-

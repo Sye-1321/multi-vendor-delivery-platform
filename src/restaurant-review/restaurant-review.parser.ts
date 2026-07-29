@@ -1,11 +1,12 @@
-import { UserParser } from "src/user/user.parser";
-import { IRestaurantReviewResponse } from "./interfaces/restaurant-review-response.interface";
-import { RestaurantReview } from "./restaurant-review";
-import { AuditParser } from "src/audit/audit.parser";
-
+import { UserParser } from 'src/user/user.parser';
+import { IRestaurantReviewResponse } from './interfaces/restaurant-review-response.interface';
+import { RestaurantReview } from './restaurant-review';
+import { AuditParser } from 'src/audit/audit.parser';
 
 export class RestaurantReviewParser {
-  static createReviewResponse(review: RestaurantReview): IRestaurantReviewResponse {
+  static createReviewResponse(
+    review: RestaurantReview,
+  ): IRestaurantReviewResponse {
     const reviewResponse: IRestaurantReviewResponse = {
       id: review.id,
       user: UserParser.createUserResponse(review.user),
@@ -16,7 +17,11 @@ export class RestaurantReviewParser {
     return reviewResponse;
   }
 
-  static createReviewsResponse(reviews: RestaurantReview[]): IRestaurantReviewResponse[] {
-    return reviews.map((review) => RestaurantReviewParser.createReviewResponse(review));
+  static createReviewsResponse(
+    reviews: RestaurantReview[],
+  ): IRestaurantReviewResponse[] {
+    return reviews.map((review) =>
+      RestaurantReviewParser.createReviewResponse(review),
+    );
   }
 }

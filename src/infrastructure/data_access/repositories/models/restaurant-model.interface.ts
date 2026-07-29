@@ -1,5 +1,8 @@
 import { Types } from 'mongoose';
-import { PaymentMethod, RestaurantStatus } from 'src/restaurant/constants/constants';
+import {
+  PaymentMethod,
+  RestaurantStatus,
+} from 'src/restaurant/constants/constants';
 import { ISavedAddress } from './deliveryperson-model.interface';
 
 export interface IRestaurantDataModel {
@@ -16,4 +19,3 @@ export interface IRestaurantDataModel {
   readonly image: string;
   readonly logo: string;
 }
-

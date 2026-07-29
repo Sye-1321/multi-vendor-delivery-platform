@@ -24,7 +24,7 @@ export class User extends Entity<IUser> {
     this._phoneNumber = props.phoneNumber;
     this._passwordHash = props.passwordHash;
     this._role = props.role;
-    this._status = props.status ?? UserStatus.PENDING; 
+    this._status = props.status ?? UserStatus.PENDING;
     this._refreshTokenHash = props.refreshTokenHash;
     this._audit = props.audit;
     this._savedAddress = props.savedAddress ?? { city: '', subCity: '' };
@@ -97,7 +97,7 @@ export class User extends Entity<IUser> {
   get savedAddress(): ISavedAddress | undefined {
     return this._savedAddress;
   }
-  
+
   set savedAddress(savedAddress: ISavedAddress) {
     this._savedAddress = savedAddress;
   }

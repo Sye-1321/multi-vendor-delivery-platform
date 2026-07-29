@@ -1,12 +1,21 @@
-import {  MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
 import { DeliveryPersonController } from './delivery-person.controller';
 import { DeliveryPersonMapper } from './delivery-person.mapper';
 import { DeliveryPersonRepository } from 'src/infrastructure/data_access/repositories/deliveryperson.repository';
-import { DeliveryPersonDataModel, DeliveryPersonSchema } from 'src/infrastructure/data_access/repositories/schemas/delivery-person.schema';
-import { UserDataModel, UserSchema } from 'src/infrastructure/data_access/repositories/schemas/user.schema';
-import { RestaurantDataModel, RestaurantSchema } from 'src/infrastructure/data_access/repositories/schemas/restaurant.schema';
+import {
+  DeliveryPersonDataModel,
+  DeliveryPersonSchema,
+} from 'src/infrastructure/data_access/repositories/schemas/delivery-person.schema';
+import {
+  UserDataModel,
+  UserSchema,
+} from 'src/infrastructure/data_access/repositories/schemas/user.schema';
+import {
+  RestaurantDataModel,
+  RestaurantSchema,
+} from 'src/infrastructure/data_access/repositories/schemas/restaurant.schema';
 import { ContextMiddleWare } from 'src/infrastructure/middlewares/context.middleware';
 import { DeliveryPersonService } from './delivery-person.service';
 import { JwtService } from '@nestjs/jwt';
@@ -27,7 +36,10 @@ import { RestaurantService } from 'src/restaurant/restaurant.service';
 import { RestaurantRepository } from 'src/infrastructure/data_access/repositories/restaurant.repository';
 import { CompanyService } from 'src/company/company.service';
 import { CompanyRepository } from 'src/infrastructure/data_access/repositories/company.repository';
-import { CompanyDataModel, CompanySchema } from 'src/infrastructure/data_access/repositories/schemas/company.schema';
+import {
+  CompanyDataModel,
+  CompanySchema,
+} from 'src/infrastructure/data_access/repositories/schemas/company.schema';
 import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
 
 @Module({
@@ -41,19 +53,22 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
   ],
   controllers: [DeliveryPersonController],
   providers: [
-        { provide: TYPES.IDeliveryPersonRepository, useClass: DeliveryPersonRepository},
-        { provide: TYPES.IDeliveryPersonService, useClass: DeliveryPersonService},
-        { provide: TYPES.IUserService, useClass: UserService },
-        { provide: TYPES.IAuthService, useClass: AuthService },
-        { provide: TYPES.IEmailService, useClass: EmailService},
-        { provide: TYPES.IContextService, useClass: ContextService },
-        { provide: TYPES.IUserService, useClass: UserService },
-        { provide: TYPES.IAccessControlService, useClass: AccessControlService },
-        { provide: TYPES.IRoleService, useClass: RoleService },
-        { provide: TYPES.IRestaurantService, useClass: RestaurantService },
-        { provide: TYPES.IRestaurantRepository, useClass: RestaurantRepository },
-        { provide: TYPES.ICompanyService, useClass: CompanyService },  
-        { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
+    {
+      provide: TYPES.IDeliveryPersonRepository,
+      useClass: DeliveryPersonRepository,
+    },
+    { provide: TYPES.IDeliveryPersonService, useClass: DeliveryPersonService },
+    { provide: TYPES.IUserService, useClass: UserService },
+    { provide: TYPES.IAuthService, useClass: AuthService },
+    { provide: TYPES.IEmailService, useClass: EmailService },
+    { provide: TYPES.IContextService, useClass: ContextService },
+    { provide: TYPES.IUserService, useClass: UserService },
+    { provide: TYPES.IAccessControlService, useClass: AccessControlService },
+    { provide: TYPES.IRoleService, useClass: RoleService },
+    { provide: TYPES.IRestaurantService, useClass: RestaurantService },
+    { provide: TYPES.IRestaurantRepository, useClass: RestaurantRepository },
+    { provide: TYPES.ICompanyService, useClass: CompanyService },
+    { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
     DeliveryPersonMapper,
     RestaurantMapper,
     AuditMapper,
@@ -69,8 +84,6 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
 })
 export class DeliveryPersonModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ContextMiddleWare)
-      .forRoutes(DeliveryPersonController);
+    consumer.apply(ContextMiddleWare).forRoutes(DeliveryPersonController);
   }
 }

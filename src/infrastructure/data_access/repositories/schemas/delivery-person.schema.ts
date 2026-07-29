@@ -1,15 +1,25 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document, Types } from 'mongoose';
-import { IDeliveryPersonModel, ISavedAddress } from '../models/deliveryperson-model.interface';
+import {
+  IDeliveryPersonModel,
+  ISavedAddress,
+} from '../models/deliveryperson-model.interface';
 import { Type } from 'class-transformer';
 import { RestaurantDataModel } from './restaurant.schema';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
-import { AvailabilityStatus, DeliveryPersonOwnership, DeliveryPersonStatus } from 'src/delivery-person/constants/constants';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+  DeliveryPersonStatus,
+} from 'src/delivery-person/constants/constants';
 
 export type DeliveryPersonDocument = DeliveryPersonDataModel & Document;
 
 @Schema({ versionKey: false })
-export class DeliveryPersonDataModel extends BaseDocument implements IDeliveryPersonModel {
+export class DeliveryPersonDataModel
+  extends BaseDocument
+  implements IDeliveryPersonModel
+{
   @Prop({ type: String, required: true })
   profileImage: string;
 
@@ -48,4 +58,6 @@ export class DeliveryPersonDataModel extends BaseDocument implements IDeliveryPe
   savedAddress: ISavedAddress;
 }
 
-export const DeliveryPersonSchema = SchemaFactory.createForClass(DeliveryPersonDataModel);
+export const DeliveryPersonSchema = SchemaFactory.createForClass(
+  DeliveryPersonDataModel,
+);

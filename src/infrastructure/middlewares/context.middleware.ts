@@ -18,7 +18,6 @@ export class ContextMiddleWare implements NestMiddleware {
     private readonly configService: ConfigService,
   ) {}
 
-  
   use(req: Request, res: Response, next: NextFunction) {
     const headers = req.headers;
     const errors: Record<string, string> = {};
@@ -37,7 +36,8 @@ export class ContextMiddleWare implements NestMiddleware {
     if (Object.keys(errors).length) {
       throwApplicationError(HttpStatus.BAD_REQUEST, JSON.stringify(errors));
     }
-    const authHeader = (headers[APIResponseMessage.authorizationHeader] as string) || '';
+    const authHeader =
+      (headers[APIResponseMessage.authorizationHeader] as string) || '';
     let token = '';
     if (authHeader) {
       if (authHeader.startsWith('Bearer ')) {
@@ -46,7 +46,10 @@ export class ContextMiddleWare implements NestMiddleware {
         token = authHeader;
       }
     } else {
-      throwApplicationError(HttpStatus.UNAUTHORIZED, APIResponseMessage.invalidToken);
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        APIResponseMessage.invalidToken,
+      );
     }
 
     let email = this.configService.get<string>('GUEST_EMAIL') || '';
@@ -54,16 +57,23 @@ export class ContextMiddleWare implements NestMiddleware {
 
     if (token) {
       try {
-        const secret = this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET') as string;
+        const secret = this.configService.get<string>(
+          'JWT_ACCESS_TOKEN_SECRET',
+        ) as string;
         const decoded = jwt.verify(token, secret) as any;
         email = decoded.email || email;
         role = decoded.role || '';
       } catch (error) {
-        throwApplicationError(HttpStatus.UNAUTHORIZED, APIResponseMessage.invalidToken);
+        throwApplicationError(
+          HttpStatus.UNAUTHORIZED,
+          APIResponseMessage.invalidToken,
+        );
       }
     }
 
-    const correlationId = headers[APIResponseMessage.correlationIdHeader] as string;
+    const correlationId = headers[
+      APIResponseMessage.correlationIdHeader
+    ] as string;
     const context: Context = new Context(email, correlationId, token, role);
     this.contextService.setContext(context);
     next();

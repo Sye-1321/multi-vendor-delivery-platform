@@ -6,6 +6,3 @@ export interface ICartDataModel {
   readonly totalPrice: number;
   readonly cartItems?: CartItemDataModel[];
 }
-
-
-

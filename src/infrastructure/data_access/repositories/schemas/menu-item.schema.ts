@@ -6,7 +6,10 @@ import { IMenuItemDataModel } from '../models/menu-item.interface';
 export type MenuItemDocument = MenuItemDataModel & Document;
 
 @Schema({ versionKey: false })
-export class MenuItemDataModel extends BaseDocument implements IMenuItemDataModel {
+export class MenuItemDataModel
+  extends BaseDocument
+  implements IMenuItemDataModel
+{
   @Prop({ type: String, required: true })
   name: string;
 
@@ -27,4 +30,3 @@ export class MenuItemDataModel extends BaseDocument implements IMenuItemDataMode
 }
 
 export const MenuItemSchema = SchemaFactory.createForClass(MenuItemDataModel);
-

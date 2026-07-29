@@ -13,7 +13,10 @@ import { Company } from 'src/company/company';
 export type RestaurantDocument = RestaurantDataModel & Document;
 
 @Schema({ versionKey: false })
-export class RestaurantDataModel extends BaseDocument implements IRestaurantDataModel {
+export class RestaurantDataModel
+  extends BaseDocument
+  implements IRestaurantDataModel
+{
   @Prop({ type: String, required: true })
   name: string;
 
@@ -51,7 +54,11 @@ export class RestaurantDataModel extends BaseDocument implements IRestaurantData
   @Type(() => UserDataModel)
   restaurantAdmin: UserDataModel;
 
-  @Prop({ type: String, enum: Object.values(RestaurantStatus), default: RestaurantStatus.ACTIVE })
+  @Prop({
+    type: String,
+    enum: Object.values(RestaurantStatus),
+    default: RestaurantStatus.ACTIVE,
+  })
   status: RestaurantStatus;
 
   @Prop({ type: String, required: true })
@@ -69,13 +76,12 @@ export class RestaurantDataModel extends BaseDocument implements IRestaurantData
   @Prop({ type: [Types.ObjectId], ref: MenuDataModel.name })
   menus: Types.ObjectId[];
 
-
   @Prop({ type: [Types.ObjectId], ref: RestaurantReviewDataModel.name })
   reviews: Types.ObjectId[];
 }
 
-export const RestaurantSchema = SchemaFactory.createForClass(RestaurantDataModel);
-
+export const RestaurantSchema =
+  SchemaFactory.createForClass(RestaurantDataModel);
 
 RestaurantSchema.virtual('menusDetail', {
   ref: MenuDataModel.name,
@@ -92,4 +98,3 @@ RestaurantSchema.virtual('reviewsDetail', {
   justOne: false,
   autopopulate: true,
 });
-

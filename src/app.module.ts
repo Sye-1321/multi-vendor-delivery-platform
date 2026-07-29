@@ -45,7 +45,7 @@ import { HealthModule } from './health/health.module';
     HealthModule,
     AuthModule,
     UserModule,
-    CompanyModule, 
+    CompanyModule,
     RestaurantModule,
     DeliveryPersonModule,
     SystemReviewModule,

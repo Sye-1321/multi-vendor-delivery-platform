@@ -15,14 +15,7 @@ export class MenuMapper implements IMapper<Menu, MenuDataModel> {
   ) {}
 
   toPersistence(entity: Menu): MenuDataModel {
-    const {
-      id,
-      name,
-      image,
-      restaurantId,
-      menuItems,
-      audit,
-    } = entity;
+    const { id, name, image, restaurantId, menuItems, audit } = entity;
 
     const {
       auditCreatedBy,
@@ -38,7 +31,8 @@ export class MenuMapper implements IMapper<Menu, MenuDataModel> {
       name,
       image,
       restaurantId,
-      menuItems: menuItems?.map(item => this.menuItemMapper.toPersistence(item)) ?? [],
+      menuItems:
+        menuItems?.map((item) => this.menuItemMapper.toPersistence(item)) ?? [],
       auditCreatedBy,
       auditCreatedDateTime,
       auditModifiedBy,
@@ -51,17 +45,12 @@ export class MenuMapper implements IMapper<Menu, MenuDataModel> {
   }
 
   toDomain(doc: MenuDataModel): Menu {
-    const {
-      _id,
-      name,
-      image,
-      restaurantId,
-      menuItems,
-    } = doc;
+    const { _id, name, image, restaurantId, menuItems } = doc;
 
-    const menuItemsToDomain: MenuItem[] = menuItems?.map(item =>
-      this.menuItemMapper.toDomain(item as MenuItemDataModel)
-    ) ?? [];
+    const menuItemsToDomain: MenuItem[] =
+      menuItems?.map((item) =>
+        this.menuItemMapper.toDomain(item as MenuItemDataModel),
+      ) ?? [];
 
     const entity: Menu = Menu.create(
       {

@@ -20,10 +20,14 @@ export const schemaValidationError: z.ZodErrorMap = (error, ctx) => {
       return { message: `${error.path[1]} should be ${errorMessage}` };
     case z.ZodIssueCode.too_small:
       if (error.type === 'array') {
-        return { message: `${error.path[1]} should have at lease one character` };
+        return {
+          message: `${error.path[1]} should have at lease one character`,
+        };
       }
       if (error.type === 'string') {
-        return { message: `${error.path[1]} should have at lease one character` };
+        return {
+          message: `${error.path[1]} should have at lease one character`,
+        };
       }
       break;
     case z.ZodIssueCode.too_big:

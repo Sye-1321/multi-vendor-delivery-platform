@@ -11,7 +11,10 @@ export interface IAuthService {
     userId: Types.ObjectId,
     refreshToken: string,
   ): Promise<{ accessToken: string }>;
-  nullifyRefreshToken(model: GenericDocumentRepository<any, any>, userId: Types.ObjectId);
+  nullifyRefreshToken(
+    model: GenericDocumentRepository<any, any>,
+    userId: Types.ObjectId,
+  );
   logOut(model: GenericDocumentRepository<any, any>, userId: Types.ObjectId);
   generateVerificationToken(user: User): Promise<string>;
 }

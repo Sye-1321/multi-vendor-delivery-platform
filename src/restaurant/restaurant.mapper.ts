@@ -9,7 +9,9 @@ import { UserMapper } from 'src/user/user.mapper';
 import { CompanyMapper } from 'src/company/company.mapper';
 
 @Injectable()
-export class RestaurantMapper implements IMapper<Restaurant, RestaurantDataModel> {
+export class RestaurantMapper
+  implements IMapper<Restaurant, RestaurantDataModel>
+{
   constructor(
     private readonly auditMapper: AuditMapper,
     private readonly restaurantReviewMapper: RestaurantReviewMapper,
@@ -97,7 +99,9 @@ export class RestaurantMapper implements IMapper<Restaurant, RestaurantDataModel
         companyId,
         company: this.companyMapper.toDomain(company),
         deliveryPersonAvailability,
-        reviews: reviews ? reviews.map((r) => this.restaurantReviewMapper.toDomain(r)) : [],
+        reviews: reviews
+          ? reviews.map((r) => this.restaurantReviewMapper.toDomain(r))
+          : [],
         menus: menus ? menus.map((m) => this.menuMapper.toDomain(m)) : [],
         restaurantAdminId,
         restaurantAdmin: this.userMapper.toDomain(restaurantAdmin),

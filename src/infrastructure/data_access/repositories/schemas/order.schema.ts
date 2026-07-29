@@ -41,14 +41,18 @@ export class OrderDataModel extends BaseDocument implements IOrderDataModel {
   @Prop({ type: Types.ObjectId, ref: 'DeliveryPerson' })
   deliveryPersonId: Types.ObjectId | null;
 
-  @Prop({ type: Types.ObjectId, required: false, ref: 'DeliveryPerson', default: null })
+  @Prop({
+    type: Types.ObjectId,
+    required: false,
+    ref: 'DeliveryPerson',
+    default: null,
+  })
   @Type(() => DeliveryPersonDataModel)
   deliveryPerson?: DeliveryPersonDataModel;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'CartDataModel' })
   @Type(() => CartDataModel)
   cart: CartDataModel;
-
 }
 
 export const OrderSchema = SchemaFactory.createForClass(OrderDataModel);

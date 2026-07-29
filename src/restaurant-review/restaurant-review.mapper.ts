@@ -7,16 +7,18 @@ import { RestaurantReview } from './restaurant-review';
 import { UserMapper } from 'src/user/user.mapper';
 
 @Injectable()
-export class RestaurantReviewMapper implements IMapper<RestaurantReview, RestaurantReviewDataModel> {
+export class RestaurantReviewMapper
+  implements IMapper<RestaurantReview, RestaurantReviewDataModel>
+{
   constructor(
-   private readonly auditMapper: AuditMapper,
-   private readonly userMapper: UserMapper,
+    private readonly auditMapper: AuditMapper,
+    private readonly userMapper: UserMapper,
   ) {}
 
   toPersistence(entity: RestaurantReview): RestaurantReviewDataModel {
-    const { id, reviewText, rating  } = entity;
+    const { id, reviewText, rating } = entity;
     const userId: Types.ObjectId = entity.user.id;
-    const restaurantId: Types.ObjectId = entity.restaurantId
+    const restaurantId: Types.ObjectId = entity.restaurantId;
     const document: RestaurantReviewDataModel = {
       _id: id,
       userId,
@@ -34,10 +36,8 @@ export class RestaurantReviewMapper implements IMapper<RestaurantReview, Restaur
     return document;
   }
 
-
-
   toDomain(model: RestaurantReviewDataModel): RestaurantReview {
-    const { _id, userId, user,restaurantId, rating, reviewText } = model;
+    const { _id, userId, user, restaurantId, rating, reviewText } = model;
     const entity: RestaurantReview = RestaurantReview.create(
       {
         userId,
@@ -45,7 +45,7 @@ export class RestaurantReviewMapper implements IMapper<RestaurantReview, Restaur
         restaurantId,
         rating,
         reviewText,
-        audit: this.auditMapper.toDomain(model)
+        audit: this.auditMapper.toDomain(model),
       },
       _id,
     ).getValue();

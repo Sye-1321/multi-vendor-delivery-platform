@@ -8,7 +8,11 @@ import { Context } from 'src/infrastructure/context/context';
 import { Audit } from 'src/domain/audit/audit';
 
 export class UserFactory {
-  static createUser(props: CreateUserDTO | CreateAdminDTO, role: Role, passwordHash: string): User {
+  static createUser(
+    props: CreateUserDTO | CreateAdminDTO,
+    role: Role,
+    passwordHash: string,
+  ): User {
     const commonDefaults = {
       audit: Audit.createInsertContext(new Context(props.email)),
     };
@@ -31,9 +35,15 @@ export class UserFactory {
         };
         break;
       default:
-        throwApplicationError(HttpStatus.BAD_REQUEST, "Invalid user role.");
-    } 
-    const userProps = { ...props, role,...commonDefaults, ...roleSpecificDefaults, passwordHash:passwordHash };
+        throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid user role.');
+    }
+    const userProps = {
+      ...props,
+      role,
+      ...commonDefaults,
+      ...roleSpecificDefaults,
+      passwordHash: passwordHash,
+    };
 
     return User.create(userProps).getValue();
   }

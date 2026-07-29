@@ -6,11 +6,10 @@ import { Audit } from 'src/domain/audit/audit';
 import { Menu } from 'src/menu/menu';
 import { RestaurantReview } from 'src/restaurant-review/restaurant-review';
 
-export interface ISavedAddress{
-  city: string,
-  subCity: string
+export interface ISavedAddress {
+  city: string;
+  subCity: string;
 }
-
 
 export interface IRestaurant {
   name: string;

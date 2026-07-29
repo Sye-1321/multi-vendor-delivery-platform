@@ -5,5 +5,8 @@ import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-do
 import { Result } from 'src/domain/result/result';
 
 export interface ICartRepository extends IGenericDocument<Cart, CartDocument> {
-  updateCartItemSelectedItems(cartItems: Cart[], options?: { session: ClientSession }): Promise<Result<Cart[]>>;
+  updateCartItemSelectedItems(
+    cartItems: Cart[],
+    options?: { session: ClientSession },
+  ): Promise<Result<Cart[]>>;
 }

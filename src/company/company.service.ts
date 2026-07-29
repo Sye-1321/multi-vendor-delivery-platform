@@ -13,10 +13,17 @@ import { ICompanyService } from './interfaces/company-service.interface';
 import { CompanyMapper } from './company.mapper';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { ICompanyRepository } from 'src/infrastructure/data_access/repositories/interfaces/company-repository.interface';
-import { CompanyAdminDTO, CreateCompanyDTO, UpdateCompanyDTO } from './dtos/company.dto';
+import {
+  CompanyAdminDTO,
+  CreateCompanyDTO,
+  UpdateCompanyDTO,
+} from './dtos/company.dto';
 import { Role } from 'src/application/constants/constants';
 import { User } from 'src/user/user';
-import { IUpdateCompany, IUpdateCompanyAdmin } from './interfaces/company.interface';
+import {
+  IUpdateCompany,
+  IUpdateCompanyAdmin,
+} from './interfaces/company.interface';
 import { Audit } from 'src/domain/audit/audit';
 import { SaveFileLocally } from 'src/application/saveFileLocally';
 
@@ -25,9 +32,11 @@ export class CompanyService implements ICompanyService {
   private context: Context;
 
   constructor(
-    @Inject(TYPES.IContextService) private readonly contextService: IContextService,
+    @Inject(TYPES.IContextService)
+    private readonly contextService: IContextService,
     @Inject(TYPES.IUserService) private readonly userService: IUserService,
-    @Inject(TYPES.ICompanyRepository) private readonly companyRepository: ICompanyRepository,
+    @Inject(TYPES.ICompanyRepository)
+    private readonly companyRepository: ICompanyRepository,
     @InjectConnection() private readonly connection: Connection,
     private readonly companyMapper: CompanyMapper,
   ) {
@@ -36,15 +45,22 @@ export class CompanyService implements ICompanyService {
 
   async createCompany(
     { name, phoneNumber, savedAddress, companyAdminData }: CreateCompanyDTO,
-    logoFile: Express.Multer.File
+    logoFile: Express.Multer.File,
   ): Promise<Result<ICompanyResponse>> {
     const session = await this.connection.startSession();
     try {
       session.startTransaction();
 
       const existingCompany = await this.companyRepository.getCompanies({});
-      if (existingCompany.getValue().some((company) => company.phoneNumber === phoneNumber)) {
-        throwApplicationError(HttpStatus.CONFLICT, `Company with phone number ${phoneNumber} already exists`);
+      if (
+        existingCompany
+          .getValue()
+          .some((company) => company.phoneNumber === phoneNumber)
+      ) {
+        throwApplicationError(
+          HttpStatus.CONFLICT,
+          `Company with phone number ${phoneNumber} already exists`,
+        );
       }
 
       const logo = await SaveFileLocally(logoFile, 'company-logos');
@@ -52,32 +68,44 @@ export class CompanyService implements ICompanyService {
 
       const companyAdmin = await this.userService.createAdmin(
         companyAdminData,
-        Role.BUSINESS_ADMINISTRATOR
+        Role.BUSINESS_ADMINISTRATOR,
       );
 
-      const company = Company.create({
-        logo,
-        name,
-        phoneNumber,
-        ownerId: companyAdmin.id,
-        audit,
-        owner: companyAdmin,
-        savedAddress,
-      }, new Types.ObjectId()).getValue();
+      const company = Company.create(
+        {
+          logo,
+          name,
+          phoneNumber,
+          ownerId: companyAdmin.id,
+          audit,
+          owner: companyAdmin,
+          savedAddress,
+        },
+        new Types.ObjectId(),
+      ).getValue();
 
       const companyModel = this.companyMapper.toPersistence(company);
-      const companyDocument = await this.companyRepository.createCompany(companyModel);
+      const companyDocument =
+        await this.companyRepository.createCompany(companyModel);
 
       if (!companyDocument.isSuccess) {
-        throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Company could not be created');
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Company could not be created',
+        );
       }
 
       await session.commitTransaction();
 
       const newCompany = companyDocument.getValue();
-      const response = await this.companyRepository.getCompanyById(newCompany.id);
+      const response = await this.companyRepository.getCompanyById(
+        newCompany.id,
+      );
 
-      return Result.ok(CompanyParser.createCompanyResponse(response.getValue()), 'Company created successfully');
+      return Result.ok(
+        CompanyParser.createCompanyResponse(response.getValue()),
+        'Company created successfully',
+      );
     } catch (error) {
       await session.abortTransaction();
       throw error;
@@ -89,100 +117,148 @@ export class CompanyService implements ICompanyService {
   async getCompanies(): Promise<Result<ICompanyResponse[]>> {
     const companies = await this.companyRepository.getCompanies({});
     if (!companies.isSuccess) {
-      throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Could not retrieve companies');
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Could not retrieve companies',
+      );
     }
-    return Result.ok(CompanyParser.createCompaniesResponse(companies.getValue()), 'Companies retrieved successfully');
+    return Result.ok(
+      CompanyParser.createCompaniesResponse(companies.getValue()),
+      'Companies retrieved successfully',
+    );
   }
 
-  async getCompanyById(companyId: Types.ObjectId): Promise<Result<ICompanyResponse>> {
-    const companyResult = await this.companyRepository.getCompanyById(companyId);
+  async getCompanyById(
+    companyId: Types.ObjectId,
+  ): Promise<Result<ICompanyResponse>> {
+    const companyResult =
+      await this.companyRepository.getCompanyById(companyId);
     if (!companyResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
     }
-    return Result.ok(CompanyParser.createCompanyResponse(companyResult.getValue()), 'Company retrieved successfully');
+    return Result.ok(
+      CompanyParser.createCompanyResponse(companyResult.getValue()),
+      'Company retrieved successfully',
+    );
   }
 
-  async changeCompanyAdmin(companyId: Types.ObjectId, companyAdminData: CompanyAdminDTO): Promise<Result<ICompanyResponse>> {
-  const companyResult = await this.companyRepository.getCompanyById(companyId);
-  if (!companyResult.isSuccess) {
-    throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
+  async changeCompanyAdmin(
+    companyId: Types.ObjectId,
+    companyAdminData: CompanyAdminDTO,
+  ): Promise<Result<ICompanyResponse>> {
+    const companyResult =
+      await this.companyRepository.getCompanyById(companyId);
+    if (!companyResult.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
+    }
+
+    const ownerId = companyResult.getValue().owner.id;
+    await this.userService.suspendUser(ownerId);
+
+    const companyAdmin = await this.userService.createAdmin(
+      companyAdminData,
+      Role.BUSINESS_ADMINISTRATOR,
+    );
+
+    const data = {
+      auditModifiedBy: this.context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+      ownerId: companyAdmin.id,
+      owner: companyAdmin,
+    };
+
+    this.updateCompanyAdmin(data, companyResult.getValue().owner, this.context);
+    await this.updateCompanyById(companyId, data);
+
+    const updatedCompanyResult =
+      await this.companyRepository.getCompanyById(companyId);
+    if (!updatedCompanyResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Could not retrieve updated company',
+      );
+    }
+
+    return Result.ok(
+      CompanyParser.createCompanyResponse(updatedCompanyResult.getValue()),
+      'Company admin changed successfully',
+    );
   }
-
-  const ownerId = companyResult.getValue().owner.id;
-  await this.userService.suspendUser(ownerId);
-
-  const companyAdmin = await this.userService.createAdmin(companyAdminData, Role.BUSINESS_ADMINISTRATOR);
-
-  const data = {
-    auditModifiedBy: this.context.email,
-    auditModifiedDateTime: new Date().toISOString(),
-    ownerId: companyAdmin.id,
-    owner: companyAdmin,
-  };
-
-  this.updateCompanyAdmin(data, companyResult.getValue().owner, this.context);
-  await this.updateCompanyById(companyId, data);
-
-  const updatedCompanyResult = await this.companyRepository.getCompanyById(companyId);
-  if (!updatedCompanyResult.isSuccess) {
-    throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Could not retrieve updated company');
-  }
-
-  return Result.ok(CompanyParser.createCompanyResponse(updatedCompanyResult.getValue()), 'Company admin changed successfully');
-}
 
   async getMyCompany(): Promise<Result<ICompanyResponse>> {
     const companyAdmin: User = await this.userService.getContextUser();
-    const companyResult = await this.companyRepository.getCompanyByOwner(companyAdmin.id);
-    return Result.ok(CompanyParser.createCompanyResponse(companyResult.getValue()), 'Company retrieved successfully');
+    const companyResult = await this.companyRepository.getCompanyByOwner(
+      companyAdmin.id,
+    );
+    return Result.ok(
+      CompanyParser.createCompanyResponse(companyResult.getValue()),
+      'Company retrieved successfully',
+    );
   }
 
   async updateMyCompany(
-  props: UpdateCompanyDTO,
-  logoFile?: Express.Multer.File
-): Promise<Result<ICompanyResponse>> {
-  try {
-    const companyAdmin: User = await this.userService.getContextUser();
-    const companyResult = await this.companyRepository.getCompanyByOwner(companyAdmin.id);
+    props: UpdateCompanyDTO,
+    logoFile?: Express.Multer.File,
+  ): Promise<Result<ICompanyResponse>> {
+    try {
+      const companyAdmin: User = await this.userService.getContextUser();
+      const companyResult = await this.companyRepository.getCompanyByOwner(
+        companyAdmin.id,
+      );
 
-    if (!companyResult.isSuccess) {
-      throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
+      if (!companyResult.isSuccess) {
+        throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
+      }
+
+      const company = companyResult.getValue();
+      const data: any = {
+        auditModifiedBy: this.context.email,
+        auditModifiedDateTime: new Date().toISOString(),
+        ...props,
+      };
+
+      if (logoFile) {
+        const logo = await SaveFileLocally(logoFile, 'company-logos');
+        data.logo = logo;
+      }
+
+      this.updateCompanyData(data, company, this.context);
+
+      if ((props as any).companyAdminData) {
+        this.updateCompanyAdmin(
+          (props as any).companyAdminData,
+          company.owner,
+          this.context,
+        );
+      }
+
+      await this.updateCompanyById(company.id, data);
+
+      const refreshedCompanyResult =
+        await this.companyRepository.getCompanyById(company.id);
+      if (!refreshedCompanyResult.isSuccess) {
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Failed to retrieve updated company',
+        );
+      }
+
+      const refreshedCompany = refreshedCompanyResult.getValue();
+
+      return Result.ok(
+        CompanyParser.createCompanyResponse(refreshedCompany),
+        'Company updated successfully',
+      );
+    } catch (error) {
+      throw error;
     }
-
-    const company = companyResult.getValue();
-    const data: any = {
-      auditModifiedBy: this.context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      ...props,
-    };
-
-    if (logoFile) {
-      const logo = await SaveFileLocally(logoFile, 'company-logos');
-      data.logo = logo;
-    }
-
-    this.updateCompanyData(data, company, this.context);
-
-    if ((props as any).companyAdminData) {
-      this.updateCompanyAdmin((props as any).companyAdminData, company.owner, this.context);
-    }
-
-    await this.updateCompanyById(company.id, data);
-
-    const refreshedCompanyResult = await this.companyRepository.getCompanyById(company.id);
-    if (!refreshedCompanyResult.isSuccess) {
-      throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to retrieve updated company');
-    }
-
-    const refreshedCompany = refreshedCompanyResult.getValue();
-
-    return Result.ok(CompanyParser.createCompanyResponse(refreshedCompany), 'Company updated successfully');
-  } catch (error) {
-    throw error;
   }
-}
 
-  private updateCompanyData(data: IUpdateCompany, company: Company, context: Context) {
+  private updateCompanyData(
+    data: IUpdateCompany,
+    company: Company,
+    context: Context,
+  ) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in company) {
         (company as any)[key] = value;
@@ -191,15 +267,28 @@ export class CompanyService implements ICompanyService {
     Audit.updateContext(context.email, company);
   }
 
-  private async updateCompanyById(id: Types.ObjectId, data: any): Promise<Company> {
-    const updatedCompanyResult = await this.companyRepository.updateCompany(id, data);
+  private async updateCompanyById(
+    id: Types.ObjectId,
+    data: any,
+  ): Promise<Company> {
+    const updatedCompanyResult = await this.companyRepository.updateCompany(
+      id,
+      data,
+    );
     if (!updatedCompanyResult.isSuccess) {
-      throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Company update failed');
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Company update failed',
+      );
     }
     return updatedCompanyResult.getValue();
   }
 
-  private updateCompanyAdmin(data: IUpdateCompanyAdmin, user: User, context: Context) {
+  private updateCompanyAdmin(
+    data: IUpdateCompanyAdmin,
+    user: User,
+    context: Context,
+  ) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in user) {
         (user as any)[key] = value;
@@ -209,7 +298,8 @@ export class CompanyService implements ICompanyService {
   }
 
   async getCompanyByCompanyAdmin(ownerId: Types.ObjectId): Promise<Company> {
-    const companyResult = await this.companyRepository.getCompanyByOwner(ownerId);
+    const companyResult =
+      await this.companyRepository.getCompanyByOwner(ownerId);
     if (!companyResult) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'Company not found');
     }

@@ -1,6 +1,13 @@
 import { Types } from 'mongoose';
-import { IDeliveryPerson, ISavedAddress } from './interfaces/deliveryperson.interface';
-import { AvailabilityStatus, DeliveryPersonOwnership, DeliveryPersonStatus } from './constants/constants';
+import {
+  IDeliveryPerson,
+  ISavedAddress,
+} from './interfaces/deliveryperson.interface';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+  DeliveryPersonStatus,
+} from './constants/constants';
 import { Entity } from 'src/domain/entity/entity';
 import { Audit } from 'src/domain/audit/audit';
 import { Result } from 'src/domain/result/result';
@@ -101,7 +108,10 @@ export class DeliveryPerson extends Entity<IDeliveryPerson> {
     this._audit = audit;
   }
 
-  static create(props: IDeliveryPerson, id?: Types.ObjectId): Result<DeliveryPerson> {
+  static create(
+    props: IDeliveryPerson,
+    id?: Types.ObjectId,
+  ): Result<DeliveryPerson> {
     return Result.ok(new DeliveryPerson(id ?? new Types.ObjectId(), props));
   }
 

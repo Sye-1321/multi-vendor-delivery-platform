@@ -7,7 +7,12 @@ import { HttpStatus } from '@nestjs/common';
 import { throwApplicationError } from '../utilities/exception-instance';
 import { IAuthService } from '../auth/interfaces/auth-service.interface';
 import { TYPES } from 'src/application/constants/types';
-import { APIResponseMessage, BASE_URL, EmailSubjects, URLPaths } from 'src/application/constants/constants';
+import {
+  APIResponseMessage,
+  BASE_URL,
+  EmailSubjects,
+  URLPaths,
+} from 'src/application/constants/constants';
 import { Result } from 'src/domain/result/result';
 
 @Injectable()
@@ -27,7 +32,10 @@ export class EmailService implements IEmailService {
     });
   }
 
-  private async generateVerificationUrl(user: User, path: string): Promise<string> {
+  private async generateVerificationUrl(
+    user: User,
+    path: string,
+  ): Promise<string> {
     const token = await this.authService.generateVerificationToken(user);
     return `${BASE_URL}${path}/${token}`;
   }
@@ -35,40 +43,99 @@ export class EmailService implements IEmailService {
   async sendAccountVerificationEmail(user: any): Promise<Result<void>> {
     const url = await this.generateVerificationUrl(user, URLPaths.verifyEmail);
     const message = `Dear ${user.name},\n\nPlease verify your email address by clicking the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
-    const result = await this.sendEmail(user.email, EmailSubjects.emailVerification, message);
-    if (!result.isSuccess) throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, APIResponseMessage.emailVerificationError);
-    return Result.ok<void>(undefined, 'Verification email has been successfully sent.');
+    const result = await this.sendEmail(
+      user.email,
+      EmailSubjects.emailVerification,
+      message,
+    );
+    if (!result.isSuccess)
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        APIResponseMessage.emailVerificationError,
+      );
+    return Result.ok<void>(
+      undefined,
+      'Verification email has been successfully sent.',
+    );
   }
 
   async sendRegistrationCompletionEmail(user: any): Promise<Result<void>> {
     const url = await this.generateVerificationUrl(user, URLPaths.verifyEmail);
     const message = `Dear ${user.name},\n\nTo complete your registration, please click the link below to set a secure password:\n${url}\nIf you did not register, please disregard this email.\n\nBest regards,\nAlmostThere Delivery Company.`;
-    const result = await this.sendEmail(user.email, EmailSubjects.completeRegistration, message);
-    if (!result.isSuccess) throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, APIResponseMessage.emailVerificationError);
-    return Result.ok<void>(undefined, 'Registration completion email has been successfully sent to new email.');
+    const result = await this.sendEmail(
+      user.email,
+      EmailSubjects.completeRegistration,
+      message,
+    );
+    if (!result.isSuccess)
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        APIResponseMessage.emailVerificationError,
+      );
+    return Result.ok<void>(
+      undefined,
+      'Registration completion email has been successfully sent to new email.',
+    );
   }
 
   async sendPasswordResetInstructionsEmail(user: any): Promise<Result<void>> {
-    const url = await this.generateVerificationUrl(user, URLPaths.passwordResetConfirm);
+    const url = await this.generateVerificationUrl(
+      user,
+      URLPaths.passwordResetConfirm,
+    );
     const message = `Dear ${user.name},\n\nTo reset your password, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
-    const result = await this.sendEmail(user.email, EmailSubjects.passwordReset, message);
-    if (!result.isSuccess) throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, APIResponseMessage.emailVerificationError);
-    return Result.ok<void>(undefined, 'Password reset instructions have been successfully sent.');
+    const result = await this.sendEmail(
+      user.email,
+      EmailSubjects.passwordReset,
+      message,
+    );
+    if (!result.isSuccess)
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        APIResponseMessage.emailVerificationError,
+      );
+    return Result.ok<void>(
+      undefined,
+      'Password reset instructions have been successfully sent.',
+    );
   }
 
   async sendEmailChangeConfirmationEmail(user: any): Promise<Result<void>> {
-    const url = await this.generateVerificationUrl(user, URLPaths.verifyNewEmail);
+    const url = await this.generateVerificationUrl(
+      user,
+      URLPaths.verifyNewEmail,
+    );
     const message = `Dear ${user._name},\n\nTo confirm your email change, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
-    const result = await this.sendEmail(user._email, EmailSubjects.emailVerification, message);
-    if (!result.isSuccess) throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, APIResponseMessage.emailVerificationError);
-    return Result.ok<void>(undefined, 'Email change confirmation email has been successfully sent.');
+    const result = await this.sendEmail(
+      user._email,
+      EmailSubjects.emailVerification,
+      message,
+    );
+    if (!result.isSuccess)
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        APIResponseMessage.emailVerificationError,
+      );
+    return Result.ok<void>(
+      undefined,
+      'Email change confirmation email has been successfully sent.',
+    );
   }
 
-  private async sendEmail(to: string, subject: string, message: string): Promise<Result<void>> {
+  private async sendEmail(
+    to: string,
+    subject: string,
+    message: string,
+  ): Promise<Result<void>> {
     try {
       const from = this.configService.get<string>('SMTP_USER');
 
-      console.log('Attempting to send email:', { from, to, subject, text: message });
+      console.log('Attempting to send email:', {
+        from,
+        to,
+        subject,
+        text: message,
+      });
 
       await this.transporter.sendMail({ from, to, subject, text: message });
 

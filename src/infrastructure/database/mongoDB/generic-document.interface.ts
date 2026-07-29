@@ -1,10 +1,24 @@
-import { ClientSession, FilterQuery, ProjectionType, QueryOptions, SaveOptions, Types, UpdateQuery } from 'mongoose';
+import {
+  ClientSession,
+  FilterQuery,
+  ProjectionType,
+  QueryOptions,
+  SaveOptions,
+  Types,
+  UpdateQuery,
+} from 'mongoose';
 import { Result } from './../../../domain/result/result';
 
 export interface IGenericDocument<TEntity, T> {
-  findOne(filterQuery: FilterQuery<T>, projection?: ProjectionType<T | null>): Promise<Result<TEntity | null>>;
+  findOne(
+    filterQuery: FilterQuery<T>,
+    projection?: ProjectionType<T | null>,
+  ): Promise<Result<TEntity | null>>;
 
-  findById(id: any, projection?: ProjectionType<T> | null): Promise<Result<TEntity | null>>;
+  findById(
+    id: any,
+    projection?: ProjectionType<T> | null,
+  ): Promise<Result<TEntity | null>>;
 
   find(
     filterQuery: FilterQuery<T>,
@@ -20,7 +34,11 @@ export interface IGenericDocument<TEntity, T> {
     options?: { session: ClientSession },
   ): Promise<Result<TEntity | null>>;
 
-  upsert(filterQuery: FilterQuery<T>, document: Partial<T>, options?: QueryOptions<T>): Promise<Result<TEntity | null>>;
+  upsert(
+    filterQuery: FilterQuery<T>,
+    document: Partial<T>,
+    options?: QueryOptions<T>,
+  ): Promise<Result<TEntity | null>>;
 
   deleteMany(filterQuery: FilterQuery<T>): Promise<boolean>;
 
@@ -36,7 +54,14 @@ export interface IGenericDocument<TEntity, T> {
 
   stringToObjectId(prop: string): Types.ObjectId;
 
-  updateMany(query: FilterQuery<T>, updateBody: UpdateQuery<T>, options?: QueryOptions<T>): Promise<Result<TEntity[]>>;
+  updateMany(
+    query: FilterQuery<T>,
+    updateBody: UpdateQuery<T>,
+    options?: QueryOptions<T>,
+  ): Promise<Result<TEntity[]>>;
 
-  insertManyWithSession(docs: any, options?: QueryOptions<T>): Promise<Result<Types.ObjectId[]>>;
+  insertManyWithSession(
+    docs: any,
+    options?: QueryOptions<T>,
+  ): Promise<Result<Types.ObjectId[]>>;
 }

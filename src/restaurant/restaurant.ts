@@ -117,7 +117,7 @@ export class Restaurant extends Entity<IRestaurant> {
     return this._reviews;
   }
 
-  set reviews(value:RestaurantReview[]) {
+  set reviews(value: RestaurantReview[]) {
     this._reviews = value;
   }
 

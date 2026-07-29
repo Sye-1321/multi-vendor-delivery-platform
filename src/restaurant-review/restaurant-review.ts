@@ -72,9 +72,15 @@ export class RestaurantReview extends Entity<IRestaurantReview> {
     this._audit = audit;
   }
 
-  static create(props: IRestaurantReview, id?: Types.ObjectId): Result<RestaurantReview> {
+  static create(
+    props: IRestaurantReview,
+    id?: Types.ObjectId,
+  ): Result<RestaurantReview> {
     if (!props.user || !props.user.id) {
-      return Result.fail<RestaurantReview>('User or User ID is missing', HttpStatus.EXPECTATION_FAILED,);
+      return Result.fail<RestaurantReview>(
+        'User or User ID is missing',
+        HttpStatus.EXPECTATION_FAILED,
+      );
     }
 
     return Result.ok(new RestaurantReview(id ?? new Types.ObjectId(), props));

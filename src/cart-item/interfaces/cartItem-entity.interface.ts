@@ -5,6 +5,6 @@ export interface ICartItem {
   menuItemId: Types.ObjectId;
   quantity: number;
   subTotal: number;
-  customizations?: string; 
+  customizations?: string;
   audit: Audit;
 }

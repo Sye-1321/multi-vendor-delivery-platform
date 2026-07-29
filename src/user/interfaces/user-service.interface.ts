@@ -1,5 +1,8 @@
 import { Types } from 'mongoose';
-import { IUserSignedInResponseDTO, IUserResponse } from './user-response.interface';
+import {
+  IUserSignedInResponseDTO,
+  IUserResponse,
+} from './user-response.interface';
 import { User } from '../user';
 import { CreateUserDTO } from '../dtos/user/create-user.dto';
 import { Result } from 'src/domain/result/result';
@@ -14,24 +17,42 @@ import { AdminUpdateUserDTO } from '../dtos/user/admin-update-user.dto';
 import { Role } from 'src/application/constants/constants';
 
 export interface IUserService {
-    createEndUser(props: CreateUserDTO): Promise<Result<IUserResponse>>;
-    createCompanyAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>>;
-    createRestaurantAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>>;
-    verifyEmail(token: string): Promise<Result<IUserResponse>>;
-    signIn(props: LoginDTO): Promise<Result<IUserSignedInResponseDTO>>;
-    signOut(userId: Types.ObjectId): Promise<Result<void>>;
-    getAccessTokenAndUpdateRefreshToken(userId: Types.ObjectId, refreshToken: string): Promise<Result<{ accessToken: string }>>;
-    getUserById(userId: Types.ObjectId): Promise<Result<IUserResponse>>;
-    updateProfile(userId: Types.ObjectId, props: UpdateUserProfileDTO): Promise<Result<IUserResponse>>;
-    updatePassword(userId: Types.ObjectId, props: UpdatePasswordDTO): Promise<Result<IUserResponse>>;
-    requestToChangeEmail(userId: Types.ObjectId, props: ChangeEmailDTO): Promise<Result<void>>;
-    deactivateAccount(userId: Types.ObjectId): Promise<Result<void>>;
-    verifyNewEmail(token: string): Promise<Result<void>>;
-    requestToResetPassword(props: EmailDTO): Promise<Result<void>>;
-    confirmPasswordReset(token: string, props: ResetPasswordDTO): Promise<Result<void>>;
-    getUsers(): Promise<Result<IUserResponse[]>>;
-    adminUpdateUser(userId: Types.ObjectId, props: AdminUpdateUserDTO): Promise<Result<IUserResponse>>;
-    suspendUser(userId: Types.ObjectId): Promise<Result<void>>;
-    getContextUser(): Promise<User>;  
-    createAdmin( props: CreateAdminDTO, role: Role ): Promise<User>;
+  createEndUser(props: CreateUserDTO): Promise<Result<IUserResponse>>;
+  createCompanyAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>>;
+  createRestaurantAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>>;
+  verifyEmail(token: string): Promise<Result<IUserResponse>>;
+  signIn(props: LoginDTO): Promise<Result<IUserSignedInResponseDTO>>;
+  signOut(userId: Types.ObjectId): Promise<Result<void>>;
+  getAccessTokenAndUpdateRefreshToken(
+    userId: Types.ObjectId,
+    refreshToken: string,
+  ): Promise<Result<{ accessToken: string }>>;
+  getUserById(userId: Types.ObjectId): Promise<Result<IUserResponse>>;
+  updateProfile(
+    userId: Types.ObjectId,
+    props: UpdateUserProfileDTO,
+  ): Promise<Result<IUserResponse>>;
+  updatePassword(
+    userId: Types.ObjectId,
+    props: UpdatePasswordDTO,
+  ): Promise<Result<IUserResponse>>;
+  requestToChangeEmail(
+    userId: Types.ObjectId,
+    props: ChangeEmailDTO,
+  ): Promise<Result<void>>;
+  deactivateAccount(userId: Types.ObjectId): Promise<Result<void>>;
+  verifyNewEmail(token: string): Promise<Result<void>>;
+  requestToResetPassword(props: EmailDTO): Promise<Result<void>>;
+  confirmPasswordReset(
+    token: string,
+    props: ResetPasswordDTO,
+  ): Promise<Result<void>>;
+  getUsers(): Promise<Result<IUserResponse[]>>;
+  adminUpdateUser(
+    userId: Types.ObjectId,
+    props: AdminUpdateUserDTO,
+  ): Promise<Result<IUserResponse>>;
+  suspendUser(userId: Types.ObjectId): Promise<Result<void>>;
+  getContextUser(): Promise<User>;
+  createAdmin(props: CreateAdminDTO, role: Role): Promise<User>;
 }

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import  { Document, Types, Schema as MongooseSchema } from 'mongoose';
+import { Document, Types, Schema as MongooseSchema } from 'mongoose';
 import { UserDataModel } from './user.schema';
 import { Type } from 'class-transformer';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
@@ -8,7 +8,10 @@ import { IRestaurantReviewModel } from '../models/resuarant-review-model.interfa
 export type RestaurantReviewDocument = RestaurantReviewDataModel & Document;
 
 @Schema({ versionKey: false })
-export class RestaurantReviewDataModel extends BaseDocument implements IRestaurantReviewModel {
+export class RestaurantReviewDataModel
+  extends BaseDocument
+  implements IRestaurantReviewModel
+{
   @Prop({ type: String, required: true })
   reviewText: string;
 
@@ -26,4 +29,6 @@ export class RestaurantReviewDataModel extends BaseDocument implements IRestaura
   restaurantId: Types.ObjectId;
 }
 
-export const RestaurantReviewSchema = SchemaFactory.createForClass(RestaurantReviewDataModel);
+export const RestaurantReviewSchema = SchemaFactory.createForClass(
+  RestaurantReviewDataModel,
+);

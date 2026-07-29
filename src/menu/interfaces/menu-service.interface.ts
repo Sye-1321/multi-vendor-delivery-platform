@@ -11,9 +11,7 @@ export interface IMenuService {
 
   getMenus(): Promise<Result<IMenuResponse[]>>;
 
-  getMenuById(
-    id: Types.ObjectId,
-  ): Promise<Result<IMenuResponse>>;
+  getMenuById(id: Types.ObjectId): Promise<Result<IMenuResponse>>;
 
   updateMenu(
     props: UpdateMenuDTO,
@@ -21,9 +19,7 @@ export interface IMenuService {
     image?: Express.Multer.File,
   ): Promise<Result<IMenuResponse>>;
 
-  deleteMenu(
-    id: Types.ObjectId,
-  ): Promise<Result<void>>;
+  deleteMenu(id: Types.ObjectId): Promise<Result<void>>;
 
   getRestaurantMenus(
     restaurantId: Types.ObjectId,

@@ -28,15 +28,8 @@ export class MenuItemMapper implements IMapper<MenuItem, MenuItemDataModel> {
   }
 
   toDomain(doc: MenuItemDataModel): MenuItem {
-    const {
-      _id,
-      name,
-      image,
-      description,
-      price,
-      availability,
-      restaurantId,
-    } = doc;
+    const { _id, name, image, description, price, availability, restaurantId } =
+      doc;
     const entity: MenuItem = MenuItem.create(
       {
         name,

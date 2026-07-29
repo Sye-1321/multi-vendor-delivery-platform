@@ -10,14 +10,16 @@ import { Result } from 'src/domain/result/result';
 
 export interface IRestaurantService {
   createRestaurant(
-  data: CreateRestaurantDTO,
-  logoFile: Express.Multer.File,
-  coverImageFile: Express.Multer.File
-): Promise<Result<IRestaurantResponse>>
+    data: CreateRestaurantDTO,
+    logoFile: Express.Multer.File,
+    coverImageFile: Express.Multer.File,
+  ): Promise<Result<IRestaurantResponse>>;
 
   getRestaurants(): Promise<Result<IRestaurantResponse[]>>;
 
-  getRestaurantById(restaurantId: Types.ObjectId): Promise<Result<IRestaurantResponse>>;
+  getRestaurantById(
+    restaurantId: Types.ObjectId,
+  ): Promise<Result<IRestaurantResponse>>;
 
   updateRestaurant(
     restaurantId: Types.ObjectId,
@@ -39,10 +41,11 @@ export interface IRestaurantService {
 
   getRestaurantsByCompany(): Promise<Result<IRestaurantResponse[]>>;
 
-  getCompanyRestaurantById(restaurantId: Types.ObjectId): Promise<Result<IRestaurantResponse>>;
+  getCompanyRestaurantById(
+    restaurantId: Types.ObjectId,
+  ): Promise<Result<IRestaurantResponse>>;
 
   getRestaurantByRestaurantAdmin(): Promise<Result<IRestaurantResponse>>;
 
   getRestaurantByRAdmin(): Promise<Restaurant>;
-
 }

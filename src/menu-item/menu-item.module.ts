@@ -1,11 +1,22 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TYPES } from './../application/constants/types';
 import { ContextMiddleWare } from './../infrastructure/middlewares/context.middleware';
 import { MenuItemController } from './menu-item.controller';
 import { MenuItemMapper } from './menu-item.mapper';
-import { MenuItemDataModel, MenuItemSchema } from 'src/infrastructure/data_access/repositories/schemas/menu-item.schema';
-import { UserDataModel, UserSchema } from 'src/infrastructure/data_access/repositories/schemas/user.schema';
+import {
+  MenuItemDataModel,
+  MenuItemSchema,
+} from 'src/infrastructure/data_access/repositories/schemas/menu-item.schema';
+import {
+  UserDataModel,
+  UserSchema,
+} from 'src/infrastructure/data_access/repositories/schemas/user.schema';
 import { UserModule } from 'src/user/user.module';
 import { RestaurantModule } from 'src/restaurant/restaurant.module';
 import { AuthService } from 'src/infrastructure/auth/auth.service';
@@ -23,8 +34,14 @@ import { RoleService } from 'src/shared/services/role_service';
 import { RestaurantRepository } from 'src/infrastructure/data_access/repositories/restaurant.repository';
 import { RestaurantService } from 'src/restaurant/restaurant.service';
 import { RestaurantMapper } from 'src/restaurant/restaurant.mapper';
-import { RestaurantDataModel, RestaurantSchema } from 'src/infrastructure/data_access/repositories/schemas/restaurant.schema';
-import { CompanyDataModel, CompanySchema } from 'src/infrastructure/data_access/repositories/schemas/company.schema';
+import {
+  RestaurantDataModel,
+  RestaurantSchema,
+} from 'src/infrastructure/data_access/repositories/schemas/restaurant.schema';
+import {
+  CompanyDataModel,
+  CompanySchema,
+} from 'src/infrastructure/data_access/repositories/schemas/company.schema';
 import { CompanyRepository } from 'src/infrastructure/data_access/repositories/company.repository';
 import { CompanyService } from 'src/company/company.service';
 import { CompanyMapper } from 'src/company/company.mapper';
@@ -44,34 +61,31 @@ import { MenuMapper } from 'src/menu/menu.mapper';
     RestaurantModule,
   ],
   controllers: [MenuItemController],
-   providers: [
-        { provide: TYPES.IAuthService, useClass: AuthService },
-        { provide: TYPES.IEmailService, useClass: EmailService},
-        { provide: TYPES.IAccessControlService, useClass: AccessControlService },
-        { provide: TYPES.IRoleService, useClass: RoleService },
-        { provide: TYPES.IContextService, useClass: ContextService },
-        { provide: TYPES.IUserService, useClass: UserService },
-        { provide: TYPES.IMenuItemService, useClass: MenuItemService},
-        { provide: TYPES.IMenuItemRepository, useClass: MenuItemRepository },
-        { provide: TYPES.IRestaurantRepository, useClass: RestaurantRepository },
-        { provide: TYPES.IRestaurantService, useClass: RestaurantService},
-        { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
-        { provide: TYPES.ICompanyService, useClass: CompanyService },  
-        AuditMapper,
-        UserMapper,
-        JwtService,
-        UserRepository,
-        MenuItemMapper,
-        RestaurantMapper,
-        CompanyMapper,
-        RestaurantReviewMapper,
-        MenuMapper
-      ],
-  exports: [
-    MenuItemMapper, 
+  providers: [
+    { provide: TYPES.IAuthService, useClass: AuthService },
+    { provide: TYPES.IEmailService, useClass: EmailService },
+    { provide: TYPES.IAccessControlService, useClass: AccessControlService },
+    { provide: TYPES.IRoleService, useClass: RoleService },
+    { provide: TYPES.IContextService, useClass: ContextService },
+    { provide: TYPES.IUserService, useClass: UserService },
+    { provide: TYPES.IMenuItemService, useClass: MenuItemService },
+    { provide: TYPES.IMenuItemRepository, useClass: MenuItemRepository },
+    { provide: TYPES.IRestaurantRepository, useClass: RestaurantRepository },
+    { provide: TYPES.IRestaurantService, useClass: RestaurantService },
+    { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
+    { provide: TYPES.ICompanyService, useClass: CompanyService },
+    AuditMapper,
+    UserMapper,
+    JwtService,
+    UserRepository,
+    MenuItemMapper,
+    RestaurantMapper,
+    CompanyMapper,
+    RestaurantReviewMapper,
+    MenuMapper,
   ],
+  exports: [MenuItemMapper],
 })
-
 export class MenuItemModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer

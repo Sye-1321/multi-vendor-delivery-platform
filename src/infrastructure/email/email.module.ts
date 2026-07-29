@@ -6,10 +6,7 @@ import { TYPES } from 'src/application/constants/types';
 import { AuthService } from '../auth/auth.service';
 
 @Module({
-  imports: [
-    JwtModule.register({ secret: 'your-secret-key' }),
-    ConfigModule,
-  ],
+  imports: [JwtModule.register({ secret: 'your-secret-key' }), ConfigModule],
   providers: [
     { provide: TYPES.IEmailService, useClass: EmailService },
     { provide: TYPES.IAuthService, useClass: AuthService },

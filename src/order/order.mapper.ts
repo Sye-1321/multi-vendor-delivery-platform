@@ -83,7 +83,9 @@ export class OrderMapper {
       cart: this.cartMapper.toPersistence(cart),
       paymentStatus,
       deliveryAddress,
-      deliveryPersonId: deliveryPerson ? deliveryPerson.id : deliveryPersonId ?? null,
+      deliveryPersonId: deliveryPerson
+        ? deliveryPerson.id
+        : (deliveryPersonId ?? null),
       totalPrice,
       auditCreatedBy,
       auditCreatedDateTime,

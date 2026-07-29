@@ -10,7 +10,11 @@ import { IRestaurantService } from 'src/restaurant/interfaces/restaurant-service
 import { DeliveryPersonMapper } from './delivery-person.mapper';
 import { DeliveryPersonParser } from './delivery-person.parser';
 import { DeliveryPerson } from './delivery-person';
-import { CreateDeliveryPersonDTO, CreateDeliveryPersonWithProfileImageDTO, UpdateDeliveryPersonDTO } from './dtos/delivery-person.dto';
+import {
+  CreateDeliveryPersonDTO,
+  CreateDeliveryPersonWithProfileImageDTO,
+  UpdateDeliveryPersonDTO,
+} from './dtos/delivery-person.dto';
 import { IDeliveryPersonService } from './interfaces/delivery-person-service.interface';
 import { IDeliveryPersonResponse } from './interfaces/deliveryperson-response.interface';
 import { AvailabilityStatus } from './constants/constants';
@@ -20,87 +24,170 @@ import { SaveFileLocally } from 'src/application/saveFileLocally';
 @Injectable()
 export class DeliveryPersonService implements IDeliveryPersonService {
   constructor(
-    @Inject(TYPES.IContextService) private readonly contextService: IContextService,
-    @Inject(TYPES.IDeliveryPersonRepository) private readonly deliveryPersonRepository: IDeliveryPersonRepository,
-    @Inject(TYPES.IRestaurantService) private readonly restaurantService: IRestaurantService,
+    @Inject(TYPES.IContextService)
+    private readonly contextService: IContextService,
+    @Inject(TYPES.IDeliveryPersonRepository)
+    private readonly deliveryPersonRepository: IDeliveryPersonRepository,
+    @Inject(TYPES.IRestaurantService)
+    private readonly restaurantService: IRestaurantService,
     private readonly deliveryPersonMapper: DeliveryPersonMapper,
   ) {}
 
-  async createSystemWideDeliveryPerson(props: CreateDeliveryPersonDTO, profileImageFile: Express.Multer.File): Promise<Result<IDeliveryPersonResponse>> {
+  async createSystemWideDeliveryPerson(
+    props: CreateDeliveryPersonDTO,
+    profileImageFile: Express.Multer.File,
+  ): Promise<Result<IDeliveryPersonResponse>> {
     return this.createDeliveryPerson(props, profileImageFile);
   }
 
-  async createRestaurantDeliveryPerson(props: CreateDeliveryPersonDTO, profileImageFile: Express.Multer.File): Promise<Result<IDeliveryPersonResponse>> {
+  async createRestaurantDeliveryPerson(
+    props: CreateDeliveryPersonDTO,
+    profileImageFile: Express.Multer.File,
+  ): Promise<Result<IDeliveryPersonResponse>> {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
     return this.createDeliveryPerson(props, profileImageFile, restaurantId);
   }
 
-  async getSystemWideDeliveryPersons(): Promise<Result<IDeliveryPersonResponse[]>> {
+  async getSystemWideDeliveryPersons(): Promise<
+    Result<IDeliveryPersonResponse[]>
+  > {
     return this.getDeliveryPersonsByFilter({ deliveryType: 'SYSTEM' });
   }
 
-  async getRestaurantDeliveryPersons(): Promise<Result<IDeliveryPersonResponse[]>> {
+  async getRestaurantDeliveryPersons(): Promise<
+    Result<IDeliveryPersonResponse[]>
+  > {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
     return this.getDeliveryPersonsByFilter({ restaurantId });
   }
 
-  async getSystemWideDeliveryPersonById(id: Types.ObjectId): Promise<Result<IDeliveryPersonResponse>> {
+  async getSystemWideDeliveryPersonById(
+    id: Types.ObjectId,
+  ): Promise<Result<IDeliveryPersonResponse>> {
     const { deliveryPerson } = await this.validateSystemWideDeliveryPerson(id);
-    return Result.ok(DeliveryPersonParser.createDeliveryPersonResponse(deliveryPerson));
+    return Result.ok(
+      DeliveryPersonParser.createDeliveryPersonResponse(deliveryPerson),
+    );
   }
 
-  async getRestaurantDeliveryPersonById(id: Types.ObjectId): Promise<Result<IDeliveryPersonResponse>> {
+  async getRestaurantDeliveryPersonById(
+    id: Types.ObjectId,
+  ): Promise<Result<IDeliveryPersonResponse>> {
     const { deliveryPerson } = await this.validateRestaurantDeliveryPerson(id);
-    return Result.ok(DeliveryPersonParser.createDeliveryPersonResponse(deliveryPerson));
+    return Result.ok(
+      DeliveryPersonParser.createDeliveryPersonResponse(deliveryPerson),
+    );
   }
 
-  async updateSystemWideDeliveryPerson(id: Types.ObjectId, props: UpdateDeliveryPersonDTO, profileImageFile?: Express.Multer.File): Promise<Result<IDeliveryPersonResponse>> {
-    return this.updateDeliveryPerson(id, props, this.validateSystemWideDeliveryPerson.bind(this), profileImageFile);
+  async updateSystemWideDeliveryPerson(
+    id: Types.ObjectId,
+    props: UpdateDeliveryPersonDTO,
+    profileImageFile?: Express.Multer.File,
+  ): Promise<Result<IDeliveryPersonResponse>> {
+    return this.updateDeliveryPerson(
+      id,
+      props,
+      this.validateSystemWideDeliveryPerson.bind(this),
+      profileImageFile,
+    );
   }
 
-  async updateRestaurantDeliveryPerson(id: Types.ObjectId, props: UpdateDeliveryPersonDTO, profileImageFile?: Express.Multer.File): Promise<Result<IDeliveryPersonResponse>> {
-    return this.updateDeliveryPerson(id, props, this.validateRestaurantDeliveryPerson.bind(this), profileImageFile);
+  async updateRestaurantDeliveryPerson(
+    id: Types.ObjectId,
+    props: UpdateDeliveryPersonDTO,
+    profileImageFile?: Express.Multer.File,
+  ): Promise<Result<IDeliveryPersonResponse>> {
+    return this.updateDeliveryPerson(
+      id,
+      props,
+      this.validateRestaurantDeliveryPerson.bind(this),
+      profileImageFile,
+    );
   }
 
   private async getRestaurantIdForCurrentAdmin(): Promise<Types.ObjectId> {
     const restaurant = await this.restaurantService.getRestaurantByRAdmin();
     if (!restaurant.deliveryPersonAvailability) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'The restaurant does not have delivery person availability');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'The restaurant does not have delivery person availability',
+      );
     }
     return restaurant.id;
   }
 
-  private async createDeliveryPerson(props: CreateDeliveryPersonDTO, profileImageFile: Express.Multer.File, restaurantId?: Types.ObjectId): Promise<Result<IDeliveryPersonResponse>> {
-    const existingPerson = await this.deliveryPersonRepository.findByPhoneNumber(props.phoneNumber);
+  private async createDeliveryPerson(
+    props: CreateDeliveryPersonDTO,
+    profileImageFile: Express.Multer.File,
+    restaurantId?: Types.ObjectId,
+  ): Promise<Result<IDeliveryPersonResponse>> {
+    const existingPerson =
+      await this.deliveryPersonRepository.findByPhoneNumber(props.phoneNumber);
     if (existingPerson.isSuccess) {
-      throwApplicationError(HttpStatus.CONFLICT, 'A delivery person with this phone number already exists.');
+      throwApplicationError(
+        HttpStatus.CONFLICT,
+        'A delivery person with this phone number already exists.',
+      );
     }
     const context = this.contextService.getContext();
     const audit = Audit.createInsertContext(context);
-    const profileImage = await SaveFileLocally(profileImageFile, 'delivery-person-profiles');
-    const newProps: CreateDeliveryPersonWithProfileImageDTO = { ...props, profileImage };
-    const deliveryPerson = DeliveryPersonFactory.createDeliveryPerson(newProps, audit, restaurantId);
+    const profileImage = await SaveFileLocally(
+      profileImageFile,
+      'delivery-person-profiles',
+    );
+    const newProps: CreateDeliveryPersonWithProfileImageDTO = {
+      ...props,
+      profileImage,
+    };
+    const deliveryPerson = DeliveryPersonFactory.createDeliveryPerson(
+      newProps,
+      audit,
+      restaurantId,
+    );
     const model = this.deliveryPersonMapper.toPersistence(deliveryPerson);
-    const result = await this.deliveryPersonRepository.createDeliveryPerson(model);
+    const result =
+      await this.deliveryPersonRepository.createDeliveryPerson(model);
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'Delivery person could not be created. Try again later.');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'Delivery person could not be created. Try again later.',
+      );
     }
-    const response = await this.deliveryPersonRepository.getDeliveryPersonById(result.getValue().id);
-    return Result.ok(DeliveryPersonParser.createDeliveryPersonResponse(response.getValue()));
+    const response = await this.deliveryPersonRepository.getDeliveryPersonById(
+      result.getValue().id,
+    );
+    return Result.ok(
+      DeliveryPersonParser.createDeliveryPersonResponse(response.getValue()),
+    );
   }
 
-  private async getDeliveryPersonsByFilter(filter: Record<string, any>): Promise<Result<IDeliveryPersonResponse[]>> {
-    const result = await this.deliveryPersonRepository.getDeliveryPersons(filter);
+  private async getDeliveryPersonsByFilter(
+    filter: Record<string, any>,
+  ): Promise<Result<IDeliveryPersonResponse[]>> {
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersons(filter);
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Failed to fetch delivery persons');
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to fetch delivery persons',
+      );
     }
-    return Result.ok(DeliveryPersonParser.createDeliveryPersonsResponse(result.getValue()), 'Delivery persons retrieved successfully');
+    return Result.ok(
+      DeliveryPersonParser.createDeliveryPersonsResponse(result.getValue()),
+      'Delivery persons retrieved successfully',
+    );
   }
 
-  private async validateSystemWideDeliveryPerson(id: Types.ObjectId): Promise<{ deliveryPerson: DeliveryPerson }> {
-    const result = await this.deliveryPersonRepository.getDeliveryPersonById(id);
+  private async validateSystemWideDeliveryPerson(
+    id: Types.ObjectId,
+  ): Promise<{ deliveryPerson: DeliveryPerson }> {
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonById(id);
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'DeliveryPerson does not exist');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'DeliveryPerson does not exist',
+      );
     }
     const deliveryPerson = result.getValue();
     if (deliveryPerson.restaurantId !== null) {
@@ -109,28 +196,55 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     return { deliveryPerson };
   }
 
-  private async validateRestaurantDeliveryPerson(id: Types.ObjectId): Promise<{ restaurantId: Types.ObjectId; deliveryPerson: DeliveryPerson }> {
+  private async validateRestaurantDeliveryPerson(
+    id: Types.ObjectId,
+  ): Promise<{ restaurantId: Types.ObjectId; deliveryPerson: DeliveryPerson }> {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
-    const result = await this.deliveryPersonRepository.getDeliveryPersonById(id);
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonById(id);
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'DeliveryPerson does not exist');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'DeliveryPerson does not exist',
+      );
     }
     const deliveryPerson = result.getValue();
-    if (!deliveryPerson.restaurantId || !deliveryPerson.restaurantId.equals(restaurantId)) {
-      throwApplicationError(HttpStatus.UNAUTHORIZED, 'Unauthorized access to this delivery person');
+    if (
+      !deliveryPerson.restaurantId ||
+      !deliveryPerson.restaurantId.equals(restaurantId)
+    ) {
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        'Unauthorized access to this delivery person',
+      );
     }
     return { restaurantId, deliveryPerson };
   }
 
-  private async updateDeliveryPerson(id: Types.ObjectId, props: UpdateDeliveryPersonDTO, validateMethod: (id: Types.ObjectId) => Promise<{ deliveryPerson: DeliveryPerson }>, profileImageFile?: Express.Multer.File): Promise<Result<IDeliveryPersonResponse>> {
+  private async updateDeliveryPerson(
+    id: Types.ObjectId,
+    props: UpdateDeliveryPersonDTO,
+    validateMethod: (
+      id: Types.ObjectId,
+    ) => Promise<{ deliveryPerson: DeliveryPerson }>,
+    profileImageFile?: Express.Multer.File,
+  ): Promise<Result<IDeliveryPersonResponse>> {
     try {
       const context = this.contextService.getContext();
       const { deliveryPerson } = await validateMethod(id);
 
       if (props?.phoneNumber) {
-        const existing = await this.deliveryPersonRepository.findByPhoneNumber(props.phoneNumber);
-        if (existing.isSuccess && existing.getValue().id.toString() !== id.toString()) {
-          throwApplicationError(HttpStatus.CONFLICT, 'A delivery person with this phone number already exists.');
+        const existing = await this.deliveryPersonRepository.findByPhoneNumber(
+          props.phoneNumber,
+        );
+        if (
+          existing.isSuccess &&
+          existing.getValue().id.toString() !== id.toString()
+        ) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            'A delivery person with this phone number already exists.',
+          );
         }
       }
 
@@ -141,32 +255,60 @@ export class DeliveryPersonService implements IDeliveryPersonService {
       };
 
       if (profileImageFile) {
-        const profileImage = await SaveFileLocally(profileImageFile, 'delivery-person-profiles');
+        const profileImage = await SaveFileLocally(
+          profileImageFile,
+          'delivery-person-profiles',
+        );
         data['profileImage'] = profileImage;
       }
 
       this.updateDeliveryPersonData(data, deliveryPerson, context);
-      const updatedModel = this.deliveryPersonMapper.toPersistence(deliveryPerson);
-      const updateResult = await this.deliveryPersonRepository.updateDeliveryPersonById(id, updatedModel);
+      const updatedModel =
+        this.deliveryPersonMapper.toPersistence(deliveryPerson);
+      const updateResult =
+        await this.deliveryPersonRepository.updateDeliveryPersonById(
+          id,
+          updatedModel,
+        );
       if (!updateResult.isSuccess) {
-        return Result.fail('Failed to update delivery person', HttpStatus.INTERNAL_SERVER_ERROR);
+        return Result.fail(
+          'Failed to update delivery person',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
       }
-      const updated = await this.deliveryPersonRepository.getDeliveryPersonById(id);
-      return Result.ok(DeliveryPersonParser.createDeliveryPersonResponse(updated.getValue()), 'Delivery person updated successfully');
+      const updated =
+        await this.deliveryPersonRepository.getDeliveryPersonById(id);
+      return Result.ok(
+        DeliveryPersonParser.createDeliveryPersonResponse(updated.getValue()),
+        'Delivery person updated successfully',
+      );
     } catch (error) {
-      return Result.fail('Delivery person update failed', HttpStatus.EXPECTATION_FAILED);
+      return Result.fail(
+        'Delivery person update failed',
+        HttpStatus.EXPECTATION_FAILED,
+      );
     }
   }
 
-  public async getDeliveryPersonById(id: Types.ObjectId): Promise<DeliveryPerson> {
-    const result = await this.deliveryPersonRepository.getDeliveryPersonById(id);
+  public async getDeliveryPersonById(
+    id: Types.ObjectId,
+  ): Promise<DeliveryPerson> {
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonById(id);
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, `DeliveryPerson with ID ${id} does not exist`);
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        `DeliveryPerson with ID ${id} does not exist`,
+      );
     }
     return result.getValue();
   }
 
-  private updateDeliveryPersonData(data: any, deliveryPerson: DeliveryPerson, context: any): void {
+  private updateDeliveryPersonData(
+    data: any,
+    deliveryPerson: DeliveryPerson,
+    context: any,
+  ): void {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in deliveryPerson) {
         (deliveryPerson as any)[key] = value;
@@ -175,31 +317,63 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     Audit.updateContext(context.email, deliveryPerson);
   }
 
-  private changeDeliveryPersonStatus(deliveryPerson: DeliveryPerson, context: any): void {
-    deliveryPerson.availabilityStatus = deliveryPerson.availabilityStatus === AvailabilityStatus.WORKING ? AvailabilityStatus.AVAILABLE : AvailabilityStatus.WORKING;
+  private changeDeliveryPersonStatus(
+    deliveryPerson: DeliveryPerson,
+    context: any,
+  ): void {
+    deliveryPerson.availabilityStatus =
+      deliveryPerson.availabilityStatus === AvailabilityStatus.WORKING
+        ? AvailabilityStatus.AVAILABLE
+        : AvailabilityStatus.WORKING;
     Audit.updateContext(context.email, deliveryPerson);
   }
 
-  async pickFromRestaurant(deliveryPersonId: Types.ObjectId, restaurantId: Types.ObjectId) {
-    const result = await this.deliveryPersonRepository.getDeliveryPersonByIdAndRestaurantId(deliveryPersonId, restaurantId);
+  async pickFromRestaurant(
+    deliveryPersonId: Types.ObjectId,
+    restaurantId: Types.ObjectId,
+  ) {
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonByIdAndRestaurantId(
+        deliveryPersonId,
+        restaurantId,
+      );
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'no restaurant delivery person with that Id');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'no restaurant delivery person with that Id',
+      );
     }
-    return result.getValue().availabilityStatus === AvailabilityStatus.AVAILABLE;
+    return (
+      result.getValue().availabilityStatus === AvailabilityStatus.AVAILABLE
+    );
   }
 
   async pickFromSystem(deliveryPersonId: Types.ObjectId) {
-    const result = await this.deliveryPersonRepository.getDeliveryPersonById(deliveryPersonId);
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonById(
+        deliveryPersonId,
+      );
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'no system delivery person with that Id');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'no system delivery person with that Id',
+      );
     }
-    return result.getValue().availabilityStatus === AvailabilityStatus.AVAILABLE;
+    return (
+      result.getValue().availabilityStatus === AvailabilityStatus.AVAILABLE
+    );
   }
 
   async markAsAssigned(deliveryPersonId: Types.ObjectId) {
-    const result = await this.deliveryPersonRepository.getDeliveryPersonById(deliveryPersonId);
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonById(
+        deliveryPersonId,
+      );
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'no delivery person with that Id');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'no delivery person with that Id',
+      );
     }
     const context = this.contextService.getContext();
     const data = {
@@ -208,17 +382,31 @@ export class DeliveryPersonService implements IDeliveryPersonService {
       availabilityStatus: AvailabilityStatus.WORKING,
     };
     this.changeDeliveryPersonStatus(result.getValue(), context);
-    const update = await this.deliveryPersonRepository.updateDeliveryPersonById(deliveryPersonId, data);
+    const update = await this.deliveryPersonRepository.updateDeliveryPersonById(
+      deliveryPersonId,
+      data,
+    );
     if (!update.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'delivery person could not be updated');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'delivery person could not be updated',
+      );
     }
-    return await this.deliveryPersonRepository.getDeliveryPersonById(deliveryPersonId);
+    return await this.deliveryPersonRepository.getDeliveryPersonById(
+      deliveryPersonId,
+    );
   }
 
   async markAsAvailable(deliveryPersonId: Types.ObjectId) {
-    const result = await this.deliveryPersonRepository.getDeliveryPersonById(deliveryPersonId);
+    const result =
+      await this.deliveryPersonRepository.getDeliveryPersonById(
+        deliveryPersonId,
+      );
     if (!result.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'no delivery person with that Id');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'no delivery person with that Id',
+      );
     }
     const context = this.contextService.getContext();
     const data = {
@@ -227,10 +415,18 @@ export class DeliveryPersonService implements IDeliveryPersonService {
       availabilityStatus: AvailabilityStatus.AVAILABLE,
     };
     this.changeDeliveryPersonStatus(result.getValue(), context);
-    const update = await this.deliveryPersonRepository.updateDeliveryPersonById(deliveryPersonId, data);
+    const update = await this.deliveryPersonRepository.updateDeliveryPersonById(
+      deliveryPersonId,
+      data,
+    );
     if (!update.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'delivery person could not be updated');
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'delivery person could not be updated',
+      );
     }
-    return await this.deliveryPersonRepository.getDeliveryPersonById(deliveryPersonId);
+    return await this.deliveryPersonRepository.getDeliveryPersonById(
+      deliveryPersonId,
+    );
   }
 }

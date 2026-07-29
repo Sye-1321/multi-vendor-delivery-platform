@@ -7,10 +7,13 @@ import { SystemReview } from './system-review';
 import { UserMapper } from 'src/user/user.mapper';
 
 @Injectable()
-export class SystemReviewMapper implements IMapper<SystemReview, SystemReviewDataModel> {
+export class SystemReviewMapper
+  implements IMapper<SystemReview, SystemReviewDataModel>
+{
   constructor(
     private readonly auditMapper: AuditMapper,
-    private readonly userMapper: UserMapper ) {}
+    private readonly userMapper: UserMapper,
+  ) {}
 
   toPersistence(entity: SystemReview): SystemReviewDataModel {
     const { id, reviewText, rating, user } = entity;
@@ -47,5 +50,4 @@ export class SystemReviewMapper implements IMapper<SystemReview, SystemReviewDat
 
     return entity;
   }
-  
 }

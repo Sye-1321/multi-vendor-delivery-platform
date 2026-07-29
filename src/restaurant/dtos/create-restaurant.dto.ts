@@ -1,4 +1,17 @@
-import { IsString, IsEnum, IsOptional, IsPhoneNumber, IsUrl, IsBoolean, IsNumber, ValidateNested, MinLength, IsEmail, Matches, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsPhoneNumber,
+  IsUrl,
+  IsBoolean,
+  IsNumber,
+  ValidateNested,
+  MinLength,
+  IsEmail,
+  Matches,
+  IsNotEmpty,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { RestaurantStatus } from '../constants/constants';
@@ -22,14 +35,15 @@ export class RestaurantAdminDTO {
   readonly email: string;
 
   @IsString()
-  @Matches(/^251\d{9}$/, { message: 'Phone number must start with 251 followed by 9 digits' })
+  @Matches(/^251\d{9}$/, {
+    message: 'Phone number must start with 251 followed by 9 digits',
+  })
   readonly phoneNumber: string;
 
   @ValidateNested()
   @Type(() => SavedAddressDTO)
   savedAddress: SavedAddressDTO;
 }
-
 
 export class CreateRestaurantDTO {
   @IsString()
@@ -41,7 +55,9 @@ export class CreateRestaurantDTO {
   savedAddress: SavedAddressDTO;
 
   @IsString()
-  @Matches(/^251\d{9}$/, { message: 'Phone number must start with 251 followed by 9 digits' })
+  @Matches(/^251\d{9}$/, {
+    message: 'Phone number must start with 251 followed by 9 digits',
+  })
   readonly phoneNumber: string;
 
   @IsString()
@@ -63,5 +79,4 @@ export class CreateRestaurantDTO {
 
 export class UpdateRestaurantDTO extends PartialType(
   OmitType(CreateRestaurantDTO, ['restaurantAdminData'] as const),
-) {
-}
+) {}

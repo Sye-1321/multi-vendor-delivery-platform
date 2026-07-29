@@ -39,7 +39,9 @@ export class RestaurantParser {
       closingHours,
       image,
       logo,
-      reviews: reviews.map((review) => RestaurantReviewParser.createReviewResponse(review)),
+      reviews: reviews.map((review) =>
+        RestaurantReviewParser.createReviewResponse(review),
+      ),
       menus: menus.map((menu) => MenuParser.createMenuResponse(menu)),
       ...AuditParser.createAuditResponse(audit),
     };
@@ -47,7 +49,11 @@ export class RestaurantParser {
     return response;
   }
 
-  static createRestaurantsResponse(restaurants: Restaurant[]): IRestaurantResponse[] {
-    return restaurants.map((restaurant) => this.createRestaurantResponse(restaurant));
+  static createRestaurantsResponse(
+    restaurants: Restaurant[],
+  ): IRestaurantResponse[] {
+    return restaurants.map((restaurant) =>
+      this.createRestaurantResponse(restaurant),
+    );
   }
 }

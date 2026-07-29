@@ -5,21 +5,19 @@ import { DeliveryPerson } from 'src/delivery-person/delivery-person';
 import { Audit } from 'src/domain/audit/audit';
 
 export interface ISavedAddress {
-    city: string;
-    subCity: string;
-  }
-  
+  city: string;
+  subCity: string;
+}
 
 export interface IOrder {
   userId: Types.ObjectId;
   cart: Cart;
   restaurantId: Types.ObjectId;
-  deliveryAddress: ISavedAddress; 
-  status: OrderStatus
+  deliveryAddress: ISavedAddress;
+  status: OrderStatus;
   totalPrice: number;
   paymentStatus: PaymentStatus;
   deliveryPerson?: DeliveryPerson | null;
   deliveryPersonId?: Types.ObjectId | null;
   audit: Audit;
 }
-
