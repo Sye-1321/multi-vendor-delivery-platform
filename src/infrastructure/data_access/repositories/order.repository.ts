@@ -113,4 +113,34 @@ export class OrderRepository
     const updatedOrder = this.orderMapper.toDomain(updatedDocument);
     return Result.ok(updatedOrder);
   }
+
+  async transitionOrder(
+    orderId: Types.ObjectId,
+    expectedStatus: OrderDataModel['status'],
+    updateData: Partial<OrderDataModel>,
+    options?: { session?: ClientSession },
+  ): Promise<Result<Order>> {
+    const updatedDocument = await this.DocumentModel.findOneAndUpdate(
+      {
+        _id: orderId,
+        status: expectedStatus,
+      },
+      { $set: updateData },
+      {
+        new: true,
+        session: options?.session,
+      },
+    )
+      .populate(this.orderPopulation)
+      .exec();
+
+    if (!updatedDocument) {
+      return Result.fail(
+        `Order is no longer in ${expectedStatus} status`,
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    return Result.ok(this.orderMapper.toDomain(updatedDocument));
+  }
 }

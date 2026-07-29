@@ -243,16 +243,14 @@ export class OrderService implements IOrderService {
       );
     }
 
-    const data = {
-      auditModifiedBy: context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      status: OrderStatus.CANCELLED,
-    };
+    const updatedOrder = await this.transitionOrderStatus(
+      orderId,
+      OrderStatus.PENDING,
+      OrderStatus.CANCELLED,
+      context,
+    );
 
-    this.updateOrder(data, order.getValue(), context);
-    await this.updateOrderById(orderId, data);
-
-    return Result.ok(OrderParser.createOrderResponse(order.getValue()));
+    return Result.ok(OrderParser.createOrderResponse(updatedOrder));
   }
 
   async acceptOrder(
@@ -282,16 +280,14 @@ export class OrderService implements IOrderService {
       );
     }
     const context = this.contextService.getContext();
-    const data = {
-      auditModifiedBy: context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      status: OrderStatus.ACCEPTED,
-    };
+    const updatedOrder = await this.transitionOrderStatus(
+      orderId,
+      OrderStatus.PENDING,
+      OrderStatus.ACCEPTED,
+      context,
+    );
 
-    this.updateOrder(data, order.getValue(), context);
-    await this.updateOrderById(orderId, data);
-
-    return Result.ok(OrderParser.createOrderResponse(order.getValue()));
+    return Result.ok(OrderParser.createOrderResponse(updatedOrder));
   }
 
   async orderPrepared(
@@ -321,15 +317,13 @@ export class OrderService implements IOrderService {
       );
     }
     const context = this.contextService.getContext();
-    const data = {
-      auditModifiedBy: context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      status: OrderStatus.PREPARED,
-    };
-
-    this.updateOrder(data, order.getValue(), context);
-    await this.updateOrderById(orderId, data);
-    return Result.ok(OrderParser.createOrderResponse(order.getValue()));
+    const updatedOrder = await this.transitionOrderStatus(
+      orderId,
+      OrderStatus.ACCEPTED,
+      OrderStatus.PREPARED,
+      context,
+    );
+    return Result.ok(OrderParser.createOrderResponse(updatedOrder));
   }
 
   async markDelivered(
@@ -489,6 +483,32 @@ export class OrderService implements IOrderService {
       }
     });
     Audit.updateContext(context.email, order);
+  }
+
+  private async transitionOrderStatus(
+    orderId: Types.ObjectId,
+    expectedStatus: OrderStatus,
+    nextStatus: OrderStatus,
+    context: Context,
+  ): Promise<Order> {
+    const result = await this.orderRepository.transitionOrder(
+      orderId,
+      expectedStatus,
+      {
+        status: nextStatus,
+        auditModifiedBy: context.email,
+        auditModifiedDateTime: new Date().toISOString(),
+      },
+    );
+
+    if (!result.isSuccess) {
+      throwApplicationError(
+        HttpStatus.CONFLICT,
+        `Order status changed before it could move from ${expectedStatus} to ${nextStatus}.`,
+      );
+    }
+
+    return result.getValue();
   }
 
   private async updateOrderById(id: Types.ObjectId, data: any) {

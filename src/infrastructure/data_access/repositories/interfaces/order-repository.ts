@@ -14,4 +14,10 @@ export interface IOrderRepository
   getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>>;
   getOrderById(id: Types.ObjectId): Promise<Result<Order>>;
   updateOrder(orderId: Types.ObjectId, updateData: any): Promise<Result<Order>>;
+  transitionOrder(
+    orderId: Types.ObjectId,
+    expectedStatus: OrderDataModel['status'],
+    updateData: Partial<OrderDataModel>,
+    options?: { session?: ClientSession },
+  ): Promise<Result<Order>>;
 }
