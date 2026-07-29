@@ -132,18 +132,13 @@ export class MenuItemRepository
   }
 
   async getMenuItemsByIds(
+    restaurantId: Types.ObjectId,
     itemIds: Types.ObjectId[],
   ): Promise<Result<MenuItem[]>> {
     const itemDocs = await this.DocumentModel.find({
       _id: { $in: itemIds },
+      restaurantId,
     }).exec();
-
-    if (!itemDocs?.length) {
-      return Result.fail(
-        'No items found for the provided IDs',
-        HttpStatus.NOT_FOUND,
-      );
-    }
 
     const items = itemDocs.map((doc) => this.menuItemMapper.toDomain(doc));
     return Result.ok(items);

@@ -99,3 +99,6 @@ RestaurantSchema.virtual('reviewsDetail', {
   justOne: false,
   autopopulate: true,
 });
+
+RestaurantSchema.index({ restaurantAdminId: 1 }, { unique: true });
+RestaurantSchema.index({ companyId: 1, status: 1 });

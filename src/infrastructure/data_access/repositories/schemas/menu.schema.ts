@@ -15,7 +15,11 @@ export class MenuDataModel extends BaseDocument implements IMenuDataModel {
   @Prop({ type: String, required: true })
   image: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'RestaurantDataModel',
+    required: true,
+  })
   restaurantId: Types.ObjectId;
 
   @Prop({
@@ -29,10 +33,4 @@ export class MenuDataModel extends BaseDocument implements IMenuDataModel {
 
 export const MenuSchema = SchemaFactory.createForClass(MenuDataModel);
 
-MenuSchema.virtual('itemDetails', {
-  ref: 'MenuItem',
-  localField: 'items',
-  foreignField: '_id',
-  justOne: false,
-  autopopulate: true,
-});
+MenuSchema.index({ restaurantId: 1, name: 1 }, { unique: true });

@@ -91,7 +91,10 @@ export class MenuService implements IMenuService {
 
       let menuItems: MenuItem[] = [];
       if (menuItemsIds?.length) {
-        menuItems = await this.menuItemService.getMenuItemsByIds(menuItemsIds);
+        menuItems = await this.menuItemService.getMenuItemsByIds(
+          restaurantId,
+          menuItemsIds,
+        );
       }
 
       const menuEntity = Menu.create({
@@ -183,6 +186,7 @@ export class MenuService implements IMenuService {
 
       if (props.menuItemsIds?.length) {
         data.menuItems = await this.menuItemService.getMenuItemsByIds(
+          restaurantId,
           props.menuItemsIds,
         );
       }

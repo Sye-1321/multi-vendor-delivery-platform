@@ -22,7 +22,11 @@ export class MenuItemDataModel
   @Prop({ type: Number, required: true })
   price: number;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Restaurant' })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'RestaurantDataModel',
+    required: true,
+  })
   restaurantId: Types.ObjectId;
 
   @Prop({ type: Boolean, default: true })
@@ -30,3 +34,6 @@ export class MenuItemDataModel
 }
 
 export const MenuItemSchema = SchemaFactory.createForClass(MenuItemDataModel);
+
+MenuItemSchema.index({ restaurantId: 1, name: 1 }, { unique: true });
+MenuItemSchema.index({ restaurantId: 1, availability: 1 });

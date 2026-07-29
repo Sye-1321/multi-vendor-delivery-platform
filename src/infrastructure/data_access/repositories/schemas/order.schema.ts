@@ -11,10 +11,10 @@ export type OrderDocument = OrderDataModel & Document;
 
 @Schema({ versionKey: false })
 export class OrderDataModel extends BaseDocument implements IOrderDataModel {
-  @Prop({ type: Types.ObjectId, required: true, ref: 'User' })
+  @Prop({ type: Types.ObjectId, required: true, ref: 'UserDataModel' })
   userId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, required: true, ref: 'Restaurant' })
+  @Prop({ type: Types.ObjectId, required: true, ref: 'RestaurantDataModel' })
   restaurantId: Types.ObjectId;
 
   @Prop({
@@ -41,9 +41,13 @@ export class OrderDataModel extends BaseDocument implements IOrderDataModel {
   @Prop({ type: Types.ObjectId, ref: DeliveryPersonDataModel.name })
   deliveryPersonId: Types.ObjectId | null;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'CartDataModel' })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: CartDataModel.name })
   @Type(() => CartDataModel)
   cart: CartDataModel;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(OrderDataModel);
+
+OrderSchema.index({ userId: 1, auditCreatedDateTime: -1 });
+OrderSchema.index({ restaurantId: 1, status: 1 });
+OrderSchema.index({ status: 1, deliveryPersonId: 1 });

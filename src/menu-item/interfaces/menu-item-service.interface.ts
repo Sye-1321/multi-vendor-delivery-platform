@@ -34,5 +34,8 @@ export interface IMenuItemService {
     id: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse>>;
 
-  getMenuItemsByIds(itemIds: Types.ObjectId[]): Promise<MenuItem[]>;
+  getMenuItemsByIds(
+    restaurantId: Types.ObjectId,
+    itemIds: Types.ObjectId[],
+  ): Promise<MenuItem[]>;
 }

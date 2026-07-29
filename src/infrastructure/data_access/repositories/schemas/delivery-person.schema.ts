@@ -61,3 +61,10 @@ export class DeliveryPersonDataModel
 export const DeliveryPersonSchema = SchemaFactory.createForClass(
   DeliveryPersonDataModel,
 );
+
+DeliveryPersonSchema.index({
+  deliveryType: 1,
+  restaurantId: 1,
+  status: 1,
+  availabilityStatus: 1,
+});
