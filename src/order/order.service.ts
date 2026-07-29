@@ -34,6 +34,7 @@ import {
   DeliveryPersonOwnership,
 } from 'src/delivery-person/constants/constants';
 import { IOrderTransition } from './interfaces/order.interface';
+import { OrderEventPublisher } from './realtime/order-event.publisher';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -54,6 +55,7 @@ export class OrderService implements IOrderService {
     private readonly cartMapper: CartMapper,
     private readonly cartRepository: CartRepository,
     private readonly orderMapper: OrderMapper,
+    private readonly orderEvents: OrderEventPublisher,
   ) {}
 
   async createOrder(
@@ -190,6 +192,7 @@ export class OrderService implements IOrderService {
         );
       }
 
+      this.orderEvents.publish(savedOrder, context.correlationId);
       return Result.ok(OrderParser.createOrderResponse(savedOrder));
     } catch (error) {
       if (error instanceof HttpException) {
@@ -442,6 +445,7 @@ export class OrderService implements IOrderService {
         );
       }
 
+      this.orderEvents.publish(updatedOrder, context.correlationId);
       return Result.ok(OrderParser.createOrderResponse(updatedOrder));
     } finally {
       await session.endSession();
@@ -553,6 +557,7 @@ export class OrderService implements IOrderService {
         );
       }
 
+      this.orderEvents.publish(updatedOrder, context.correlationId);
       return Result.ok(OrderParser.createOrderResponse(updatedOrder));
     } finally {
       await session.endSession();
@@ -583,7 +588,9 @@ export class OrderService implements IOrderService {
       );
     }
 
-    return result.getValue();
+    const order = result.getValue();
+    this.orderEvents.publish(order, context.correlationId);
+    return order;
   }
 
   private createOrderTransition(

@@ -16,6 +16,10 @@ export interface IRestaurantRepository
     companyAdminId: Types.ObjectId,
   ): Promise<Result<Restaurant[]>>;
   getRestaurantById(restaurantId: Types.ObjectId): Promise<Result<Restaurant>>;
+  isRestaurantAdmin(
+    restaurantId: Types.ObjectId,
+    restaurantAdminId: Types.ObjectId,
+  ): Promise<boolean>;
   createRestaurant(
     restaurantDataModel: Partial<RestaurantDataModel>,
   ): Promise<Result<Restaurant>>;
