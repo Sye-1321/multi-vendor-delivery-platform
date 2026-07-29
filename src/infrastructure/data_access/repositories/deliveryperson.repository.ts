@@ -1,6 +1,6 @@
 import { Injectable, HttpStatus, Inject } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
-import { Connection, Model, Types, FilterQuery } from 'mongoose';
+import { ClientSession, Connection, Model, Types, FilterQuery } from 'mongoose';
 import {
   DeliveryPersonDataModel,
   DeliveryPersonDocument,
@@ -9,6 +9,12 @@ import { DeliveryPerson } from 'src/delivery-person/delivery-person';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { DeliveryPersonMapper } from 'src/delivery-person/delivery-person.mapper';
 import { Result } from 'src/domain/result/result';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+  DeliveryPersonStatus,
+} from 'src/delivery-person/constants/constants';
+import { DeliveryPersonScope } from './interfaces/deliveryperson-repository.interface';
 
 @Injectable()
 export class DeliveryPersonRepository extends GenericDocumentRepository<
@@ -158,5 +164,62 @@ export class DeliveryPersonRepository extends GenericDocumentRepository<
 
     const mapped = this.deliveryPersonMapper.toDomain(doc);
     return Result.ok(mapped);
+  }
+
+  async changeAvailability(
+    id: Types.ObjectId,
+    expectedStatus: AvailabilityStatus,
+    nextStatus: AvailabilityStatus,
+    audit: {
+      auditModifiedBy: string;
+      auditModifiedDateTime: string;
+    },
+    options?: {
+      scope?: DeliveryPersonScope;
+      session?: ClientSession;
+    },
+  ): Promise<Result<DeliveryPerson>> {
+    const scopeFilter =
+      options?.scope?.deliveryType === DeliveryPersonOwnership.RESTAURANT
+        ? {
+            deliveryType: DeliveryPersonOwnership.RESTAURANT,
+            restaurantId: options.scope.restaurantId,
+          }
+        : options?.scope?.deliveryType === DeliveryPersonOwnership.SYSTEM
+          ? {
+              deliveryType: DeliveryPersonOwnership.SYSTEM,
+              restaurantId: null,
+            }
+          : {};
+
+    const updated = await this.DocumentModel.findOneAndUpdate(
+      {
+        _id: id,
+        availabilityStatus: expectedStatus,
+        ...(nextStatus === AvailabilityStatus.WORKING && {
+          status: DeliveryPersonStatus.ACTIVE,
+        }),
+        ...scopeFilter,
+      },
+      {
+        $set: {
+          availabilityStatus: nextStatus,
+          ...audit,
+        },
+      },
+      {
+        new: true,
+        session: options?.session,
+      },
+    ).exec();
+
+    if (!updated) {
+      return Result.fail(
+        `Delivery person is not eligible to move from ${expectedStatus} to ${nextStatus}`,
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    return Result.ok(this.deliveryPersonMapper.toDomain(updated));
   }
 }

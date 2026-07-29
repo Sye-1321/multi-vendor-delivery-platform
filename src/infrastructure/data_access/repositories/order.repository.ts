@@ -13,15 +13,20 @@ export class OrderRepository
   extends GenericDocumentRepository<Order, OrderDocument>
   implements IOrderRepository
 {
-  private readonly orderPopulation = {
-    path: 'cart',
-    populate: {
-      path: 'cartItems',
+  private readonly orderPopulation = [
+    {
+      path: 'cart',
       populate: {
-        path: 'menuItemId',
+        path: 'cartItems',
+        populate: {
+          path: 'menuItemId',
+        },
       },
     },
-  };
+    {
+      path: 'deliveryPersonId',
+    },
+  ];
 
   constructor(
     @InjectModel(OrderDataModel.name) orderDataModel: Model<OrderDocument>,
@@ -93,24 +98,33 @@ export class OrderRepository
     return Result.ok(order);
   }
 
-  async updateOrder(
+  async transitionOrder(
     orderId: Types.ObjectId,
-    updateData: any,
+    expectedStatus: OrderDataModel['status'],
+    updateData: Partial<OrderDataModel>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Order>> {
-    const updatedDocument = await this.DocumentModel.findByIdAndUpdate(
-      orderId,
+    const updatedDocument = await this.DocumentModel.findOneAndUpdate(
+      {
+        _id: orderId,
+        status: expectedStatus,
+      },
       { $set: updateData },
-      { new: true },
+      {
+        new: true,
+        session: options?.session,
+      },
     )
       .populate(this.orderPopulation)
       .exec();
+
     if (!updatedDocument) {
       return Result.fail(
-        'Error while updating order',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        `Order is no longer in ${expectedStatus} status`,
+        HttpStatus.CONFLICT,
       );
     }
-    const updatedOrder = this.orderMapper.toDomain(updatedDocument);
-    return Result.ok(updatedOrder);
+
+    return Result.ok(this.orderMapper.toDomain(updatedDocument));
   }
 }

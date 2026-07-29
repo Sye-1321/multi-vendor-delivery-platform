@@ -1,8 +1,21 @@
 import { DeliveryPerson } from 'src/delivery-person/delivery-person';
 import { DeliveryPersonDataModel } from '../schemas/delivery-person.schema';
-import { FilterQuery, Types } from 'mongoose';
+import { ClientSession, FilterQuery, Types } from 'mongoose';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 import { Result } from 'src/domain/result/result';
+import {
+  DeliveryPersonOwnership,
+  AvailabilityStatus,
+} from 'src/delivery-person/constants/constants';
+
+export type DeliveryPersonScope =
+  | {
+      deliveryType: DeliveryPersonOwnership.SYSTEM;
+    }
+  | {
+      deliveryType: DeliveryPersonOwnership.RESTAURANT;
+      restaurantId: Types.ObjectId;
+    };
 
 export interface IDeliveryPersonRepository
   extends IGenericDocument<DeliveryPerson, DeliveryPersonDataModel> {
@@ -27,4 +40,17 @@ export interface IDeliveryPersonRepository
     restaurantId: Types.ObjectId,
   ): Promise<Result<DeliveryPerson>>;
   findByPhoneNumber(phoneNumber: string): Promise<Result<DeliveryPerson>>;
+  changeAvailability(
+    id: Types.ObjectId,
+    expectedStatus: AvailabilityStatus,
+    nextStatus: AvailabilityStatus,
+    audit: {
+      auditModifiedBy: string;
+      auditModifiedDateTime: string;
+    },
+    options?: {
+      scope?: DeliveryPersonScope;
+      session?: ClientSession;
+    },
+  ): Promise<Result<DeliveryPerson>>;
 }

@@ -5,7 +5,6 @@ import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document'
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
 import { CompanyDataModel } from './company.schema';
 import { UserDataModel } from './user.schema';
-import { Type } from 'class-transformer';
 import { RestaurantReviewDataModel } from './restaurant-review.schema';
 import { MenuDataModel } from './menu.schema';
 
@@ -49,8 +48,11 @@ export class RestaurantDataModel
   @Prop({ type: Types.ObjectId, ref: UserDataModel.name, required: true })
   restaurantAdminId: Types.ObjectId;
 
-  @Prop({ type: UserDataModel, ref: UserDataModel.name })
-  @Type(() => UserDataModel)
+  @Prop({
+    type: Types.ObjectId,
+    ref: UserDataModel.name,
+    required: true,
+  })
   restaurantAdmin: UserDataModel;
 
   @Prop({

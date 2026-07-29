@@ -28,7 +28,6 @@ import { RestaurantMapper } from 'src/restaurant/restaurant.mapper';
 import { OrderMapper } from './order.mapper';
 import { RestaurantService } from 'src/restaurant/restaurant.service';
 import { CompanyService } from 'src/company/company.service';
-import { DeliveryPersonService } from 'src/delivery-person/delivery-person.service';
 import { CartItemMapper } from 'src/cart-item/cartItem.mapper';
 import { CartItemRepository } from 'src/infrastructure/data_access/repositories/cart-item.repository';
 import { CartMapper } from 'src/cart/cart.mapper';
@@ -92,7 +91,6 @@ import { RoleService } from 'src/shared/services/role_service';
     { provide: TYPES.IMenuItemRepository, useClass: MenuItemRepository },
     { provide: TYPES.ICompanyService, useClass: CompanyService },
     { provide: TYPES.ICompanyRepository, useClass: CompanyRepository },
-    { provide: TYPES.IDeliveryPersonService, useClass: DeliveryPersonService },
     {
       provide: TYPES.IDeliveryPersonRepository,
       useClass: DeliveryPersonRepository,
