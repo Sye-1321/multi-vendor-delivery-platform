@@ -15,7 +15,6 @@ import { IOrderResponseDTO } from './dtos/order-response.dto';
 import { IUserService } from 'src/user/interfaces/user-service.interface';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { RestaurantService } from 'src/restaurant/restaurant.service';
-import { DeliveryPersonService } from 'src/delivery-person/delivery-person.service';
 import { CartItemMapper } from 'src/cart-item/cartItem.mapper';
 import { CartItem } from 'src/cart-item/cartItem';
 import { OrderStatus, PaymentStatus } from './constants/constants';
@@ -26,6 +25,14 @@ import { IOrderRepository } from 'src/infrastructure/data_access/repositories/in
 import { IOrderService } from './interfaces/order.service.interface';
 import { IMenuItemRepository } from 'src/infrastructure/data_access/repositories/interfaces/menu-item-repository';
 import { MenuItem } from 'src/menu-item/menu-item';
+import {
+  IDeliveryPersonRepository,
+  DeliveryPersonScope,
+} from 'src/infrastructure/data_access/repositories/interfaces/deliveryperson-repository.interface';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+} from 'src/delivery-person/constants/constants';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -35,10 +42,10 @@ export class OrderService implements IOrderService {
     @Inject(TYPES.IUserService) private readonly userService: IUserService,
     @Inject(TYPES.IRestaurantService)
     private readonly restaurantService: RestaurantService,
-    @Inject(TYPES.IDeliveryPersonService)
-    private readonly deliveryPersonService: DeliveryPersonService,
     @Inject(TYPES.IOrderRepository)
     private readonly orderRepository: IOrderRepository,
+    @Inject(TYPES.IDeliveryPersonRepository)
+    private readonly deliveryPersonRepository: IDeliveryPersonRepository,
     @Inject(TYPES.IMenuItemRepository)
     private readonly menuItemRepository: IMenuItemRepository,
     private readonly cartItemMapper: CartItemMapper,
@@ -342,8 +349,16 @@ export class OrderService implements IOrderService {
       throwApplicationError(HttpStatus.BAD_REQUEST, 'not possible');
     }
 
-    const deliveryPersonId = order.getValue()
-      .deliveryPersonId as Types.ObjectId;
+    const deliveryPersonId = order.getValue().deliveryPersonId;
+
+    if (!deliveryPersonId) {
+      return throwApplicationError(
+        HttpStatus.CONFLICT,
+        'The order has no assigned delivery person.',
+      );
+    }
+    const assignedDeliveryPersonId = deliveryPersonId;
+
     const restaurant = await this.restaurantService.getRestaurantByI(
       order.getValue().restaurantId,
     );
@@ -366,26 +381,62 @@ export class OrderService implements IOrderService {
       }
     }
 
-    const freed =
-      await this.deliveryPersonService.markAsAvailable(deliveryPersonId);
-    if (!freed.isSuccess) {
-      throwApplicationError(
-        HttpStatus.EXPECTATION_FAILED,
-        'Failed to update delivery person availability.',
-      );
-    }
-
-    const data = {
+    const auditUpdate = {
       auditModifiedBy: context.email,
       auditModifiedDateTime: new Date().toISOString(),
-      deliveryPersonId: null,
-      status: OrderStatus.DELIVERED,
-      paymentStatus: PaymentStatus.PAID,
     };
+    const session = await this.orderRepository.startSession();
 
-    this.updateOrder(data, order.getValue(), context);
-    await this.updateOrderById(orderId, data);
-    return Result.ok(OrderParser.createOrderResponse(order.getValue()));
+    try {
+      const updatedOrder = await session.withTransaction(async () => {
+        const released = await this.deliveryPersonRepository.changeAvailability(
+          assignedDeliveryPersonId,
+          AvailabilityStatus.WORKING,
+          AvailabilityStatus.AVAILABLE,
+          auditUpdate,
+          { session },
+        );
+
+        if (!released.isSuccess) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            'The delivery person could not be released.',
+          );
+        }
+
+        const transition = await this.orderRepository.transitionOrder(
+          orderId,
+          OrderStatus.OUT_FOR_DELIVERY,
+          {
+            ...auditUpdate,
+            deliveryPersonId: null,
+            status: OrderStatus.DELIVERED,
+            paymentStatus: PaymentStatus.PAID,
+          },
+          { session },
+        );
+
+        if (!transition.isSuccess) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            'The order is no longer out for delivery.',
+          );
+        }
+
+        return transition.getValue();
+      });
+
+      if (!updatedOrder) {
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'The delivery transaction did not return an order.',
+        );
+      }
+
+      return Result.ok(OrderParser.createOrderResponse(updatedOrder));
+    } finally {
+      await session.endSession();
+    }
   }
 
   async assignDeliveryPerson(
@@ -406,6 +457,8 @@ export class OrderService implements IOrderService {
     const restaurant = await this.restaurantService.getRestaurantByI(
       order.getValue().restaurantId,
     );
+    let deliveryPersonScope: DeliveryPersonScope;
+
     if (restaurant.deliveryPersonAvailability) {
       if (
         contextUser.role !== Role.RESTAURANT_ADMINISTRATOR ||
@@ -416,24 +469,10 @@ export class OrderService implements IOrderService {
           'Only the restaurant administrator can assign delivery person.',
         );
       }
-      const available = await this.deliveryPersonService.pickFromRestaurant(
-        deliveryPersonId,
-        restaurant.id,
-      );
-      if (!available) {
-        throwApplicationError(
-          HttpStatus.EXPECTATION_FAILED,
-          'Delivery person unavailable.',
-        );
-      }
-      const assigned =
-        await this.deliveryPersonService.markAsAssigned(deliveryPersonId);
-      if (!assigned) {
-        throwApplicationError(
-          HttpStatus.EXPECTATION_FAILED,
-          'Failed to assign delivery person.',
-        );
-      }
+      deliveryPersonScope = {
+        deliveryType: DeliveryPersonOwnership.RESTAURANT,
+        restaurantId: restaurant.id,
+      };
     } else {
       if (contextUser.role !== Role.DELIVERY_COMPANY_ADMINISTRATOR) {
         throwApplicationError(
@@ -441,48 +480,69 @@ export class OrderService implements IOrderService {
           'Only the delivery company administrator can assign.',
         );
       }
-
-      const available =
-        await this.deliveryPersonService.pickFromSystem(deliveryPersonId);
-      if (!available) {
-        throwApplicationError(
-          HttpStatus.EXPECTATION_FAILED,
-          'No delivery person available.',
-        );
-      }
-      const assigned =
-        await this.deliveryPersonService.markAsAssigned(deliveryPersonId);
-      if (!assigned) {
-        throwApplicationError(
-          HttpStatus.EXPECTATION_FAILED,
-          'Failed to assign delivery person.',
-        );
-      }
+      deliveryPersonScope = {
+        deliveryType: DeliveryPersonOwnership.SYSTEM,
+      };
     }
 
-    const deliveryPerson =
-      await this.deliveryPersonService.getDeliveryPersonById(deliveryPersonId);
-    const data = {
+    const auditUpdate = {
       auditModifiedBy: context.email,
       auditModifiedDateTime: new Date().toISOString(),
-      deliveryPersonId: deliveryPersonId,
-      status: OrderStatus.OUT_FOR_DELIVERY,
-      deliveryPerson: deliveryPerson,
     };
+    const session = await this.orderRepository.startSession();
 
-    this.updateOrder(data, order.getValue(), context);
-    await this.updateOrderById(orderId, data);
+    try {
+      const updatedOrder = await session.withTransaction(async () => {
+        const claimed = await this.deliveryPersonRepository.changeAvailability(
+          deliveryPersonId,
+          AvailabilityStatus.AVAILABLE,
+          AvailabilityStatus.WORKING,
+          auditUpdate,
+          {
+            scope: deliveryPersonScope,
+            session,
+          },
+        );
 
-    return Result.ok(OrderParser.createOrderResponse(order.getValue()));
-  }
+        if (!claimed.isSuccess) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            'The delivery person is no longer available.',
+          );
+        }
 
-  private updateOrder(data: any, order: Order, context: Context) {
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && key in order) {
-        (order as any)[key] = value;
+        const transition = await this.orderRepository.transitionOrder(
+          orderId,
+          OrderStatus.PREPARED,
+          {
+            ...auditUpdate,
+            deliveryPersonId: claimed.getValue().id,
+            status: OrderStatus.OUT_FOR_DELIVERY,
+          },
+          { session },
+        );
+
+        if (!transition.isSuccess) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            'The order is no longer ready for assignment.',
+          );
+        }
+
+        return transition.getValue();
+      });
+
+      if (!updatedOrder) {
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'The assignment transaction did not return an order.',
+        );
       }
-    });
-    Audit.updateContext(context.email, order);
+
+      return Result.ok(OrderParser.createOrderResponse(updatedOrder));
+    } finally {
+      await session.endSession();
+    }
   }
 
   private async transitionOrderStatus(
@@ -509,17 +569,6 @@ export class OrderService implements IOrderService {
     }
 
     return result.getValue();
-  }
-
-  private async updateOrderById(id: Types.ObjectId, data: any) {
-    const updatedOrderResult = await this.orderRepository.updateOrder(id, data);
-    if (!updatedOrderResult.isSuccess) {
-      throwApplicationError(
-        HttpStatus.NOT_MODIFIED,
-        'Order could not be updated',
-      );
-    }
-    return updatedOrderResult.getValue();
   }
 
   async getOrdersByUser(): Promise<Result<IOrderResponseDTO[]>> {

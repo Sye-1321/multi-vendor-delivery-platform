@@ -13,15 +13,20 @@ export class OrderRepository
   extends GenericDocumentRepository<Order, OrderDocument>
   implements IOrderRepository
 {
-  private readonly orderPopulation = {
-    path: 'cart',
-    populate: {
-      path: 'cartItems',
+  private readonly orderPopulation = [
+    {
+      path: 'cart',
       populate: {
-        path: 'menuItemId',
+        path: 'cartItems',
+        populate: {
+          path: 'menuItemId',
+        },
       },
     },
-  };
+    {
+      path: 'deliveryPersonId',
+    },
+  ];
 
   constructor(
     @InjectModel(OrderDataModel.name) orderDataModel: Model<OrderDocument>,
@@ -91,27 +96,6 @@ export class OrderRepository
     }
     const order = this.orderMapper.toDomain(orderDocument);
     return Result.ok(order);
-  }
-
-  async updateOrder(
-    orderId: Types.ObjectId,
-    updateData: any,
-  ): Promise<Result<Order>> {
-    const updatedDocument = await this.DocumentModel.findByIdAndUpdate(
-      orderId,
-      { $set: updateData },
-      { new: true },
-    )
-      .populate(this.orderPopulation)
-      .exec();
-    if (!updatedDocument) {
-      return Result.fail(
-        'Error while updating order',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-    const updatedOrder = this.orderMapper.toDomain(updatedDocument);
-    return Result.ok(updatedOrder);
   }
 
   async transitionOrder(
