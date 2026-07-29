@@ -120,11 +120,10 @@ export class MenuService implements IMenuService {
       );
       const response = MenuParser.createMenuResponse(saved.getValue());
       return Result.ok(response, 'Menu created successfully');
-    } catch (err) {
+    } catch {
       if (!committed) {
         await session.abortTransaction();
       }
-      console.error(err);
       return Result.fail('Menu creation failed', HttpStatus.EXPECTATION_FAILED);
     } finally {
       await session.endSession();
@@ -207,8 +206,7 @@ export class MenuService implements IMenuService {
       const saved = await this.menuRepository.getMenuById(restaurantId, id);
       const response = MenuParser.createMenuResponse(saved.getValue());
       return Result.ok(response, 'Menu updated successfully');
-    } catch (err) {
-      console.error(err);
+    } catch {
       return Result.fail('Menu update failed', HttpStatus.EXPECTATION_FAILED);
     }
   }

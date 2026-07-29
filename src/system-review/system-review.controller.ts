@@ -41,7 +41,6 @@ export class SystemReviewController {
     @Param('id') id: Types.ObjectId,
     @Body() body: UpdateReviewDTO,
   ): Promise<Result<ISystemReviewResponse>> {
-    console.log(body, 'body');
     return this.systemReviewService.updateSystemReview(id, body);
   }
 

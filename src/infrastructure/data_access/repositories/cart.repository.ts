@@ -26,29 +26,22 @@ export class CartRepository
   async updateCartItemSelectedItems(
     cartItems: Cart[],
   ): Promise<Result<Cart[]>> {
-    try {
-      const document = cartItems.map((doc) =>
-        this.cartMapper.toPersistence(doc),
-      );
-      const selectedItemsToUpdate = document.map((doc) => ({
-        _id: doc._id,
-        cartItems: doc.cartItems,
-      }));
-      const result = await this.updateMany(
-        { _id: { $in: document.map((doc) => doc._id) } },
-        {
-          $set: {
-            cartItems: selectedItemsToUpdate.map((item) => item.cartItems),
-          },
+    const document = cartItems.map((doc) => this.cartMapper.toPersistence(doc));
+    const selectedItemsToUpdate = document.map((doc) => ({
+      _id: doc._id,
+      cartItems: doc.cartItems,
+    }));
+    const result = await this.updateMany(
+      { _id: { $in: document.map((doc) => doc._id) } },
+      {
+        $set: {
+          cartItems: selectedItemsToUpdate.map((item) => item.cartItems),
         },
-      );
-      if (!result.isSuccess) {
-        throwApplicationError(HttpStatus.BAD_REQUEST, '');
-      }
-      return result;
-    } catch (error) {
-      console.error('an error occurred', error);
-      throw error;
+      },
+    );
+    if (!result.isSuccess) {
+      throwApplicationError(HttpStatus.BAD_REQUEST, '');
     }
+    return result;
   }
 }

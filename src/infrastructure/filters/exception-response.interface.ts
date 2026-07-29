@@ -5,7 +5,6 @@ export interface IExceptionResponse {
   path: string;
   message: string;
   method: string;
-  body?: any;
 }
 
 export interface IRequestException {
