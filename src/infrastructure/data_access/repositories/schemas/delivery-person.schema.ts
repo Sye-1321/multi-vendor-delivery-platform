@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document, Types } from 'mongoose';
 import { IDeliveryPersonModel, ISavedAddress } from '../models/deliveryperson-model.interface';
 import { Type } from 'class-transformer';
-import { RestaurantDataModel } from './restuarant.schema';
+import { RestaurantDataModel } from './restaurant.schema';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
 import { AvailabilityStatus, DeliveryPersonOwnership, DeliveryPersonStatus } from 'src/delivery-person/constants/constants';
 

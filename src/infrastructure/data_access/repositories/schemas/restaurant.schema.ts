@@ -1,12 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document, Types } from 'mongoose';
-import { IRestaurantDataModel } from '../models/restuarant-model.interface';
+import { IRestaurantDataModel } from '../models/restaurant-model.interface';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
-import { RestaurantStatus } from 'src/restuarant/constants/constants';
+import { RestaurantStatus } from 'src/restaurant/constants/constants';
 import { CompanyDataModel } from './company.schema';
 import { UserDataModel } from './user.schema';
 import { Type } from 'class-transformer';
-import { RestaurantReviewDataModel } from './restuarant-review.schema';
+import { RestaurantReviewDataModel } from './restaurant-review.schema';
 import { MenuDataModel } from './menu.schema';
 import { Company } from 'src/company/company';
 

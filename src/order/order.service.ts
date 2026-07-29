@@ -14,7 +14,7 @@ import { OrderParser } from './order.parser';
 import { IOrderResponseDTO } from './dtos/order-response.dto';
 import { IUserService } from 'src/user/interfaces/user-service.interface';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
-import { RestaurantService } from 'src/restuarant/restaurant.service';
+import { RestaurantService } from 'src/restaurant/restaurant.service';
 import { DeliveryPersonService } from 'src/delivery-person/delivery-person.service';
 import { CartItemMapper } from 'src/cart-item/cartItem.mapper';
 import { CartItem } from 'src/cart-item/cartItem';

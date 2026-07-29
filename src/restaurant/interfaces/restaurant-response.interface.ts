@@ -3,7 +3,7 @@ import { IAudit } from 'src/infrastructure/database/mongoDB/base-document.interf
 import { IUserResponse } from 'src/user/interfaces/user-response.interface';
 import { RestaurantStatus } from '../constants/constants';
 import { IMenuResponse } from 'src/menu/interfaces/menu-reponse.interface';
-import { IRestaurantReviewResponse } from 'src/restuarant-review/interfaces/restaurant-review-response.interface';
+import { IRestaurantReviewResponse } from 'src/restaurant-review/interfaces/restaurant-review-response.interface';
 
 export interface ISavedAddress{
   city: string,

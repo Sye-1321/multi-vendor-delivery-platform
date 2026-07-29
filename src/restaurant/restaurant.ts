@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { IRestaurant } from './interfaces/restuarant.interface';
+import { IRestaurant } from './interfaces/restaurant.interface';
 import { Entity } from 'src/domain/entity/entity';
 import { Company } from 'src/company/company';
 import { User } from 'src/user/user';
@@ -7,7 +7,7 @@ import { RestaurantStatus } from './constants/constants';
 import { Audit } from 'src/domain/audit/audit';
 import { Result } from 'src/domain/result/result';
 import { Menu } from 'src/menu/menu';
-import { RestaurantReview } from 'src/restuarant-review/restaurant-review';
+import { RestaurantReview } from 'src/restaurant-review/restaurant-review';
 
 export class Restaurant extends Entity<IRestaurant> {
   private _name: string;

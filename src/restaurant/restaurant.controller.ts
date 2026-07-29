@@ -24,7 +24,7 @@ import {
   RestaurantAdminDTO,
   UpdateRestaurantDTO,
 } from './dtos/create-restaurant.dto';
-import { IRestaurantResponse } from './interfaces/restuarant-response.interface';
+import { IRestaurantResponse } from './interfaces/restaurant-response.interface';
 import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 

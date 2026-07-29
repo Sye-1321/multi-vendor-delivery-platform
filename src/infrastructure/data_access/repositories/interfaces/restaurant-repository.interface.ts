@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
-import { Restaurant } from 'src/restuarant/restuarant';
-import { RestaurantDataModel, RestaurantDocument } from '../schemas/restuarant.schema';
+import { Restaurant } from 'src/restaurant/restaurant';
+import { RestaurantDataModel, RestaurantDocument } from '../schemas/restaurant.schema';
 import { Result } from 'src/domain/result/result';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 

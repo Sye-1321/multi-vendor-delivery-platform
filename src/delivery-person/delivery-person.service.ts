@@ -6,7 +6,7 @@ import { Result } from '../domain/result/result';
 import { throwApplicationError } from '../infrastructure/utilities/exception-instance';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { IDeliveryPersonRepository } from 'src/infrastructure/data_access/repositories/interfaces/deliveryperson-repository.interface';
-import { IRestaurantService } from 'src/restuarant/interfaces/restaurant-service.interface';
+import { IRestaurantService } from 'src/restaurant/interfaces/restaurant-service.interface';
 import { DeliveryPersonMapper } from './delivery-person.mapper';
 import { DeliveryPersonParser } from './delivery-person.parser';
 import { DeliveryPerson } from './delivery-person';

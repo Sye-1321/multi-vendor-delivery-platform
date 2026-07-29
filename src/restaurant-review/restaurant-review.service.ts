@@ -10,7 +10,7 @@ import { IUserService } from 'src/user/interfaces/user-service.interface';
 import { RestaurantReviewMapper } from './restaurant-review.mapper';
 import { IRestaurantReviewService } from './interfaces/restaurant-review-service.interface';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
-import { IRestaurantReviewRepository } from 'src/infrastructure/data_access/repositories/interfaces/restuarant-review-repository.interface';
+import { IRestaurantReviewRepository } from 'src/infrastructure/data_access/repositories/interfaces/restaurant-review-repository.interface';
 import { CreateReviewDTO, UpdateReviewDTO } from 'src/system-review/dtos/system-review.dto';
 import { IRestaurantReviewResponse } from './interfaces/restaurant-review-response.interface';
 import { IUserUpdateReview } from 'src/system-review/interfaces/system-review.interface';

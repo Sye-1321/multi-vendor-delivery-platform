@@ -1,10 +1,10 @@
 import { CompanyParser } from 'src/company/company.parser';
-import { IRestaurantResponse } from './interfaces/restuarant-response.interface';
-import { Restaurant } from './restuarant';
+import { IRestaurantResponse } from './interfaces/restaurant-response.interface';
+import { Restaurant } from './restaurant';
 import { UserParser } from 'src/user/user.parser';
 import { AuditParser } from 'src/audit/audit.parser';
 import { MenuParser } from 'src/menu/menu.parser';
-import { RestaurantReviewParser } from 'src/restuarant-review/restaurant-review.parser';
+import { RestaurantReviewParser } from 'src/restaurant-review/restaurant-review.parser';
 
 export class RestaurantParser {
   static createRestaurantResponse(restaurant: Restaurant): IRestaurantResponse {

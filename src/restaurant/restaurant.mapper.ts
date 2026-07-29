@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { RestaurantDataModel } from 'src/infrastructure/data_access/repositories/schemas/restuarant.schema';
+import { RestaurantDataModel } from 'src/infrastructure/data_access/repositories/schemas/restaurant.schema';
 import { AuditMapper } from '../audit/audit.mapper';
 import { IMapper } from '../domain/mapper/mapper';
-import { Restaurant } from './restuarant';
+import { Restaurant } from './restaurant';
 import { MenuMapper } from 'src/menu/menu.mapper';
-import { RestaurantReviewMapper } from 'src/restuarant-review/restaurant-review.mapper';
+import { RestaurantReviewMapper } from 'src/restaurant-review/restaurant-review.mapper';
 import { UserMapper } from 'src/user/user.mapper';
 import { CompanyMapper } from 'src/company/company.mapper';
 

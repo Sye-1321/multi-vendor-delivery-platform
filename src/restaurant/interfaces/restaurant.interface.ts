@@ -4,7 +4,7 @@ import { User } from 'src/user/user';
 import { RestaurantStatus } from '../constants/constants';
 import { Audit } from 'src/domain/audit/audit';
 import { Menu } from 'src/menu/menu';
-import { RestaurantReview } from 'src/restuarant-review/restaurant-review';
+import { RestaurantReview } from 'src/restaurant-review/restaurant-review';
 
 export interface ISavedAddress{
   city: string,

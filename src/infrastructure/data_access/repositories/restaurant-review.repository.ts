@@ -1,12 +1,12 @@
 import { HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { Connection, Model, Types } from 'mongoose';
-import { RestaurantReviewDataModel, RestaurantReviewDocument } from './schemas/restuarant-review.schema';
+import { RestaurantReviewDataModel, RestaurantReviewDocument } from './schemas/restaurant-review.schema';
 import { Result } from 'src/domain/result/result'; 
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
-import { RestaurantReview } from 'src/restuarant-review/restaurant-review';
-import { RestaurantReviewMapper } from 'src/restuarant-review/restaurant-review.mapper';
-import { IRestaurantReviewRepository } from './interfaces/restuarant-review-repository.interface';
+import { RestaurantReview } from 'src/restaurant-review/restaurant-review';
+import { RestaurantReviewMapper } from 'src/restaurant-review/restaurant-review.mapper';
+import { IRestaurantReviewRepository } from './interfaces/restaurant-review-repository.interface';
 
 @Injectable()
 export class RestaurantReviewRepository extends GenericDocumentRepository<RestaurantReview, RestaurantReviewDocument> implements IRestaurantReviewRepository {

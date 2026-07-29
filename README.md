@@ -275,8 +275,8 @@ src/
 ├── menu/                 # Restaurant menu management
 ├── menu-item/            # Menu-item management
 ├── order/                # Order processing and lifecycle management
-├── restuarant/           # Restaurant management
-├── restuarant-review/    # Restaurant ratings and reviews
+├── restaurant/           # Restaurant management
+├── restaurant-review/    # Restaurant ratings and reviews
 ├── shared/               # Shared application components
 ├── system-review/        # Platform-level feedback
 ├── user/                 # Accounts, authentication and profiles

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { IMapper } from '../domain/mapper/mapper';
 import { AuditMapper } from '../audit/audit.mapper';
-import { RestaurantReviewDataModel } from 'src/infrastructure/data_access/repositories/schemas/restuarant-review.schema';
+import { RestaurantReviewDataModel } from 'src/infrastructure/data_access/repositories/schemas/restaurant-review.schema';
 import { RestaurantReview } from './restaurant-review';
 import { UserMapper } from 'src/user/user.mapper';
 

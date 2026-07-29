@@ -10,7 +10,7 @@ import { throwApplicationError } from './../infrastructure/utilities/exception-i
 import { IMenuItemService } from './interfaces/menu-item-service.interface';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { IMenuItemRepository } from 'src/infrastructure/data_access/repositories/interfaces/menu-item-repository';
-import { IRestaurantService } from 'src/restuarant/interfaces/restaurant-service.interface';
+import { IRestaurantService } from 'src/restaurant/interfaces/restaurant-service.interface';
 import { CreateMenuItemDTO, UpdateMenuItemDTO } from './dtos/create-menu-item.dto';
 import { IMenuItemResponse } from './interfaces/menu-item-response.interface';
 import { MenuItemMapper } from './menu-item.mapper';

@@ -1,12 +1,12 @@
 import { Types } from 'mongoose';
 import { Entity } from 'src/domain/entity/entity';
-import { IRestuarantReview } from './interfaces/restuarant-review.interface';
+import { IRestaurantReview } from './interfaces/restaurant-review.interface';
 import { User } from 'src/user/user';
 import { Audit } from 'src/domain/audit/audit';
 import { Result } from 'src/domain/result/result';
 import { HttpStatus } from '@nestjs/common';
 
-export class RestaurantReview extends Entity<IRestuarantReview> {
+export class RestaurantReview extends Entity<IRestaurantReview> {
   private _userId: Types.ObjectId;
   private _user: User;
   private _restaurantId: Types.ObjectId;
@@ -14,7 +14,7 @@ export class RestaurantReview extends Entity<IRestuarantReview> {
   private _reviewText: string;
   private _audit: Audit;
 
-  constructor(id: Types.ObjectId, props: IRestuarantReview) {
+  constructor(id: Types.ObjectId, props: IRestaurantReview) {
     super(id);
     this._userId = props.userId;
     this._user = props.user;
@@ -72,7 +72,7 @@ export class RestaurantReview extends Entity<IRestuarantReview> {
     this._audit = audit;
   }
 
-  static create(props: IRestuarantReview, id?: Types.ObjectId): Result<RestaurantReview> {
+  static create(props: IRestaurantReview, id?: Types.ObjectId): Result<RestaurantReview> {
     if (!props.user || !props.user.id) {
       return Result.fail<RestaurantReview>('User or User ID is missing', HttpStatus.EXPECTATION_FAILED,);
     }

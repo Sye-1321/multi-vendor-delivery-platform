@@ -8,7 +8,7 @@ import { throwApplicationError } from '../infrastructure/utilities/exception-ins
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { IMenuRepository } from 'src/infrastructure/data_access/repositories/interfaces/menu-repository.interface';
 import { IMenuItemService } from 'src/menu-item/interfaces/menu-item-service.interface';
-import { IRestaurantService } from 'src/restuarant/interfaces/restaurant-service.interface';
+import { IRestaurantService } from 'src/restaurant/interfaces/restaurant-service.interface';
 import { MenuMapper } from './menu.mapper';
 import { MenuParser } from './menu.parser';
 import { Menu } from './menu';

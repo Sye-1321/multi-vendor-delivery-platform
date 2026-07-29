@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
-import { IRestaurantResponse } from './restuarant-response.interface';
-import { Restaurant } from '../restuarant';
+import { IRestaurantResponse } from './restaurant-response.interface';
+import { Restaurant } from '../restaurant';
 import {
   CreateRestaurantDTO,
   RestaurantAdminDTO,

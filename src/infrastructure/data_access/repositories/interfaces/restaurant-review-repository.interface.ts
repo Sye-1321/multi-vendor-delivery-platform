@@ -1,7 +1,7 @@
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
-import { RestaurantReviewDataModel } from '../schemas/restuarant-review.schema';
+import { RestaurantReviewDataModel } from '../schemas/restaurant-review.schema';
 import { Types } from 'mongoose';
-import { RestaurantReview } from 'src/restuarant-review/restaurant-review';
+import { RestaurantReview } from 'src/restaurant-review/restaurant-review';
 import { Result } from 'src/domain/result/result';
 
 export interface IRestaurantReviewRepository extends IGenericDocument<RestaurantReview, RestaurantReviewDataModel> {
