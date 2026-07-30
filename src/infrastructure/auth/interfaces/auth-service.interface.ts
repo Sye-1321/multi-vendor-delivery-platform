@@ -10,7 +10,7 @@ export interface IAuthService {
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,
     refreshToken: string,
-  ): Promise<{ accessToken: string }>;
+  ): Promise<ISignUpTokens>;
   nullifyRefreshToken(
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,

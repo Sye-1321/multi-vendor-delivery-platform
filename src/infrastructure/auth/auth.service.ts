@@ -14,6 +14,8 @@ import {
 import { IAuthService } from './interfaces/auth-service.interface';
 import { GenericDocumentRepository } from '../database/mongoDB/generic-document.repository';
 import { User } from 'src/user/user';
+import { randomUUID } from 'node:crypto';
+import { UserStatus } from 'src/user/constants/constants';
 
 @Injectable()
 export class AuthService implements IAuthService {
@@ -28,6 +30,7 @@ export class AuthService implements IAuthService {
       sub: userId,
       email,
       role,
+      sid: randomUUID(),
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -67,7 +70,7 @@ export class AuthService implements IAuthService {
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,
     refreshToken: string,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<ISignUpTokens> {
     const result: Result<any> = await model.findById(userId);
 
     if (result.isSuccess === false) {
@@ -75,11 +78,18 @@ export class AuthService implements IAuthService {
     }
     const userEntity = await result.getValue();
     const { refreshTokenHash, role, email } = userEntity;
+    if (
+      userEntity.status !== UserStatus.ACTIVE ||
+      typeof refreshTokenHash !== 'string'
+    ) {
+      throwApplicationError(HttpStatus.FORBIDDEN, 'Access denied');
+    }
+
     const verifyToken = await bcrypt.compare(refreshToken, refreshTokenHash);
 
     if (!verifyToken) {
+      await this.nullifyRefreshToken(model, userId);
       throwApplicationError(HttpStatus.FORBIDDEN, 'Access denied');
-      this.nullifyRefreshToken(model, userId);
     }
     const payload = { userId, email, role };
     const newTokens = await this.generateAuthTokens(payload);
@@ -89,9 +99,7 @@ export class AuthService implements IAuthService {
       { refreshTokenHash: tokenHash },
     );
 
-    return {
-      accessToken: newTokens.accessToken,
-    };
+    return newTokens;
   }
 
   async nullifyRefreshToken(
@@ -146,6 +154,9 @@ export class AuthService implements IAuthService {
 
     return this.jwtService.signAsync(jwtPayload, {
       secret: this.configService.get<string>('JWT_VERIFICATION_TOKEN_SECRET'),
+      expiresIn: this.configService.get<string>(
+        'JWT_VERIFICATION_TOKEN_EXPIRATION_TIME',
+      ),
     });
   }
 

@@ -36,6 +36,7 @@ import { EmailDTO } from './dtos/shared/email.dto';
 import { ResetPasswordDTO } from './dtos/auth/reset-password.dto';
 import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
+import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
 
 @Controller()
 export class UserController {
@@ -78,7 +79,7 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async refreshToken(
     @GetCurrentUser() user: any,
-  ): Promise<Result<{ accessToken: string }>> {
+  ): Promise<Result<ISignUpTokens>> {
     return this.userService.getAccessTokenAndUpdateRefreshToken(
       user.sub,
       user.token,

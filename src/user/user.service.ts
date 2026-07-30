@@ -134,7 +134,7 @@ export class UserService extends AuthService implements IUserService {
     const { id, email, role } = user;
     const userProps: IUserPayload = { userId: id, email, role };
     const tokens = await this.generateAuthTokens(userProps);
-    this.updateUserRefreshToken(user, tokens);
+    await this.updateUserRefreshToken(user, tokens);
     return Result.ok(
       UserParser.createUserResponse(user, tokens, true),
       'Login successful.',
@@ -149,19 +149,16 @@ export class UserService extends AuthService implements IUserService {
   async getAccessTokenAndUpdateRefreshToken(
     userId: Types.ObjectId,
     refreshToken: string,
-  ): Promise<Result<{ accessToken: string }>> {
+  ): Promise<Result<ISignUpTokens>> {
     const tokens = await this.refreshUserToken(
       this.userRepository,
       userId,
       refreshToken,
     );
-    if (!tokens || !tokens.accessToken) {
+    if (!tokens?.accessToken || !tokens.refreshToken) {
       throwApplicationError(HttpStatus.UNAUTHORIZED, 'Invalid refresh token.');
     }
-    return Result.ok(
-      { accessToken: tokens.accessToken },
-      'Access token refreshed successfully.',
-    );
+    return Result.ok(tokens, 'Access token refreshed successfully.');
   }
 
   async getUserById(userId: Types.ObjectId): Promise<Result<IUserResponse>> {
@@ -207,6 +204,7 @@ export class UserService extends AuthService implements IUserService {
       user,
       context,
     );
+    await this.logOutUser(this.userRepository, userId);
     return Result.ok(UserParser.createUserResponse(updatedUser));
   }
 
@@ -254,6 +252,7 @@ export class UserService extends AuthService implements IUserService {
       user,
       context,
     );
+    await this.logOutUser(this.userRepository, userId);
     return Result.ok<void>(
       undefined,
       'Your account has been successfully deactivated.',
@@ -271,9 +270,9 @@ export class UserService extends AuthService implements IUserService {
   async requestToResetPassword(props: EmailDTO): Promise<Result<void>> {
     const user = await this.userRepository.findByEmail(props.email);
     if (!user.isSuccess) {
-      throwApplicationError(
-        HttpStatus.NOT_FOUND,
-        'No active account found for the provided email.',
+      return Result.ok<void>(
+        undefined,
+        'If the account exists, password reset instructions have been sent.',
       );
     }
     const emailResult =
@@ -306,6 +305,7 @@ export class UserService extends AuthService implements IUserService {
       user,
       context,
     );
+    await this.logOutUser(this.userRepository, userId);
     return Result.ok<void>(
       undefined,
       'Your password has been successfully updated.',
@@ -467,7 +467,7 @@ export class UserService extends AuthService implements IUserService {
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,
     refreshToken: string,
-  ): Promise<{ accessToken: string }> {
+  ): Promise<ISignUpTokens> {
     return await this.updateRefreshToken(model, userId, refreshToken);
   }
 

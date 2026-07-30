@@ -15,6 +15,7 @@ import { EmailDTO } from '../dtos/shared/email.dto';
 import { ResetPasswordDTO } from '../dtos/auth/reset-password.dto';
 import { AdminUpdateUserDTO } from '../dtos/user/admin-update-user.dto';
 import { Role } from 'src/application/constants/constants';
+import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
 
 export interface IUserService {
   createEndUser(props: CreateUserDTO): Promise<Result<IUserResponse>>;
@@ -26,7 +27,7 @@ export interface IUserService {
   getAccessTokenAndUpdateRefreshToken(
     userId: Types.ObjectId,
     refreshToken: string,
-  ): Promise<Result<{ accessToken: string }>>;
+  ): Promise<Result<ISignUpTokens>>;
   getUserById(userId: Types.ObjectId): Promise<Result<IUserResponse>>;
   updateProfile(
     userId: Types.ObjectId,
