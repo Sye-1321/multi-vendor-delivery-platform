@@ -30,6 +30,9 @@ export class OrderTransitionDataModel implements IOrderTransition {
 
   @Prop({ type: String })
   correlationId?: string;
+
+  @Prop({ type: String, maxlength: 250 })
+  reason?: string;
 }
 
 const OrderTransitionSchema = SchemaFactory.createForClass(

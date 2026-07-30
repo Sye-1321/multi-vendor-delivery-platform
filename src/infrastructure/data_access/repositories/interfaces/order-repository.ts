@@ -13,7 +13,10 @@ export interface IOrderRepository
   ): Promise<Result<Order>>;
   getOrders(filter?: Partial<OrderDataModel>): Promise<Result<Order[]>>;
   getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>>;
-  getOrderById(id: Types.ObjectId): Promise<Result<Order>>;
+  getOrderById(
+    id: Types.ObjectId,
+    scope?: Partial<OrderDataModel>,
+  ): Promise<Result<Order>>;
   transitionOrder(
     orderId: Types.ObjectId,
     expectedStatus: OrderDataModel['status'],

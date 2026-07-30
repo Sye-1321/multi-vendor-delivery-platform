@@ -17,6 +17,7 @@ export interface IOrderTransition {
   actorRole: Role;
   occurredAt: string;
   correlationId?: string;
+  reason?: string;
 }
 
 export interface IOrder {

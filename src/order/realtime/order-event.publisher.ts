@@ -37,6 +37,7 @@ export class OrderEventPublisher {
         to: transition.to,
         actorRole: transition.actorRole,
         occurredAt: transition.occurredAt,
+        reason: transition.reason,
       },
       correlationId,
     });

@@ -10,6 +10,7 @@ export interface IOrderTimelineEntryDTO {
   to: OrderStatus;
   actorRole: Role;
   occurredAt: string;
+  reason?: string;
 }
 
 export interface IOrderResponseDTO extends IAudit {
