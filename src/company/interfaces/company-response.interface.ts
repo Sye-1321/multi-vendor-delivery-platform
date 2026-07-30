@@ -9,6 +9,6 @@ export interface ICompanyResponse extends IAudit {
   name: string;
   phoneNumber: string;
   ownerId: Types.ObjectId;
-  savedAddress:ISavedAddress;
+  savedAddress: ISavedAddress;
   owner: IUserResponseDTO;
 }

@@ -1,4 +1,4 @@
-import { IsOptional} from 'class-validator';
+import { IsOptional } from 'class-validator';
 import { Role } from 'src/application/constants/constants';
 import { UserStatus } from 'src/user/constants/constants';
 

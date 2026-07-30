@@ -27,12 +27,12 @@ export class Cart extends Entity<ICart> implements ICart {
     this._totalPrice = totalPrice;
   }
 
-  get userId(): Types.ObjectId{
+  get userId(): Types.ObjectId {
     return this._userId;
   }
 
   set userId(userId: Types.ObjectId) {
-    this._userId = userId ;
+    this._userId = userId;
   }
 
   get cartItems(): CartItem[] | undefined {
@@ -51,8 +51,7 @@ export class Cart extends Entity<ICart> implements ICart {
     this._audit = audit;
   }
 
-
   static create(props: ICart, id?: Types.ObjectId): Result<Cart> {
-      return Result.ok(new Cart(id ?? new Types.ObjectId(), props));
-    }
+    return Result.ok(new Cart(id ?? new Types.ObjectId(), props));
+  }
 }

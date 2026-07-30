@@ -10,8 +10,11 @@ export interface IAuthService {
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,
     refreshToken: string,
-  ): Promise<{ accessToken: string }>;
-  nullifyRefreshToken(model: GenericDocumentRepository<any, any>, userId: Types.ObjectId);
+  ): Promise<ISignUpTokens>;
+  nullifyRefreshToken(
+    model: GenericDocumentRepository<any, any>,
+    userId: Types.ObjectId,
+  );
   logOut(model: GenericDocumentRepository<any, any>, userId: Types.ObjectId);
   generateVerificationToken(user: User): Promise<string>;
 }

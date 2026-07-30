@@ -17,7 +17,10 @@ import { TYPES } from '../application/constants/types';
 import { Result } from '../domain/result/result';
 import { Types } from 'mongoose';
 import { IMenuItemService } from './interfaces/menu-item-service.interface';
-import { CreateMenuItemDTO, UpdateMenuItemDTO } from './dtos/create-menu-item.dto';
+import {
+  CreateMenuItemDTO,
+  UpdateMenuItemDTO,
+} from './dtos/create-menu-item.dto';
 import { IMenuItemResponse } from './interfaces/menu-item-response.interface';
 import { AccessAuthGuard } from 'src/infrastructure/guards/access-auth.guard';
 import { RoleGuard } from 'src/infrastructure/guards/role-guard';
@@ -57,7 +60,9 @@ export class MenuItemController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('me/menu-items/:id')
   @HttpCode(HttpStatus.OK)
-  async getItemById(@Param('id') itemId: Types.ObjectId): Promise<Result<IMenuItemResponse>> {
+  async getItemById(
+    @Param('id') itemId: Types.ObjectId,
+  ): Promise<Result<IMenuItemResponse>> {
     return await this.itemService.getMenuItemById(itemId);
   }
 
@@ -96,6 +101,9 @@ export class MenuItemController {
     @Param('restaurantId') restaurantId: Types.ObjectId,
     @Param('id') itemId: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse>> {
-    return await this.itemService.getRestaurantMenuItemById(restaurantId, itemId);
+    return await this.itemService.getRestaurantMenuItemById(
+      restaurantId,
+      itemId,
+    );
   }
 }

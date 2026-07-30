@@ -1,5 +1,4 @@
 export const TYPES = {
-  IApplicationLogger: Symbol('IApplicationLogger'),
   ILocationService: Symbol('ILocationService'),
   IRestaurantService: Symbol('IRestaurantService'),
   IUserService: Symbol('IUserService'),
@@ -34,16 +33,16 @@ export const TYPES = {
   IAccessControlService: Symbol('IAccessControlService'),
   ISystemReviewService: Symbol('ISystemReviewService'),
   ISystemReviewRepository: Symbol('ISystemReviewRepository:'),
-  IUserRepository: Symbol('IUserRepository'), 
+  IUserRepository: Symbol('IUserRepository'),
   IRestaurantReviewRepository: Symbol('IRestaurantReviewRepository'),
   IRestaurantReviewService: Symbol('IRestaurantReviewService'),
   ICompanyRepository: Symbol('ICompanyRepository'),
-  IMenuItemService:Symbol('IMenuItemService'),
+  IMenuItemService: Symbol('IMenuItemService'),
   IDeliveryPersonRepository: Symbol('IDeliveryPersonRepository'),
   IDeliveryPersonService: Symbol('IDeliveryPersonService'),
   ICategoryRepository: Symbol('ICategoryRepository'),
   ICompanyService: Symbol('ICompanyService'),
   IJwtService: Symbol('IJwtService'),
-  IMenuItemMapper:Symbol('IMenuItemMapper'),
-  IRestaurantReviewS:Symbol('IRestaurantReviewS')
+  IMenuItemMapper: Symbol('IMenuItemMapper'),
+  IRestaurantReviewS: Symbol('IRestaurantReviewS'),
 };

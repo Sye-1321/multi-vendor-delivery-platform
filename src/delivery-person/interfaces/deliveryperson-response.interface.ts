@@ -1,6 +1,10 @@
 import { Types } from 'mongoose';
 import { IAudit } from 'src/infrastructure/database/mongoDB/base-document.interface';
-import { AvailabilityStatus, DeliveryPersonOwnership, DeliveryPersonStatus } from '../constants/constants';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+  DeliveryPersonStatus,
+} from '../constants/constants';
 
 export interface ISavedAddress {
   city: string;

@@ -16,9 +16,12 @@ export class UserMapper implements IMapper<User, UserDataModel> {
       passwordHash: entity.passwordHash,
       role: entity.role,
       status: entity.status,
-      savedAddress: entity.savedAddress ? {
-        city: entity.savedAddress.city, 
-        subCity: entity.savedAddress.subCity} : {city: '', subCity: ''},
+      savedAddress: entity.savedAddress
+        ? {
+            city: entity.savedAddress.city,
+            subCity: entity.savedAddress.subCity,
+          }
+        : { city: '', subCity: '' },
       refreshTokenHash: entity.refreshTokenHash as string,
       auditCreatedBy: entity.audit.auditCreatedBy,
       auditCreatedDateTime: entity.audit.auditCreatedDateTime,
@@ -40,7 +43,7 @@ export class UserMapper implements IMapper<User, UserDataModel> {
       refreshTokenHash,
       role,
       status,
-      savedAddress
+      savedAddress,
     } = doc;
     const entity: User = User.create(
       {
@@ -58,4 +61,4 @@ export class UserMapper implements IMapper<User, UserDataModel> {
     ).getValue();
     return entity;
   }
-}  
+}

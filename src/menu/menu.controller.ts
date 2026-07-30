@@ -48,9 +48,7 @@ export class MenuController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Delete('me/menus/:id')
-  async deleteMenu(
-    @Param('id') id: Types.ObjectId,
-  ): Promise<Result<void>> {
+  async deleteMenu(@Param('id') id: Types.ObjectId): Promise<Result<void>> {
     return this.menuService.deleteMenu(id);
   }
 
@@ -75,7 +73,7 @@ export class MenuController {
     return this.menuService.updateMenu(props, id, image);
   }
 
-  // public 
+  // public
   @Get(':restaurantId/menus')
   async getRestaurantMenus(
     @Param('restaurantId') restaurantId: Types.ObjectId,
@@ -90,5 +88,4 @@ export class MenuController {
   ): Promise<Result<IMenuResponse>> {
     return this.menuService.getRestaurantMenuById(restaurantId, id);
   }
-
 }

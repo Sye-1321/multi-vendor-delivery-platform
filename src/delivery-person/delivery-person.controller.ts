@@ -47,7 +47,10 @@ export class DeliveryPersonController {
     @Body() body: CreateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
-    return this.deliveryPersonService.createSystemWideDeliveryPerson(body, profileImage);
+    return this.deliveryPersonService.createSystemWideDeliveryPerson(
+      body,
+      profileImage,
+    );
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
@@ -62,15 +65,19 @@ export class DeliveryPersonController {
     @Body() body: CreateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
-    console.log("hello");
-    return this.deliveryPersonService.createRestaurantDeliveryPerson(body, profileImage);
+    return this.deliveryPersonService.createRestaurantDeliveryPerson(
+      body,
+      profileImage,
+    );
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get('system/delivery-persons')
   @HttpCode(HttpStatus.OK)
-  async getSystemWideDeliveryPersons(): Promise<Result<IDeliveryPersonResponse[]>> {
+  async getSystemWideDeliveryPersons(): Promise<
+    Result<IDeliveryPersonResponse[]>
+  > {
     return this.deliveryPersonService.getSystemWideDeliveryPersons();
   }
 
@@ -78,7 +85,9 @@ export class DeliveryPersonController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('restaurant/delivery-persons')
   @HttpCode(HttpStatus.OK)
-  async getDeliveryPersonsByRestaurantId(): Promise<Result<IDeliveryPersonResponse[]>> {
+  async getDeliveryPersonsByRestaurantId(): Promise<
+    Result<IDeliveryPersonResponse[]>
+  > {
     return this.deliveryPersonService.getRestaurantDeliveryPersons();
   }
 
@@ -115,7 +124,11 @@ export class DeliveryPersonController {
     @Body() body: UpdateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
-    return this.deliveryPersonService.updateSystemWideDeliveryPerson(id, body, profileImage);
+    return this.deliveryPersonService.updateSystemWideDeliveryPerson(
+      id,
+      body,
+      profileImage,
+    );
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
@@ -124,7 +137,6 @@ export class DeliveryPersonController {
     FileInterceptor('profileImage'),
     ParseStringifiedJsonInterceptor,
   )
-
   @Patch('restaurant/delivery-persons/:id')
   @HttpCode(HttpStatus.OK)
   async updateRestaurantDeliveryPerson(
@@ -132,6 +144,10 @@ export class DeliveryPersonController {
     @Body() body: UpdateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
-    return this.deliveryPersonService.updateRestaurantDeliveryPerson(id, body, profileImage);
+    return this.deliveryPersonService.updateRestaurantDeliveryPerson(
+      id,
+      body,
+      profileImage,
+    );
   }
 }

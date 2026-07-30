@@ -35,7 +35,8 @@ export class SystemReviewService {
   ): Promise<Result<ISystemReviewResponse>> {
     const context = this.contextService.getContext();
     const user = await this.userService.getContextUser();
-    const existingReviewResult = await this.systemReviewRepository.getSystemReviewByUserId(user.id);
+    const existingReviewResult =
+      await this.systemReviewRepository.getSystemReviewByUserId(user.id);
     if (existingReviewResult.isSuccess && existingReviewResult.getValue()) {
       throwApplicationError(HttpStatus.CONFLICT, 'Review already exists');
     }
@@ -48,9 +49,12 @@ export class SystemReviewService {
       },
       new Types.ObjectId(),
     ).getValue();
-    console.log(systemReview, "System Review")
-    const systemReviewDataModel = this.systemReviewMapper.toPersistence(systemReview);
-    const systemReviewResult = await this.systemReviewRepository.createSystemReview(systemReviewDataModel);
+    const systemReviewDataModel =
+      this.systemReviewMapper.toPersistence(systemReview);
+    const systemReviewResult =
+      await this.systemReviewRepository.createSystemReview(
+        systemReviewDataModel,
+      );
     if (!systemReviewResult.isSuccess) {
       throwApplicationError(
         HttpStatus.BAD_REQUEST,
@@ -71,12 +75,14 @@ export class SystemReviewService {
   ): Promise<Result<ISystemReviewResponse>> {
     const context = this.contextService.getContext();
     const user = await this.userService.getContextUser();
-    const systemReviewResult = await this.systemReviewRepository.getSystemReviewById(reviewId);
+    const systemReviewResult =
+      await this.systemReviewRepository.getSystemReviewById(reviewId);
     if (!systemReviewResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'Review not found');
     }
 
-    if (systemReviewResult.getValue().userId.toString() !== user.id.toString()
+    if (
+      systemReviewResult.getValue().userId.toString() !== user.id.toString()
     ) {
       throwApplicationError(
         HttpStatus.FORBIDDEN,
@@ -90,7 +96,8 @@ export class SystemReviewService {
     };
 
     this.updateSystemReviewData(data, systemReviewResult.getValue(), context);
-    const updateSystemReviewResult = await this.systemReviewRepository.updateSystemReviewById(reviewId, data);
+    const updateSystemReviewResult =
+      await this.systemReviewRepository.updateSystemReviewById(reviewId, data);
 
     if (!updateSystemReviewResult.isSuccess) {
       throwApplicationError(
@@ -161,7 +168,8 @@ export class SystemReviewService {
       );
     }
 
-    const deleted = await this.systemReviewRepository.deleteSystemReview(reviewId);
+    const deleted =
+      await this.systemReviewRepository.deleteSystemReview(reviewId);
 
     if (!deleted.isSuccess) {
       throwApplicationError(

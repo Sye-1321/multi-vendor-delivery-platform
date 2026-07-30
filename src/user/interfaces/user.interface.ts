@@ -1,9 +1,9 @@
 import { Role } from 'src/application/constants/constants';
 import { UserStatus } from '../constants/constants';
 import { Audit } from 'src/domain/audit/audit';
-export interface ISavedAddress{
-  city: string,
-  subCity: string
+export interface ISavedAddress {
+  city: string;
+  subCity: string;
 }
 
 export interface IUser {
@@ -15,7 +15,7 @@ export interface IUser {
   status?: UserStatus;
   refreshTokenHash?: string;
   audit: Audit;
-  savedAddress?:ISavedAddress;
+  savedAddress?: ISavedAddress;
 }
 
 export interface IUpdateProfile {

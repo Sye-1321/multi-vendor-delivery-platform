@@ -61,7 +61,10 @@ export class SystemReview extends Entity<ISystemReview> {
     this._audit = audit;
   }
 
-  static create(props: ISystemReview, id?: Types.ObjectId): Result<SystemReview> {
+  static create(
+    props: ISystemReview,
+    id?: Types.ObjectId,
+  ): Result<SystemReview> {
     return Result.ok(new SystemReview(id ?? new Types.ObjectId(), props));
   }
 }

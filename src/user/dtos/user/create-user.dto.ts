@@ -1,6 +1,13 @@
-import { IsString, IsEmail, MinLength, Matches, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  MinLength,
+  Matches,
+  IsOptional,
+} from 'class-validator';
 
-const passwordStrengthRegEx = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+const passwordStrengthRegEx =
+  /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
 export class CreateUserDTO {
   @IsString()

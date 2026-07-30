@@ -7,13 +7,19 @@ import { saltRounds, Role } from '../application/constants/constants';
 import { TYPES } from '../application/constants/types';
 import { Audit } from '../domain/audit/audit';
 import { Result } from '../domain/result/result';
-import { ISignUpTokens, IUserPayload } from '../infrastructure/auth/interfaces/auth.interface';
+import {
+  ISignUpTokens,
+  IUserPayload,
+} from '../infrastructure/auth/interfaces/auth.interface';
 import { throwApplicationError } from '../infrastructure/utilities/exception-instance';
 import { User } from './user';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserStatus } from './constants/constants';
-import { IUserResponse, IUserSignedInResponseDTO } from './interfaces/user-response.interface';
+import {
+  IUserResponse,
+  IUserSignedInResponseDTO,
+} from './interfaces/user-response.interface';
 import { IEmailService } from 'src/infrastructure/email/interfaces/email-service.interface';
 import { UserParser } from './user.parser';
 import { UserMapper } from './user.mapper';
@@ -39,7 +45,8 @@ export class UserService extends AuthService implements IUserService {
     configService: ConfigService,
     @Inject(TYPES.IEmailService) private readonly emailService: IEmailService,
     private readonly userMapper: UserMapper,
-    @Inject(TYPES.IContextService) private readonly contextService: IContextService,
+    @Inject(TYPES.IContextService)
+    private readonly contextService: IContextService,
     private readonly userRepository: UserRepository,
   ) {
     super(jwtService, configService);
@@ -47,23 +54,37 @@ export class UserService extends AuthService implements IUserService {
 
   async createEndUser(props: CreateUserDTO): Promise<Result<IUserResponse>> {
     const endUser = await this.createUser(props, Role.END_USER);
-    const emailResult = await this.emailService.sendAccountVerificationEmail(endUser);
+    const emailResult =
+      await this.emailService.sendAccountVerificationEmail(endUser);
     if (!emailResult.isSuccess) {
-      throwApplicationError(HttpStatus.SERVICE_UNAVAILABLE, 'Failed to send verification email.');
+      throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Failed to send verification email.',
+      );
     }
     return Result.ok(
       UserParser.createUserResponse(endUser),
-      'Registration completed. A verification link has been sent to your email. Please verify to activate your account.'
+      'Registration completed. A verification link has been sent to your email. Please verify to activate your account.',
     );
   }
 
-  async createCompanyAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>> {
-    const companyAdmin = await this.createAdmin(props, Role.BUSINESS_ADMINISTRATOR);
+  async createCompanyAdmin(
+    props: CreateAdminDTO,
+  ): Promise<Result<IUserResponse>> {
+    const companyAdmin = await this.createAdmin(
+      props,
+      Role.BUSINESS_ADMINISTRATOR,
+    );
     return Result.ok(UserParser.createUserResponse(companyAdmin));
   }
 
-  async createRestaurantAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>> {
-    const restaurantAdmin = await this.createAdmin(props, Role.RESTAURANT_ADMINISTRATOR);
+  async createRestaurantAdmin(
+    props: CreateAdminDTO,
+  ): Promise<Result<IUserResponse>> {
+    const restaurantAdmin = await this.createAdmin(
+      props,
+      Role.RESTAURANT_ADMINISTRATOR,
+    );
     return Result.ok(UserParser.createUserResponse(restaurantAdmin));
   }
 
@@ -71,93 +92,171 @@ export class UserService extends AuthService implements IUserService {
     const { userId, email } = await this.validateTokenAndExtractUserInfo(token);
     const user = await this.getUser(userId);
     const context: Context = new Context(email);
-    const activatedUser: User = await this.updateUser(userId, { status: UserStatus.ACTIVE }, user, context);
-    return Result.ok(UserParser.createUserResponse(activatedUser), 'Email verified. Your account is now active.');
+    const activatedUser: User = await this.updateUser(
+      userId,
+      { status: UserStatus.ACTIVE },
+      user,
+      context,
+    );
+    return Result.ok(
+      UserParser.createUserResponse(activatedUser),
+      'Email verified. Your account is now active.',
+    );
   }
 
   async signIn(props: LoginDTO): Promise<Result<IUserSignedInResponseDTO>> {
     const userResult = await this.userRepository.findByEmail(props.email);
     if (!userResult.isSuccess) {
-      throwApplicationError(HttpStatus.UNAUTHORIZED, 'Invalid email or password.');
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        'Invalid email or password.',
+      );
     }
     const user: User = userResult.getValue();
     if (user.status !== UserStatus.ACTIVE) {
-      throwApplicationError(HttpStatus.FORBIDDEN, 'Account inactive. Please verify your email or contact support.');
+      throwApplicationError(
+        HttpStatus.FORBIDDEN,
+        'Account inactive. Please verify your email or contact support.',
+      );
     }
 
-    const comparePassWord: boolean = await bcrypt.compare(props.password, user.passwordHash);
+    const comparePassWord: boolean = await bcrypt.compare(
+      props.password,
+      user.passwordHash,
+    );
     if (!comparePassWord) {
-      throwApplicationError(HttpStatus.UNAUTHORIZED, 'Invalid email or password.');
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        'Invalid email or password.',
+      );
     }
 
     const { id, email, role } = user;
-    const userProps: IUserPayload = { userId: id, email, role: role as string };
+    const userProps: IUserPayload = { userId: id, email, role };
     const tokens = await this.generateAuthTokens(userProps);
-    this.updateUserRefreshToken(user, tokens);
-    return Result.ok(UserParser.createUserResponse(user, tokens, true), 'Login successful.');
+    await this.updateUserRefreshToken(user, tokens);
+    return Result.ok(
+      UserParser.createUserResponse(user, tokens, true),
+      'Login successful.',
+    );
   }
 
- async signOut(userId: Types.ObjectId): Promise<Result<void>> {
-  await this.logOutUser(this.userRepository, userId);
-  return Result.ok<void>(undefined, 'Logout successful.');
-}
+  async signOut(userId: Types.ObjectId): Promise<Result<void>> {
+    await this.logOutUser(this.userRepository, userId);
+    return Result.ok<void>(undefined, 'Logout successful.');
+  }
 
   async getAccessTokenAndUpdateRefreshToken(
-  userId: Types.ObjectId,
-  refreshToken: string
-): Promise<Result<{ accessToken: string }>> {
-  const tokens = await this.refreshUserToken(this.userRepository, userId, refreshToken);
-  if (!tokens || !tokens.accessToken) {
-    throwApplicationError(HttpStatus.UNAUTHORIZED, 'Invalid refresh token.');
+    userId: Types.ObjectId,
+    refreshToken: string,
+  ): Promise<Result<ISignUpTokens>> {
+    const tokens = await this.refreshUserToken(
+      this.userRepository,
+      userId,
+      refreshToken,
+    );
+    if (!tokens?.accessToken || !tokens.refreshToken) {
+      throwApplicationError(HttpStatus.UNAUTHORIZED, 'Invalid refresh token.');
+    }
+    return Result.ok(tokens, 'Access token refreshed successfully.');
   }
- return Result.ok({ accessToken: tokens.accessToken }, 'Access token refreshed successfully.');
-}
-
 
   async getUserById(userId: Types.ObjectId): Promise<Result<IUserResponse>> {
     const user = await this.authorizeSelfAccess(userId);
     return Result.ok(UserParser.createUserResponse(user));
   }
 
-  async updateProfile(userId: Types.ObjectId, props: UpdateUserProfileDTO): Promise<Result<IUserResponse>> {
+  async updateProfile(
+    userId: Types.ObjectId,
+    props: UpdateUserProfileDTO,
+  ): Promise<Result<IUserResponse>> {
     const user = await this.authorizeSelfAccess(userId);
     const context: Context = this.contextService.getContext();
-    const updatedUser: User = await this.updateUser(userId, props, user, context);
+    const updatedUser: User = await this.updateUser(
+      userId,
+      props,
+      user,
+      context,
+    );
     return Result.ok(UserParser.createUserResponse(updatedUser));
   }
 
-  async updatePassword(userId: Types.ObjectId, props: UpdatePasswordDTO): Promise<Result<IUserResponse>> {
+  async updatePassword(
+    userId: Types.ObjectId,
+    props: UpdatePasswordDTO,
+  ): Promise<Result<IUserResponse>> {
     const context: Context = this.contextService.getContext();
     const user = await this.authorizeSelfAccess(userId);
-    const comparePassWord: boolean = await bcrypt.compare(props.currentPassword, user.passwordHash);
+    const comparePassWord: boolean = await bcrypt.compare(
+      props.currentPassword,
+      user.passwordHash,
+    );
     if (!comparePassWord) {
-      throwApplicationError(HttpStatus.UNAUTHORIZED, 'Current password is incorrect.');
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        'Current password is incorrect.',
+      );
     }
     const hashedPassword = await this.hashData(props.newPassword, saltRounds);
-    const updatedUser = await this.updateUser(userId, { passwordHash: hashedPassword }, user, context);
+    const updatedUser = await this.updateUser(
+      userId,
+      { passwordHash: hashedPassword },
+      user,
+      context,
+    );
+    await this.logOutUser(this.userRepository, userId);
     return Result.ok(UserParser.createUserResponse(updatedUser));
   }
 
-  async requestToChangeEmail(userId: Types.ObjectId, props: ChangeEmailDTO): Promise<Result<void>> {
+  async requestToChangeEmail(
+    userId: Types.ObjectId,
+    props: ChangeEmailDTO,
+  ): Promise<Result<void>> {
     const user = await this.authorizeSelfAccess(userId);
-    const existingUser: Result<User> = await this.userRepository.findByEmail(props.newEmail);
+    const existingUser: Result<User> = await this.userRepository.findByEmail(
+      props.newEmail,
+    );
     if (existingUser.isSuccess) {
-      throwApplicationError(HttpStatus.CONFLICT, 'Email is already in use by another account.');
+      throwApplicationError(
+        HttpStatus.CONFLICT,
+        'Email is already in use by another account.',
+      );
     }
-    const comparePassWord: boolean = await bcrypt.compare(props.currentPassword, user.passwordHash);
+    const comparePassWord: boolean = await bcrypt.compare(
+      props.currentPassword,
+      user.passwordHash,
+    );
     if (!comparePassWord) {
-      throwApplicationError(HttpStatus.UNAUTHORIZED, 'Current password is incorrect.');
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        'Current password is incorrect.',
+      );
     }
     user.email = props.newEmail;
-    await this.emailService.sendEmailChangeConfirmationEmail(user, props.newEmail);
-    return Result.ok<void>(undefined, 'A confirmation email has been sent to the new address. Please verify to proceed.');
+    await this.emailService.sendEmailChangeConfirmationEmail(
+      user,
+      props.newEmail,
+    );
+    return Result.ok<void>(
+      undefined,
+      'A confirmation email has been sent to the new address. Please verify to proceed.',
+    );
   }
 
   async deactivateAccount(userId: Types.ObjectId): Promise<Result<void>> {
     const context: Context = this.contextService.getContext();
     const user = await this.authorizeSelfAccess(userId);
-    await this.updateUser(userId, { status: UserStatus.INACTIVE }, user, context);
-    return Result.ok<void>(undefined, 'Your account has been successfully deactivated.');
+    await this.updateUser(
+      userId,
+      { status: UserStatus.INACTIVE },
+      user,
+      context,
+    );
+    await this.logOutUser(this.userRepository, userId);
+    return Result.ok<void>(
+      undefined,
+      'Your account has been successfully deactivated.',
+    );
   }
 
   async verifyNewEmail(token: string): Promise<Result<void>> {
@@ -171,157 +270,240 @@ export class UserService extends AuthService implements IUserService {
   async requestToResetPassword(props: EmailDTO): Promise<Result<void>> {
     const user = await this.userRepository.findByEmail(props.email);
     if (!user.isSuccess) {
-      throwApplicationError(HttpStatus.NOT_FOUND, 'No active account found for the provided email.');
+      return Result.ok<void>(
+        undefined,
+        'If the account exists, password reset instructions have been sent.',
+      );
     }
-    const emailResult = await this.emailService.sendPasswordResetInstructionsEmail(user.getValue());
+    const emailResult =
+      await this.emailService.sendPasswordResetInstructionsEmail(
+        user.getValue(),
+      );
     if (!emailResult.isSuccess) {
-      throwApplicationError(HttpStatus.SERVICE_UNAVAILABLE, 'Failed to send password reset instructions.');
+      throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Failed to send password reset instructions.',
+      );
     }
-    return Result.ok<void>(undefined, 'Instructions to reset your password have been sent to your email.');
+    return Result.ok<void>(
+      undefined,
+      'Instructions to reset your password have been sent to your email.',
+    );
   }
 
-  async confirmPasswordReset(token: string, props: ResetPasswordDTO): Promise<Result<void>> {
+  async confirmPasswordReset(
+    token: string,
+    props: ResetPasswordDTO,
+  ): Promise<Result<void>> {
     const { userId, email } = await this.validateTokenAndExtractUserInfo(token);
     const user = await this.getUser(userId);
     const context: Context = new Context(email);
     const hashedPassword = await this.hashData(props.newPassword, saltRounds);
-    await this.updateUser(userId, { passwordHash: hashedPassword }, user, context);
-    return Result.ok<void>(undefined, 'Your password has been successfully updated.');
+    await this.updateUser(
+      userId,
+      { passwordHash: hashedPassword },
+      user,
+      context,
+    );
+    await this.logOutUser(this.userRepository, userId);
+    return Result.ok<void>(
+      undefined,
+      'Your password has been successfully updated.',
+    );
   }
 
   async getUsers(): Promise<Result<IUserResponse[]>> {
-    const users = await this.userRepository.getUsers({role: Role.END_USER});
+    const users = await this.userRepository.getUsers({ role: Role.END_USER });
     if (!users.isSuccess) {
-      throwApplicationError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to retrieve user list.');
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Unable to retrieve user list.',
+      );
     }
     return Result.ok(UserParser.usersResponse(users.getValue()));
   }
 
-  async adminUpdateUser(userId: Types.ObjectId, props: AdminUpdateUserDTO): Promise<Result<IUserResponse>> {
+  async adminUpdateUser(
+    userId: Types.ObjectId,
+    props: AdminUpdateUserDTO,
+  ): Promise<Result<IUserResponse>> {
     const context: Context = this.contextService.getContext();
     const user = await this.getUser(new Types.ObjectId(userId));
-    const updatedUser: User = await this.updateUser(userId, props, user, context);
+    const updatedUser: User = await this.updateUser(
+      userId,
+      props,
+      user,
+      context,
+    );
     return Result.ok(UserParser.createUserResponse(updatedUser));
   }
 
   async suspendUser(userId: Types.ObjectId): Promise<Result<void>> {
     const context: Context = this.contextService.getContext();
     const user = await this.getUser(new Types.ObjectId(userId));
-    await this.updateUser(userId, { status: UserStatus.SUSPENDED }, user, context);
-    return Result.ok<void>(undefined, 'User account has been successfully suspended.');
+    await this.updateUser(
+      userId,
+      { status: UserStatus.SUSPENDED },
+      user,
+      context,
+    );
+    return Result.ok<void>(
+      undefined,
+      'User account has been successfully suspended.',
+    );
   }
 
   async createAdmin(props: CreateAdminDTO, role: Role): Promise<User> {
-  const admin = await this.createUser(props, role);
-  const emailResult = await this.emailService.sendAccountVerificationEmail(admin);
-  if (!emailResult.isSuccess) {
-    throwApplicationError(HttpStatus.SERVICE_UNAVAILABLE, 'Unable to send account verification email. Please try again later.');
-  }
-  return admin;
-}
-
-private async createUser( props: CreateUserDTO | CreateAdminDTO, role: Role ): Promise<User> {
-  const existingUser: Result<User> = await this.userRepository.findByEmail(props.email);
-  if (existingUser.isSuccess && existingUser.getValue().email === props.email) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, `User already exists, sign in.`);
-  }
-  const password = role === Role.END_USER && 'password' in props ? props.password : 'password';
-  const hashedPassword = await this.hashData(password, saltRounds);
-  const user = UserFactory.createUser(props, role, hashedPassword);
-  const userModel = this.userMapper.toPersistence(user);
-  const userDoc = await this.userRepository.createUser(userModel);
-  if (!userDoc.isSuccess) {
-    throwApplicationError(HttpStatus.SERVICE_UNAVAILABLE, 'Error while creating user');
-  }
-  return userDoc.getValue();
-}
-
-private async validateTokenAndExtractUserInfo(token: string): Promise<{ userId: Types.ObjectId; email: string }> {
-  const isTokenValid = await this.verifyToken(token);
-  if (!isTokenValid) {
-    throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
-  }
-  const userInfo = await this.getUserInfoFromToken(token);
-  const { userId, email } = userInfo;
-  return { userId: new Types.ObjectId(userId), email };
-}
-
-private async updateUser<T extends object>(
-  userId: Types.ObjectId,
-  props: T,
-  user: User,
-  context: Context
-): Promise<User> {
-  const data = {
-    auditModifiedBy: context.email,
-    auditModifiedDateTime: new Date().toISOString(),
-    ...props,
-  };
-
-  this.updateUserData(data, user, context);
-  const updatedUser: User = await this.updateUserById(userId, data);
-  return updatedUser;
-}
-
-updateUserData(data: any, user: User, context: Context) {
-  Object.entries(data).forEach(([key, value]) => {
-    if (value !== undefined && key in user) {
-      (user as any)[key] = value;
+    const admin = await this.createUser(props, role);
+    const emailResult =
+      await this.emailService.sendAccountVerificationEmail(admin);
+    if (!emailResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Unable to send account verification email. Please try again later.',
+      );
     }
-  });
-
-  Audit.updateContext(context.email, user);
-}
-
-private async updateUserById(userId:Types.ObjectId, data:any){
-  const updatedUserResult = await this.userRepository.updateUser({ _id: userId }, data);
-  if (!updatedUserResult.isSuccess) {
-    throwApplicationError(HttpStatus.NOT_MODIFIED, 'User could not be updated');
+    return admin;
   }
-  return updatedUserResult.getValue();
-}
 
-private async updateUserRefreshToken( user: User, token: ISignUpTokens,): Promise<User> {
-  const hash = await this.hashData(token.refreshToken, saltRounds);
-  const updatedUser: User = await this.updateUserById(user.id, { refreshTokenHash: hash });
-  return updatedUser;
-}
-
-private async refreshUserToken( 
-  model: GenericDocumentRepository<any, any>,
-  userId: Types.ObjectId,
-  refreshToken: string,
-): Promise<{ accessToken: string }> {
-  return await this.updateRefreshToken(model, userId, refreshToken);
-}
-
-private async logOutUser(model: GenericDocumentRepository<any, any>, userId: Types.ObjectId): Promise<void> {
-  return this.logOut(model, userId);
-}
-
-private async getUser(userId: Types.ObjectId): Promise<User>{
-  const userResult = await this.userRepository.getUserById(userId);
-  if (!userResult.isSuccess) {
-    throwApplicationError(HttpStatus.NOT_FOUND, 'User does not exist');
+  private async createUser(
+    props: CreateUserDTO | CreateAdminDTO,
+    role: Role,
+  ): Promise<User> {
+    const existingUser: Result<User> = await this.userRepository.findByEmail(
+      props.email,
+    );
+    if (
+      existingUser.isSuccess &&
+      existingUser.getValue().email === props.email
+    ) {
+      throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        `User already exists, sign in.`,
+      );
+    }
+    const password =
+      role === Role.END_USER && 'password' in props
+        ? props.password
+        : 'password';
+    const hashedPassword = await this.hashData(password, saltRounds);
+    const user = UserFactory.createUser(props, role, hashedPassword);
+    const userModel = this.userMapper.toPersistence(user);
+    const userDoc = await this.userRepository.createUser(userModel);
+    if (!userDoc.isSuccess) {
+      throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Error while creating user',
+      );
+    }
+    return userDoc.getValue();
   }
-  return userResult.getValue();
-}
 
-async getContextUser(): Promise<User> {
-  const context: Context = this.contextService.getContext();
-  const userResult = await this.userRepository.findByEmail(context.email);
-  if (!userResult.isSuccess) {
-    throwApplicationError(HttpStatus.NOT_FOUND, 'User does not exist');
+  private async validateTokenAndExtractUserInfo(
+    token: string,
+  ): Promise<{ userId: Types.ObjectId; email: string }> {
+    const isTokenValid = await this.verifyToken(token);
+    if (!isTokenValid) {
+      throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
+    }
+    const userInfo = await this.getUserInfoFromToken(token);
+    const { userId, email } = userInfo;
+    return { userId: new Types.ObjectId(userId), email };
   }
-  return userResult.getValue();
-}
 
-private async authorizeSelfAccess(userId: Types.ObjectId): Promise<User> {
-  const context: Context = this.contextService.getContext();
-  const user = await this.getUser(new Types.ObjectId(userId));
-  if (context.email.toString() !== user.email.toString()) {
-    throwApplicationError(HttpStatus.FORBIDDEN, 'You don’t have sufficient privilege');
+  private async updateUser<T extends object>(
+    userId: Types.ObjectId,
+    props: T,
+    user: User,
+    context: Context,
+  ): Promise<User> {
+    const data = {
+      auditModifiedBy: context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+      ...props,
+    };
+
+    this.updateUserData(data, user, context);
+    const updatedUser: User = await this.updateUserById(userId, data);
+    return updatedUser;
   }
-  return user;
-}
+
+  updateUserData(data: any, user: User, context: Context) {
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && key in user) {
+        (user as any)[key] = value;
+      }
+    });
+
+    Audit.updateContext(context.email, user);
+  }
+
+  private async updateUserById(userId: Types.ObjectId, data: any) {
+    const updatedUserResult = await this.userRepository.updateUser(
+      { _id: userId },
+      data,
+    );
+    if (!updatedUserResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.NOT_MODIFIED,
+        'User could not be updated',
+      );
+    }
+    return updatedUserResult.getValue();
+  }
+
+  private async updateUserRefreshToken(
+    user: User,
+    token: ISignUpTokens,
+  ): Promise<User> {
+    const hash = await this.hashData(token.refreshToken, saltRounds);
+    const updatedUser: User = await this.updateUserById(user.id, {
+      refreshTokenHash: hash,
+    });
+    return updatedUser;
+  }
+
+  private async refreshUserToken(
+    model: GenericDocumentRepository<any, any>,
+    userId: Types.ObjectId,
+    refreshToken: string,
+  ): Promise<ISignUpTokens> {
+    return await this.updateRefreshToken(model, userId, refreshToken);
+  }
+
+  private async logOutUser(
+    model: GenericDocumentRepository<any, any>,
+    userId: Types.ObjectId,
+  ): Promise<void> {
+    return this.logOut(model, userId);
+  }
+
+  private async getUser(userId: Types.ObjectId): Promise<User> {
+    const userResult = await this.userRepository.getUserById(userId);
+    if (!userResult.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'User does not exist');
+    }
+    return userResult.getValue();
+  }
+
+  async getContextUser(): Promise<User> {
+    const context: Context = this.contextService.getContext();
+    const userResult = await this.userRepository.findByEmail(context.email);
+    if (!userResult.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'User does not exist');
+    }
+    return userResult.getValue();
+  }
+
+  private async authorizeSelfAccess(userId: Types.ObjectId): Promise<User> {
+    const context: Context = this.contextService.getContext();
+    const user = await this.getUser(new Types.ObjectId(userId));
+    if (context.email.toString() !== user.email.toString()) {
+      throwApplicationError(
+        HttpStatus.FORBIDDEN,
+        'You don’t have sufficient privilege',
+      );
+    }
+    return user;
+  }
 }

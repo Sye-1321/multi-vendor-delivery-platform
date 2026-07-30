@@ -21,16 +21,20 @@ export class UserDataModel extends BaseDocument implements IUserData {
   @Prop({ type: String, required: true })
   passwordHash: string;
 
-  @Prop({ type: String, enum: Object.values(Role), required: true }) 
+  @Prop({ type: String, enum: Object.values(Role), required: true })
   role: Role;
 
-  @Prop({ type: String, enum: Object.values(UserStatus), default: UserStatus.PENDING }) 
+  @Prop({
+    type: String,
+    enum: Object.values(UserStatus),
+    default: UserStatus.PENDING,
+  })
   status: UserStatus;
 
   @Prop({ type: String })
   refreshTokenHash: string;
 
-  @Prop({ type: Object, default: { city: '', subCity: '' } }) 
+  @Prop({ type: Object, default: { city: '', subCity: '' } })
   savedAddress: { city: string; subCity: string };
 }
 

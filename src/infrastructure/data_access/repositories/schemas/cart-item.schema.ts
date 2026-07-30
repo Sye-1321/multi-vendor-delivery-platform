@@ -8,8 +8,15 @@ import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document'
 export type CartItemDocument = CartItemDataModel & Document;
 
 @Schema({ versionKey: 'false' })
-export class CartItemDataModel extends BaseDocument implements ICartItemDataModel {
-  @Prop({ type: mongoose.Schema.Types.ObjectId })
+export class CartItemDataModel
+  extends BaseDocument
+  implements ICartItemDataModel
+{
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: MenuItemDataModel.name,
+    required: true,
+  })
   @Type(() => MenuItemDataModel)
   menuItemId: Types.ObjectId;
 

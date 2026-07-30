@@ -35,7 +35,8 @@ export class CompanyMapper implements IMapper<Company, CompanyDataModel> {
   }
 
   toDomain(document: any): Company {
-    const { _id, logo, name, phoneNumber, ownerId, owner, savedAddress } = document;
+    const { _id, logo, name, phoneNumber, ownerId, owner, savedAddress } =
+      document;
     const entity: Company = Company.create(
       {
         logo,

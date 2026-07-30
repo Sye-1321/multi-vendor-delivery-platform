@@ -1,5 +1,7 @@
 import { IMapper } from './../../domain/mapper/mapper';
-export class GenericMapper<TEntity, TModel> implements IMapper<TEntity, TModel> {
+export class GenericMapper<TEntity, TModel>
+  implements IMapper<TEntity, TModel>
+{
   toPersistence(entity: any): TModel {
     const obj = new Object() as TModel as any;
     let audit: any = {};

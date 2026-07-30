@@ -38,10 +38,7 @@ export class CompanyController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
-  @UseInterceptors(
-    FileInterceptor('logo'),
-    ParseStringifiedJsonInterceptor,
-  )
+  @UseInterceptors(FileInterceptor('logo'), ParseStringifiedJsonInterceptor)
   @Post()
   createCompany(
     @Body() body: CreateCompanyDTO,
@@ -60,10 +57,7 @@ export class CompanyController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
-  @UseInterceptors(
-    FileInterceptor('logo'),
-    ParseStringifiedJsonInterceptor,
-  )
+  @UseInterceptors(FileInterceptor('logo'), ParseStringifiedJsonInterceptor)
   @Put('me')
   async updateMyCompany(
     @UploadedFile() logoFile: Express.Multer.File,
@@ -71,7 +65,6 @@ export class CompanyController {
   ): Promise<Result<ICompanyResponse>> {
     return this.companyService.updateMyCompany(updateCompanyDto, logoFile);
   }
-
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
@@ -86,13 +79,12 @@ export class CompanyController {
   @Put(':companyId/change-admin')
   @HttpCode(HttpStatus.OK)
   async changeCompanyAdmin(
-  @Param('companyId') companyId: Types.ObjectId,
-  @Body() newAdminData: CompanyAdminDTO,
+    @Param('companyId') companyId: Types.ObjectId,
+    @Body() newAdminData: CompanyAdminDTO,
   ): Promise<Result<ICompanyResponse>> {
     return this.companyService.changeCompanyAdmin(companyId, newAdminData);
   }
 
-  
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get(':companyId')
@@ -102,5 +94,4 @@ export class CompanyController {
   ): Promise<Result<ICompanyResponse>> {
     return this.companyService.getCompanyById(companyId);
   }
-
 }

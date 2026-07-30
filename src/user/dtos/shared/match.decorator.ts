@@ -1,4 +1,8 @@
-import { ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments } from 'class-validator';
+import {
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
+} from 'class-validator';
 
 @ValidatorConstraint({ name: 'PasswordsMatch', async: false })
 export class PasswordsMatchConstraint implements ValidatorConstraintInterface {
@@ -7,7 +11,7 @@ export class PasswordsMatchConstraint implements ValidatorConstraintInterface {
     return confirmPassword === newPassword;
   }
 
-  defaultMessage(args: ValidationArguments): string {
+  defaultMessage(): string {
     return 'Passwords do not match.';
   }
 }

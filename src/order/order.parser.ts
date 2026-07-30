@@ -13,14 +13,25 @@ export class OrderParser {
       status: order.status,
       totalPrice: order.totalPrice,
       paymentStatus: order.paymentStatus,
-      deliveryPerson: order.deliveryPerson ? DeliveryPersonParser.createDeliveryPersonResponse(order.deliveryPerson)
-     : null,
+      timeline: order.timeline.map(
+        ({ from, to, actorRole, occurredAt, reason }) => ({
+          from,
+          to,
+          actorRole,
+          occurredAt,
+          reason,
+        }),
+      ),
+      deliveryPerson: order.deliveryPerson
+        ? DeliveryPersonParser.createDeliveryPersonResponse(
+            order.deliveryPerson,
+          )
+        : null,
       ...AuditParser.createAuditResponse(order.audit),
     };
 
     return orderResponse;
   }
-
 
   static createOrdersResponse(orders: Order[]): IOrderResponseDTO[] {
     return orders.map((order) => OrderParser.createOrderResponse(order));

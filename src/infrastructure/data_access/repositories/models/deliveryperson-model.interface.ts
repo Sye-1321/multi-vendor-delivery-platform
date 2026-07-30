@@ -1,5 +1,9 @@
 import { Types } from 'mongoose';
-import { AvailabilityStatus, DeliveryPersonOwnership, DeliveryPersonStatus } from 'src/delivery-person/constants/constants';
+import {
+  AvailabilityStatus,
+  DeliveryPersonOwnership,
+  DeliveryPersonStatus,
+} from 'src/delivery-person/constants/constants';
 
 export interface ISavedAddress {
   city: string;

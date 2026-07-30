@@ -8,7 +8,10 @@ import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document'
 export type SystemReviewDocument = SystemReviewDataModel & Document;
 
 @Schema({ versionKey: false })
-export class SystemReviewDataModel extends BaseDocument implements ISystemReviewModel {
+export class SystemReviewDataModel
+  extends BaseDocument
+  implements ISystemReviewModel
+{
   @Prop({ type: Number, required: true, min: 1, max: 5 })
   rating: number;
 
@@ -23,7 +26,9 @@ export class SystemReviewDataModel extends BaseDocument implements ISystemReview
   user: UserDataModel;
 }
 
-export const SystemReviewSchema = SchemaFactory.createForClass(SystemReviewDataModel);
+export const SystemReviewSchema = SchemaFactory.createForClass(
+  SystemReviewDataModel,
+);
 
 SystemReviewSchema.pre('save', function (next) {
   if (this.isNew && this.reviewText && this.reviewText.length < 150) {
@@ -31,7 +36,6 @@ SystemReviewSchema.pre('save', function (next) {
   }
   next();
 });
-
 
 SystemReviewSchema.virtual('userDetails', {
   ref: UserDataModel.name,

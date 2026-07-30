@@ -7,9 +7,11 @@ import { Role, RoleOrder } from 'src/application/constants/constants';
 
 @Injectable()
 export class AccessControlService implements IAccessControlService {
-  private hierarchies: Map<string, number>; 
+  private hierarchies: Map<string, number>;
 
-  constructor(@Inject(TYPES.IRoleService) private readonly roleService: IRoleService) {
+  constructor(
+    @Inject(TYPES.IRoleService) private readonly roleService: IRoleService,
+  ) {
     this.hierarchies = this.mapRoleToPriority();
   }
 
@@ -18,23 +20,28 @@ export class AccessControlService implements IAccessControlService {
 
     if (sortedRoles?.length) {
       const rolesPriorityMap = sortedRoles.reduce((map, role) => {
-        map.set(role, RoleOrder[role]); 
+        map.set(role, RoleOrder[role]);
         return map;
       }, new Map<string, number>());
-      
+
       return rolesPriorityMap;
     }
-    throw new Error("Role sorting failed or roles not found.");
+    throw new Error('Role sorting failed or roles not found.');
   }
 
-  public isAuthorized({ currentRole, requiredRole }: IIsAuthorizedProps): boolean {
+  public isAuthorized({
+    currentRole,
+    requiredRole,
+  }: IIsAuthorizedProps): boolean {
     const currentRolePriority = this.hierarchies.get(currentRole.trim());
     const requiredRolePriority = this.hierarchies.get(requiredRole);
-    if (currentRolePriority !== undefined && requiredRolePriority !== undefined) {
-      return currentRolePriority==requiredRolePriority
+    if (
+      currentRolePriority !== undefined &&
+      requiredRolePriority !== undefined
+    ) {
+      return currentRolePriority == requiredRolePriority;
     }
 
-    return false; 
+    return false;
   }
 }
-

@@ -3,7 +3,9 @@ import { DeliveryPerson } from './delivery-person';
 import { IDeliveryPersonResponse } from './interfaces/deliveryperson-response.interface';
 
 export class DeliveryPersonParser {
-  static createDeliveryPersonResponse(deliveryPerson: DeliveryPerson): IDeliveryPersonResponse {
+  static createDeliveryPersonResponse(
+    deliveryPerson: DeliveryPerson,
+  ): IDeliveryPersonResponse {
     const deliveryPersonResponse: IDeliveryPersonResponse = {
       id: deliveryPerson.id,
       profileImage: deliveryPerson.profileImage,
@@ -19,7 +21,9 @@ export class DeliveryPersonParser {
     return deliveryPersonResponse;
   }
 
-  static createDeliveryPersonsResponse(deliveryPersons: DeliveryPerson[]): IDeliveryPersonResponse[] {
+  static createDeliveryPersonsResponse(
+    deliveryPersons: DeliveryPerson[],
+  ): IDeliveryPersonResponse[] {
     return deliveryPersons.map((deliveryPerson) =>
       DeliveryPersonParser.createDeliveryPersonResponse(deliveryPerson),
     );

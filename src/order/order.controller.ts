@@ -20,6 +20,7 @@ import { RoleGuard } from 'src/infrastructure/guards/role-guard';
 import { Role } from 'src/application/constants/constants';
 import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { TYPES } from 'src/application/constants/types';
+import { CancelOrderDTO } from './dtos/cancel-order.dto';
 
 @Controller('orders')
 export class OrderController {
@@ -45,8 +46,9 @@ export class OrderController {
   @Patch(':orderId/cancel')
   async cancelOrder(
     @Param('orderId') orderId: Types.ObjectId,
+    @Body() request: CancelOrderDTO,
   ): Promise<Result<IOrderResponseDTO>> {
-    return await this.orderService.cancelOrder(orderId);
+    return await this.orderService.cancelOrder(orderId, request);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
@@ -87,7 +89,10 @@ export class OrderController {
     @Param('orderId') orderId: Types.ObjectId,
     @Param('deliveryPersonId') deliveryPersonId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
-    return await this.orderService.assignDeliveryPerson(orderId, deliveryPersonId);
+    return await this.orderService.assignDeliveryPerson(
+      orderId,
+      deliveryPersonId,
+    );
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

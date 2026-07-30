@@ -1,4 +1,16 @@
-import {Body,Controller, Delete, Get, HttpCode, HttpStatus, Inject, Param,Patch,Post, UseGuards,} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { Types } from 'mongoose';
 import { AccessAuthGuard } from '../infrastructure/guards/access-auth.guard';
 import { Result } from '../domain/result/result';
@@ -9,7 +21,9 @@ import { ISystemReviewResponse } from './interfaces/system-review-response.inter
 
 @Controller('reviews')
 export class SystemReviewController {
-  constructor( @Inject(TYPES.ISystemReviewService) private readonly systemReviewService: ISystemReviewService,
+  constructor(
+    @Inject(TYPES.ISystemReviewService)
+    private readonly systemReviewService: ISystemReviewService,
   ) {}
   @UseGuards(AccessAuthGuard)
   @Post()
@@ -27,10 +41,8 @@ export class SystemReviewController {
     @Param('id') id: Types.ObjectId,
     @Body() body: UpdateReviewDTO,
   ): Promise<Result<ISystemReviewResponse>> {
-    console.log(body, "body");
     return this.systemReviewService.updateSystemReview(id, body);
   }
-
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -39,11 +51,9 @@ export class SystemReviewController {
   }
 
   @UseGuards(AccessAuthGuard)
-  @Delete(':id') 
+  @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deleteReview(
-    @Param('id') id: Types.ObjectId,
-  ): Promise<Result<void>> {
+  async deleteReview(@Param('id') id: Types.ObjectId): Promise<Result<void>> {
     return this.systemReviewService.deleteSystemReviewById(id);
   }
 }
