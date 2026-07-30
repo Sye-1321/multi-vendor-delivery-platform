@@ -85,8 +85,14 @@ export class OrderRepository
     );
   }
 
-  async getOrderById(id: Types.ObjectId): Promise<Result<Order>> {
-    const orderDocument = await this.DocumentModel.findOne({ _id: id })
+  async getOrderById(
+    id: Types.ObjectId,
+    scope: Partial<OrderDataModel> = {},
+  ): Promise<Result<Order>> {
+    const orderDocument = await this.DocumentModel.findOne({
+      _id: id,
+      ...scope,
+    })
       .populate(this.orderPopulation)
       .exec();
     if (!orderDocument) {

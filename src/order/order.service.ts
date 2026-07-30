@@ -36,6 +36,7 @@ import {
 import { IOrderTransition } from './interfaces/order.interface';
 import { OrderEventPublisher } from './realtime/order-event.publisher';
 import { NotificationOutboxService } from 'src/notifications/notification-outbox.service';
+import { CancelOrderDTO } from './dtos/cancel-order.dto';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -245,20 +246,17 @@ export class OrderService implements IOrderService {
 
   async cancelOrder(
     orderId: Types.ObjectId,
+    request: CancelOrderDTO,
   ): Promise<Result<IOrderResponseDTO>> {
     const context = this.contextService.getContext();
     const contextUser = await this.userService.getContextUser();
-    const order = await this.orderRepository.getOrderById(orderId);
+    const order = await this.orderRepository.getOrderById(orderId, {
+      userId: contextUser.id,
+    });
     if (!order.isSuccess) {
       throwApplicationError(
         HttpStatus.NOT_FOUND,
         'The order with the provided ID was not found',
-      );
-    }
-    if (contextUser.id.toString() !== order.getValue().userId.toString()) {
-      throwApplicationError(
-        HttpStatus.UNAUTHORIZED,
-        'You do not have permission to cancel this order',
       );
     }
     if (order.getValue().status !== OrderStatus.PENDING) {
@@ -273,6 +271,7 @@ export class OrderService implements IOrderService {
       OrderStatus.PENDING,
       OrderStatus.CANCELLED,
       context,
+      request.reason.trim(),
     );
 
     return Result.ok(OrderParser.createOrderResponse(updatedOrder));
@@ -281,21 +280,14 @@ export class OrderService implements IOrderService {
   async acceptOrder(
     orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
-    const order = await this.orderRepository.getOrderById(orderId);
+    const restaurant = await this.restaurantService.getRestaurantByRAdmin();
+    const order = await this.orderRepository.getOrderById(orderId, {
+      restaurantId: restaurant.id,
+    });
     if (!order.isSuccess) {
       throwApplicationError(
         HttpStatus.NOT_FOUND,
         'The order with the provided ID was not found',
-      );
-    }
-    const orderRestaurantId = order.getValue().restaurantId;
-    const restaurant = await this.restaurantService.getRestaurantByRAdmin();
-    const adminRestaurantId = restaurant.id;
-
-    if (adminRestaurantId.toString() !== orderRestaurantId.toString()) {
-      throwApplicationError(
-        HttpStatus.UNAUTHORIZED,
-        'You do not have permission to accept this order',
       );
     }
     if (order.getValue().status !== OrderStatus.PENDING) {
@@ -318,21 +310,14 @@ export class OrderService implements IOrderService {
   async orderPrepared(
     orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
-    const order = await this.orderRepository.getOrderById(orderId);
+    const restaurant = await this.restaurantService.getRestaurantByRAdmin();
+    const order = await this.orderRepository.getOrderById(orderId, {
+      restaurantId: restaurant.id,
+    });
     if (!order.isSuccess) {
       throwApplicationError(
         HttpStatus.NOT_FOUND,
         'The order with the provided ID was not found',
-      );
-    }
-    const orderRestaurantId = order.getValue().restaurantId;
-    const restaurant = await this.restaurantService.getRestaurantByRAdmin();
-    const adminRestaurantId = restaurant.id;
-
-    if (adminRestaurantId.toString() !== orderRestaurantId.toString()) {
-      throwApplicationError(
-        HttpStatus.UNAUTHORIZED,
-        'You do not have permission to accept this order',
       );
     }
     if (order.getValue().status !== OrderStatus.ACCEPTED) {
@@ -594,11 +579,13 @@ export class OrderService implements IOrderService {
     expectedStatus: OrderStatus,
     nextStatus: OrderStatus,
     context: Context,
+    reason?: string,
   ): Promise<Order> {
     const transition = this.createOrderTransition(
       context,
       expectedStatus,
       nextStatus,
+      reason,
     );
     const session = await this.orderRepository.startSession();
 
@@ -650,6 +637,7 @@ export class OrderService implements IOrderService {
     context: Context,
     from: OrderStatus | null,
     to: OrderStatus,
+    reason?: string,
   ): IOrderTransition {
     if (!context.userId || !context.role) {
       return throwApplicationError(
@@ -665,6 +653,7 @@ export class OrderService implements IOrderService {
       actorRole: context.role,
       occurredAt: new Date().toISOString(),
       correlationId: context.correlationId,
+      reason,
     };
   }
 
@@ -704,22 +693,15 @@ export class OrderService implements IOrderService {
   ): Promise<Result<IOrderResponseDTO>> {
     const restaurant = await this.restaurantService.getRestaurantByRAdmin();
     const adminRestaurantId = restaurant.id;
-    const orderResult = await this.orderRepository.getOrderById(orderId);
+    const orderResult = await this.orderRepository.getOrderById(orderId, {
+      restaurantId: adminRestaurantId,
+    });
 
     if (!orderResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'Order not found');
     }
 
-    const order = orderResult.getValue();
-
-    if (order.restaurantId.toString() !== adminRestaurantId.toString()) {
-      throwApplicationError(
-        HttpStatus.FORBIDDEN,
-        'Access denied to this order',
-      );
-    }
-
-    const response = OrderParser.createOrderResponse(order);
+    const response = OrderParser.createOrderResponse(orderResult.getValue());
     return Result.ok(response);
   }
 
@@ -756,22 +738,15 @@ export class OrderService implements IOrderService {
     orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     const user = await this.userService.getContextUser();
-    const orderResult = await this.orderRepository.getOrderById(orderId);
+    const orderResult = await this.orderRepository.getOrderById(orderId, {
+      userId: user.id,
+    });
 
     if (!orderResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'Order not found');
     }
 
-    const order = orderResult.getValue();
-
-    if (order.userId.toString() !== user.id.toString()) {
-      throwApplicationError(
-        HttpStatus.FORBIDDEN,
-        'Access denied to this order',
-      );
-    }
-
-    const response = OrderParser.createOrderResponse(order);
+    const response = OrderParser.createOrderResponse(orderResult.getValue());
     return Result.ok(response);
   }
 }
