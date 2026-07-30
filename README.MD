@@ -208,8 +208,8 @@ Requirements:
 Clone and install:
 
 ```bash
-git clone https://github.com/Sye-1321/Multi-Tenant-Delivery-App.git
-cd Multi-Tenant-Delivery-App
+git clone https://github.com/Sye-1321/multi-vendor-delivery-platform.git
+cd multi-vendor-delivery-platform
 npm ci
 ```
 
