@@ -1,58 +1,17 @@
 # Multi-Vendor Delivery Platform
 
-A tenant-aware food ordering and delivery backend for restaurant companies,
-independent restaurants, customers, and a shared delivery operator.
+[![CI](https://github.com/Sye-1321/multi-vendor-delivery-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Sye-1321/multi-vendor-delivery-platform/actions/workflows/ci.yml)
 
-The project is implemented as a NestJS modular monolith. It focuses on business
-isolation, transactional ordering, concurrency-safe fulfilment, durable
-notifications, and authenticated real-time order updates.
+A tenant-aware NestJS backend for multi-vendor food ordering and delivery, designed around transactional ordering, concurrency-safe fulfilment, resource-scoped authorization, durable notifications, and authenticated real-time updates.
 
-## Business Model
+## Engineering Highlights
 
-The platform supports three operating arrangements:
-
-- A company can manage several restaurant branches.
-- An independent restaurant can operate without a parent company.
-- A restaurant can use its own couriers or request a courier from the shared
-  delivery operator.
-
-Delivery personnel are coordinated by restaurant or delivery-company
-administrators. Direct courier accounts and GPS tracking are outside the
-current scope.
-
-## Roles
-
-| Role | Main responsibilities |
-| --- | --- |
-| Customer | Browse restaurants, place and cancel orders, track progress, and submit reviews |
-| Business administrator | Manage a restaurant company and its branches |
-| Restaurant administrator | Manage a restaurant, catalog, orders, and restaurant-owned couriers |
-| Delivery-company administrator | Manage shared couriers and platform fulfilment |
-| System administrator | Perform platform-level administration |
-
-Authorization combines role checks with resource ownership. Customer and
-restaurant order queries include their ownership scope in the database query,
-so another tenant's resource is not loaded before access is denied.
-
-## Implemented Capabilities
-
-- Registration, email verification, login, logout, and password recovery
-- Short-lived access tokens and rotating refresh tokens
-- Refresh-token hashing, replay revocation, and session invalidation after
-  password changes
-- Company, restaurant, menu, and menu-item management
-- Restaurant-scoped catalog mutations and compound uniqueness constraints
-- Server-authoritative order pricing
-- Atomic cart, cart-item, order, timeline, and notification-intent persistence
-- Compare-and-set order transitions
-- Concurrency-safe courier claiming and release
-- Restaurant-owned and shared-delivery courier policies
-- Persisted order timelines with transition actor, role, time, and reason
-- Authenticated Socket.IO order rooms with resource-level authorization
-- Durable in-app notifications with retry, backoff, deduplication, stale-lock
-  recovery, and dead-letter state
-- Structured JSON logging with correlation IDs and sensitive-data redaction
-- Separate liveness and database-readiness endpoints
+- **Atomic, server-authoritative checkout:** menu items and prices are resolved by the server; cart, order, timeline, and notification-outbox state commit in one MongoDB transaction.
+- **Concurrency-safe fulfilment:** lifecycle changes use compare-and-set updates, while courier availability and assignment change atomically to prevent competing claims.
+- **Durable notifications:** the outbox processor atomically claims events, deduplicates delivery, recovers stale locks, retries with exponential backoff, and dead-letters repeated failures.
+- **Authorized real-time updates:** Socket.IO connections are authenticated and order-room subscriptions are checked against customer ownership, restaurant administration, or delivery-operator scope.
+- **Refresh-token replay controls:** refresh tokens are hashed and rotated; reuse of an invalidated token revokes the active refresh session.
+- **Operational visibility:** structured JSON logs carry correlation IDs and redact sensitive fields; separate liveness and database-readiness endpoints distinguish process health from MongoDB availability.
 
 ## Architecture
 
@@ -68,26 +27,24 @@ flowchart LR
     WORKER --> INAPP["In-app notifications"]
 ```
 
-The application remains one deployable service. Module boundaries are used
-where they protect business behavior; network boundaries are not introduced
-without an operational need.
+The application is a modular monolith: one deployable service with HTTP and WebSocket entry points, MongoDB persistence, and a durable notification processor. Internal module boundaries protect business behavior without adding unnecessary network boundaries.
 
 ### Main Modules
 
 ```text
 src/
-├── bootstrap/          validated runtime configuration
-├── infrastructure/     authentication, context, persistence, logging, email
-├── user/               identity and profile workflows
-├── company/            restaurant-company administration
-├── restaurant/         restaurant ownership and operations
-├── menu/               restaurant menus
-├── menu-item/          tenant-scoped catalog items
-├── order/              checkout, lifecycle, timeline, and real-time updates
-├── delivery-person/    courier eligibility, claiming, and release
-├── notifications/      durable outbox and in-app notifications
-├── restaurant-review/  restaurant feedback
-└── system-review/      platform feedback
+|-- bootstrap/          validated runtime configuration
+|-- infrastructure/     authentication, context, persistence, logging, email
+|-- user/               identity and profile workflows
+|-- company/            restaurant-company administration
+|-- restaurant/         restaurant ownership and operations
+|-- menu/               restaurant menus
+|-- menu-item/          tenant-scoped catalog items
+|-- order/              checkout, lifecycle, timeline, and real-time updates
+|-- delivery-person/    courier eligibility, claiming, and release
+|-- notifications/      durable outbox and in-app notifications
+|-- restaurant-review/  restaurant feedback
+`-- system-review/      platform feedback
 ```
 
 ## Critical Workflows
@@ -163,6 +120,28 @@ The server authorizes the room against customer ownership, restaurant
 administration, or operator scope. A successful subscription returns the
 persisted order snapshot for reconnect synchronization. Later committed
 changes are emitted as `order:updated`.
+
+## Business Model
+
+The platform supports three operating arrangements:
+
+- A company can manage several restaurant branches.
+- An independent restaurant can operate without a parent company.
+- A restaurant can use its own couriers or request a courier from the shared delivery operator.
+
+Delivery personnel are coordinated by restaurant or delivery-company administrators. Direct courier accounts and GPS tracking are outside the current scope.
+
+## Roles and Authorization
+
+| Role | Main responsibilities |
+| --- | --- |
+| Customer | Browse restaurants, place and cancel orders, track progress, and submit reviews |
+| Business administrator | Manage a restaurant company and its branches |
+| Restaurant administrator | Manage a restaurant, catalog, orders, and restaurant-owned couriers |
+| Delivery-company administrator | Manage shared couriers and platform fulfilment |
+| System administrator | Perform platform-level administration |
+
+Authorization combines role checks with resource ownership. Customer and restaurant order queries include their ownership scope in the database query, so another tenant's resource is not loaded before access is denied.
 
 ## API Overview
 
