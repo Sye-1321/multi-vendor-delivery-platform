@@ -4,7 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { Types } from 'mongoose';
 import { throwApplicationError } from '../utilities/exception-instance';
-import { saltRounds } from './../../application/constants/constants';
 import { Result } from './../../domain/result/result';
 import {
   IJwtPayload,
@@ -14,7 +13,7 @@ import {
 import { IAuthService } from './interfaces/auth-service.interface';
 import { GenericDocumentRepository } from '../database/mongoDB/generic-document.repository';
 import { User } from 'src/user/user';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { UserStatus } from 'src/user/constants/constants';
 
 @Injectable()
@@ -66,6 +65,10 @@ export class AuthService implements IAuthService {
     return bcrypt.hash(prop, saltRound);
   }
 
+  protected hashRefreshToken(refreshToken: string): string {
+    return createHash('sha256').update(refreshToken, 'utf8').digest('hex');
+  }
+
   async updateRefreshToken(
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,
@@ -85,19 +88,26 @@ export class AuthService implements IAuthService {
       throwApplicationError(HttpStatus.FORBIDDEN, 'Access denied');
     }
 
-    const verifyToken = await bcrypt.compare(refreshToken, refreshTokenHash);
+    const presentedTokenHash = this.hashRefreshToken(refreshToken);
 
-    if (!verifyToken) {
-      await this.nullifyRefreshToken(model, userId);
+    if (presentedTokenHash !== refreshTokenHash) {
       throwApplicationError(HttpStatus.FORBIDDEN, 'Access denied');
     }
     const payload = { userId, email, role };
     const newTokens = await this.generateAuthTokens(payload);
-    const tokenHash = await this.hashData(newTokens.refreshToken, saltRounds);
-    await model.findOneAndUpdate(
-      { _id: userEntity.id },
+    const tokenHash = this.hashRefreshToken(newTokens.refreshToken);
+    const updateResult = await model.findOneAndUpdate(
+      {
+        _id: userEntity.id,
+        refreshTokenHash: presentedTokenHash,
+        status: UserStatus.ACTIVE,
+      },
       { refreshTokenHash: tokenHash },
     );
+
+    if (!updateResult.isSuccess) {
+      throwApplicationError(HttpStatus.FORBIDDEN, 'Access denied');
+    }
 
     return newTokens;
   }

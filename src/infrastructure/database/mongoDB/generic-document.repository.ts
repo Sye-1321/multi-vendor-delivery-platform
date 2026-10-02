@@ -160,7 +160,7 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
     if (options?.session) {
       queryOptions.session = options.session;
     }
-    const result = await this.DocumentModel.findByIdAndUpdate(
+    const result = await this.DocumentModel.findOneAndUpdate(
       filterQuery,
       update,
       queryOptions,

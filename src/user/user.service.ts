@@ -456,7 +456,7 @@ export class UserService extends AuthService implements IUserService {
     user: User,
     token: ISignUpTokens,
   ): Promise<User> {
-    const hash = await this.hashData(token.refreshToken, saltRounds);
+    const hash = this.hashRefreshToken(token.refreshToken);
     const updatedUser: User = await this.updateUserById(user.id, {
       refreshTokenHash: hash,
     });
