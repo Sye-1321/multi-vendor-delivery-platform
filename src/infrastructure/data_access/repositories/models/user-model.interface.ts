@@ -8,6 +8,7 @@ export interface IAccountActionStateData {
 
 export interface IAccountActionsData {
   readonly EMAIL_VERIFICATION?: IAccountActionStateData;
+  readonly ADMIN_REGISTRATION?: IAccountActionStateData;
   readonly PASSWORD_RESET?: IAccountActionStateData;
   readonly EMAIL_CHANGE?: IAccountActionStateData;
 }

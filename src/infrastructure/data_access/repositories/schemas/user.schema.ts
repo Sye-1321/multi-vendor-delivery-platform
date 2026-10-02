@@ -28,6 +28,9 @@ export class AccountActionsDataModel implements IAccountActionsData {
   EMAIL_VERIFICATION?: AccountActionStateDataModel;
 
   @Prop({ type: AccountActionStateSchema })
+  ADMIN_REGISTRATION?: AccountActionStateDataModel;
+
+  @Prop({ type: AccountActionStateSchema })
   PASSWORD_RESET?: AccountActionStateDataModel;
 
   @Prop({ type: AccountActionStateSchema })

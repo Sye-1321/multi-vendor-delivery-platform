@@ -146,6 +146,15 @@ export class UserController {
     return this.userService.confirmPasswordReset(token, request);
   }
 
+  @Post('/auth/registration-completion/:token')
+  @HttpCode(HttpStatus.OK)
+  async completeAdminRegistration(
+    @Param('token') token: string,
+    @Body() request: ResetPasswordDTO,
+  ): Promise<Result<IUserResponse>> {
+    return this.userService.completeAdminRegistration(token, request);
+  }
+
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Delete('/users/me')
   @HttpCode(HttpStatus.NO_CONTENT)

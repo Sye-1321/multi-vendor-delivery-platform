@@ -48,6 +48,7 @@ export const BASE_URL = 'http://localhost:5173/almost-there';
 
 export const URLPaths = {
   verifyEmail: '/verify-email',
+  completeRegistration: '/registration-completion',
   passwordResetConfirm: '/password-reset-confirm',
   verifyNewEmail: '/verify-new-email',
 };

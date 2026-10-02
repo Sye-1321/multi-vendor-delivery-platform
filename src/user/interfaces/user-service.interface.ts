@@ -48,6 +48,10 @@ export interface IUserService {
     token: string,
     props: ResetPasswordDTO,
   ): Promise<Result<void>>;
+  completeAdminRegistration(
+    token: string,
+    props: ResetPasswordDTO,
+  ): Promise<Result<IUserResponse>>;
   getUsers(): Promise<Result<IUserResponse[]>>;
   adminUpdateUser(
     userId: Types.ObjectId,

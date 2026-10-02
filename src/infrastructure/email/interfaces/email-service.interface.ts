@@ -7,7 +7,7 @@ export interface IEmailService {
     token: string,
   ): Promise<Result<void>>;
   sendRegistrationCompletionEmail(
-    user: User,
+    user: Pick<User, 'name' | 'email'>,
     token: string,
   ): Promise<Result<void>>;
   sendPasswordResetInstructionsEmail(

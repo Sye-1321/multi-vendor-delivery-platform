@@ -58,10 +58,13 @@ export class EmailService implements IEmailService {
   }
 
   async sendRegistrationCompletionEmail(
-    user: User,
+    user: Pick<User, 'name' | 'email'>,
     token: string,
   ): Promise<Result<void>> {
-    const url = this.generateVerificationUrl(token, URLPaths.verifyEmail);
+    const url = this.generateVerificationUrl(
+      token,
+      URLPaths.completeRegistration,
+    );
     const message = `Dear ${user.name},\n\nTo complete your registration, please click the link below to set a secure password:\n${url}\nIf you did not register, please disregard this email.\n\nBest regards,\nAlmostThere Delivery Company.`;
     const result = await this.sendEmail(
       user.email,

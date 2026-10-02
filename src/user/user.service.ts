@@ -37,7 +37,7 @@ import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
 import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { CreateUserDTO } from './dtos/user/create-user.dto';
 import { LoginDTO } from './dtos/auth/login.dto';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import {
   AccountActionPurpose,
   IAccountActionPayload,
@@ -354,6 +354,32 @@ export class UserService extends AuthService implements IUserService {
     );
   }
 
+  async completeAdminRegistration(
+    token: string,
+    props: ResetPasswordDTO,
+  ): Promise<Result<IUserResponse>> {
+    const payload = await this.validateAccountActionToken(
+      token,
+      AccountActionPurpose.ADMIN_REGISTRATION,
+    );
+    const hashedPassword = await this.hashData(props.newPassword, saltRounds);
+    const administrator = await this.consumeAccountAction(
+      payload,
+      {
+        status: UserStatus.PENDING,
+        role: {
+          $in: [Role.BUSINESS_ADMINISTRATOR, Role.RESTAURANT_ADMINISTRATOR],
+        },
+      },
+      { passwordHash: hashedPassword, status: UserStatus.ACTIVE },
+      payload.email,
+    );
+    return Result.ok(
+      UserParser.createUserResponse(administrator),
+      'Registration completed. You may now sign in.',
+    );
+  }
+
   async getUsers(): Promise<Result<IUserResponse[]>> {
     const users = await this.userRepository.getUsers({ role: Role.END_USER });
     if (!users.isSuccess) {
@@ -399,16 +425,16 @@ export class UserService extends AuthService implements IUserService {
     const admin = await this.createUser(props, role);
     const token = await this.issueAccountAction(
       admin,
-      AccountActionPurpose.EMAIL_VERIFICATION,
+      AccountActionPurpose.ADMIN_REGISTRATION,
     );
-    const emailResult = await this.emailService.sendAccountVerificationEmail(
-      admin,
+    const emailResult = await this.emailService.sendRegistrationCompletionEmail(
+      { name: admin.name, email: admin.email },
       token,
     );
     if (!emailResult.isSuccess) {
       throwApplicationError(
         HttpStatus.SERVICE_UNAVAILABLE,
-        'Unable to send account verification email. Please try again later.',
+        'Unable to send registration completion email. Please try again later.',
       );
     }
     return admin;
@@ -433,7 +459,7 @@ export class UserService extends AuthService implements IUserService {
     const password =
       role === Role.END_USER && 'password' in props
         ? props.password
-        : 'password';
+        : randomBytes(32).toString('base64url');
     const hashedPassword = await this.hashData(password, saltRounds);
     const user = UserFactory.createUser(props, role, hashedPassword);
     const userModel = this.userMapper.toPersistence(user);
