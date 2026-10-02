@@ -27,3 +27,16 @@ export interface ILogin {
   email: string;
   password: string;
 }
+
+export enum AccountActionPurpose {
+  EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
+  PASSWORD_RESET = 'PASSWORD_RESET',
+  EMAIL_CHANGE = 'EMAIL_CHANGE',
+}
+
+export interface IAccountActionPayload {
+  sub: string;
+  purpose: AccountActionPurpose;
+  jti: string;
+  email?: string;
+}

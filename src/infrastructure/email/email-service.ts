@@ -1,12 +1,10 @@
 import * as nodemailer from 'nodemailer';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { IEmailService } from './interfaces/email-service.interface';
 import { User } from 'src/user/user';
 import { HttpStatus } from '@nestjs/common';
 import { throwApplicationError } from '../utilities/exception-instance';
-import { IAuthService } from '../auth/interfaces/auth-service.interface';
-import { TYPES } from 'src/application/constants/types';
 import {
   APIResponseMessage,
   BASE_URL,
@@ -22,7 +20,6 @@ export class EmailService implements IEmailService {
 
   constructor(
     private readonly configService: ConfigService,
-    @Inject(TYPES.IAuthService) private readonly authService: IAuthService,
     private readonly logger: StructuredLogger,
   ) {
     this.transporter = nodemailer.createTransport({
@@ -34,16 +31,15 @@ export class EmailService implements IEmailService {
     });
   }
 
-  private async generateVerificationUrl(
-    user: User,
-    path: string,
-  ): Promise<string> {
-    const token = await this.authService.generateVerificationToken(user);
+  private generateVerificationUrl(token: string, path: string): string {
     return `${BASE_URL}${path}/${token}`;
   }
 
-  async sendAccountVerificationEmail(user: any): Promise<Result<void>> {
-    const url = await this.generateVerificationUrl(user, URLPaths.verifyEmail);
+  async sendAccountVerificationEmail(
+    user: User,
+    token: string,
+  ): Promise<Result<void>> {
+    const url = this.generateVerificationUrl(token, URLPaths.verifyEmail);
     const message = `Dear ${user.name},\n\nPlease verify your email address by clicking the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
     const result = await this.sendEmail(
       user.email,
@@ -61,8 +57,11 @@ export class EmailService implements IEmailService {
     );
   }
 
-  async sendRegistrationCompletionEmail(user: any): Promise<Result<void>> {
-    const url = await this.generateVerificationUrl(user, URLPaths.verifyEmail);
+  async sendRegistrationCompletionEmail(
+    user: User,
+    token: string,
+  ): Promise<Result<void>> {
+    const url = this.generateVerificationUrl(token, URLPaths.verifyEmail);
     const message = `Dear ${user.name},\n\nTo complete your registration, please click the link below to set a secure password:\n${url}\nIf you did not register, please disregard this email.\n\nBest regards,\nAlmostThere Delivery Company.`;
     const result = await this.sendEmail(
       user.email,
@@ -80,9 +79,12 @@ export class EmailService implements IEmailService {
     );
   }
 
-  async sendPasswordResetInstructionsEmail(user: any): Promise<Result<void>> {
-    const url = await this.generateVerificationUrl(
-      user,
+  async sendPasswordResetInstructionsEmail(
+    user: User,
+    token: string,
+  ): Promise<Result<void>> {
+    const url = this.generateVerificationUrl(
+      token,
       URLPaths.passwordResetConfirm,
     );
     const message = `Dear ${user.name},\n\nTo reset your password, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
@@ -102,15 +104,16 @@ export class EmailService implements IEmailService {
     );
   }
 
-  async sendEmailChangeConfirmationEmail(user: any): Promise<Result<void>> {
-    const url = await this.generateVerificationUrl(
-      user,
-      URLPaths.verifyNewEmail,
-    );
-    const message = `Dear ${user._name},\n\nTo confirm your email change, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
+  async sendEmailChangeConfirmationEmail(
+    user: User,
+    newEmail: string,
+    token: string,
+  ): Promise<Result<void>> {
+    const url = this.generateVerificationUrl(token, URLPaths.verifyNewEmail);
+    const message = `Dear ${user.name},\n\nTo confirm your email change, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
     const result = await this.sendEmail(
-      user._email,
-      EmailSubjects.emailVerification,
+      newEmail,
+      EmailSubjects.emailChange,
       message,
     );
     if (!result.isSuccess)

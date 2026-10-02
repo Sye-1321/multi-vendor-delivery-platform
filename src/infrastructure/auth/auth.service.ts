@@ -7,12 +7,13 @@ import { throwApplicationError } from '../utilities/exception-instance';
 import { Result } from './../../domain/result/result';
 import {
   IJwtPayload,
+  AccountActionPurpose,
+  IAccountActionPayload,
   ISignUpTokens,
   IUserPayload,
 } from './interfaces/auth.interface';
 import { IAuthService } from './interfaces/auth-service.interface';
 import { GenericDocumentRepository } from '../database/mongoDB/generic-document.repository';
-import { User } from 'src/user/user';
 import { createHash, randomUUID } from 'node:crypto';
 import { UserStatus } from 'src/user/constants/constants';
 
@@ -158,10 +159,18 @@ export class AuthService implements IAuthService {
     }
   }
 
-  public async generateVerificationToken(user: User): Promise<string> {
-    const { id, email } = user;
-    const jwtPayload = { sub: id.toString(), email };
-
+  public async generateAccountActionToken(
+    userId: Types.ObjectId,
+    purpose: AccountActionPurpose,
+    tokenId: string,
+    email?: string,
+  ): Promise<string> {
+    const jwtPayload: IAccountActionPayload = {
+      sub: userId.toString(),
+      purpose,
+      jti: tokenId,
+      ...(email ? { email } : {}),
+    };
     return this.jwtService.signAsync(jwtPayload, {
       secret: this.configService.get<string>('JWT_VERIFICATION_TOKEN_SECRET'),
       expiresIn: this.configService.get<string>(
@@ -170,24 +179,34 @@ export class AuthService implements IAuthService {
     });
   }
 
-  public async verifyToken(token: string): Promise<boolean> {
+  public async verifyAccountActionToken(
+    token: string,
+    expectedPurpose: AccountActionPurpose,
+  ): Promise<IAccountActionPayload> {
     try {
-      await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_VERIFICATION_TOKEN_SECRET'),
-      });
-      return true;
+      const payload = await this.jwtService.verifyAsync<IAccountActionPayload>(
+        token,
+        {
+          secret: this.configService.get<string>(
+            'JWT_VERIFICATION_TOKEN_SECRET',
+          ),
+        },
+      );
+      if (
+        payload.purpose !== expectedPurpose ||
+        typeof payload.sub !== 'string' ||
+        typeof payload.jti !== 'string'
+      ) {
+        throw new Error('Invalid account-action token');
+      }
+      return payload;
     } catch {
-      return false;
+      throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
+      throw new Error('Invalid or expired token');
     }
   }
 
-  public async getUserInfoFromToken(
-    token: string,
-  ): Promise<{ userId: string; email: string }> {
-    const decoded = await this.jwtService.decode(token);
-    return {
-      userId: decoded.sub,
-      email: decoded.email,
-    };
+  protected hashAccountActionTokenId(tokenId: string): string {
+    return createHash('sha256').update(tokenId, 'utf8').digest('hex');
   }
 }

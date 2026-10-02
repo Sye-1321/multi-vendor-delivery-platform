@@ -2,11 +2,21 @@ import { Result } from 'src/domain/result/result';
 import { User } from 'src/user/user';
 
 export interface IEmailService {
-  sendAccountVerificationEmail(user: User): Promise<Result<void>>;
-  sendRegistrationCompletionEmail(user: User): Promise<Result<void>>;
-  sendPasswordResetInstructionsEmail(user: User): Promise<Result<void>>;
+  sendAccountVerificationEmail(
+    user: User,
+    token: string,
+  ): Promise<Result<void>>;
+  sendRegistrationCompletionEmail(
+    user: User,
+    token: string,
+  ): Promise<Result<void>>;
+  sendPasswordResetInstructionsEmail(
+    user: User,
+    token: string,
+  ): Promise<Result<void>>;
   sendEmailChangeConfirmationEmail(
-    user: any,
+    user: User,
     newEmail: string,
+    token: string,
   ): Promise<Result<void>>;
 }

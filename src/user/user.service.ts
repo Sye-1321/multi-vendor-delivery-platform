@@ -37,6 +37,11 @@ import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
 import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { CreateUserDTO } from './dtos/user/create-user.dto';
 import { LoginDTO } from './dtos/auth/login.dto';
+import { randomUUID } from 'node:crypto';
+import {
+  AccountActionPurpose,
+  IAccountActionPayload,
+} from '../infrastructure/auth/interfaces/auth.interface';
 
 @Injectable()
 export class UserService extends AuthService implements IUserService {
@@ -54,8 +59,14 @@ export class UserService extends AuthService implements IUserService {
 
   async createEndUser(props: CreateUserDTO): Promise<Result<IUserResponse>> {
     const endUser = await this.createUser(props, Role.END_USER);
-    const emailResult =
-      await this.emailService.sendAccountVerificationEmail(endUser);
+    const token = await this.issueAccountAction(
+      endUser,
+      AccountActionPurpose.EMAIL_VERIFICATION,
+    );
+    const emailResult = await this.emailService.sendAccountVerificationEmail(
+      endUser,
+      token,
+    );
     if (!emailResult.isSuccess) {
       throwApplicationError(
         HttpStatus.SERVICE_UNAVAILABLE,
@@ -89,14 +100,15 @@ export class UserService extends AuthService implements IUserService {
   }
 
   async verifyEmail(token: string): Promise<Result<IUserResponse>> {
-    const { userId, email } = await this.validateTokenAndExtractUserInfo(token);
-    const user = await this.getUser(userId);
-    const context: Context = new Context(email);
-    const activatedUser: User = await this.updateUser(
-      userId,
+    const payload = await this.validateAccountActionToken(
+      token,
+      AccountActionPurpose.EMAIL_VERIFICATION,
+    );
+    const activatedUser = await this.consumeAccountAction(
+      payload,
+      { status: UserStatus.PENDING },
       { status: UserStatus.ACTIVE },
-      user,
-      context,
+      payload.email,
     );
     return Result.ok(
       UserParser.createUserResponse(activatedUser),
@@ -232,10 +244,15 @@ export class UserService extends AuthService implements IUserService {
         'Current password is incorrect.',
       );
     }
-    user.email = props.newEmail;
+    const token = await this.issueAccountAction(
+      user,
+      AccountActionPurpose.EMAIL_CHANGE,
+      props.newEmail,
+    );
     await this.emailService.sendEmailChangeConfirmationEmail(
       user,
       props.newEmail,
+      token,
     );
     return Result.ok<void>(
       undefined,
@@ -260,10 +277,29 @@ export class UserService extends AuthService implements IUserService {
   }
 
   async verifyNewEmail(token: string): Promise<Result<void>> {
-    const { userId, email } = await this.validateTokenAndExtractUserInfo(token);
-    const user = await this.getUser(new Types.ObjectId(userId));
-    const context: Context = new Context(email);
-    await this.updateUser(userId, { email: email }, user, context);
+    const payload = await this.validateAccountActionToken(
+      token,
+      AccountActionPurpose.EMAIL_CHANGE,
+    );
+    if (!payload.email) {
+      throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
+    }
+    try {
+      await this.consumeAccountAction(
+        payload,
+        { [`accountActions.${payload.purpose}.email`]: payload.email },
+        { email: payload.email },
+        payload.email,
+      );
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        throwApplicationError(
+          HttpStatus.CONFLICT,
+          'Email is already in use by another account.',
+        );
+      }
+      throw error;
+    }
     return Result.ok<void>(undefined, 'Email address successfully updated.');
   }
 
@@ -275,9 +311,15 @@ export class UserService extends AuthService implements IUserService {
         'If the account exists, password reset instructions have been sent.',
       );
     }
+    const account = user.getValue();
+    const token = await this.issueAccountAction(
+      account,
+      AccountActionPurpose.PASSWORD_RESET,
+    );
     const emailResult =
       await this.emailService.sendPasswordResetInstructionsEmail(
-        user.getValue(),
+        account,
+        token,
       );
     if (!emailResult.isSuccess) {
       throwApplicationError(
@@ -295,17 +337,17 @@ export class UserService extends AuthService implements IUserService {
     token: string,
     props: ResetPasswordDTO,
   ): Promise<Result<void>> {
-    const { userId, email } = await this.validateTokenAndExtractUserInfo(token);
-    const user = await this.getUser(userId);
-    const context: Context = new Context(email);
-    const hashedPassword = await this.hashData(props.newPassword, saltRounds);
-    await this.updateUser(
-      userId,
-      { passwordHash: hashedPassword },
-      user,
-      context,
+    const payload = await this.validateAccountActionToken(
+      token,
+      AccountActionPurpose.PASSWORD_RESET,
     );
-    await this.logOutUser(this.userRepository, userId);
+    const hashedPassword = await this.hashData(props.newPassword, saltRounds);
+    await this.consumeAccountAction(
+      payload,
+      {},
+      { passwordHash: hashedPassword, refreshTokenHash: null },
+      payload.email,
+    );
     return Result.ok<void>(
       undefined,
       'Your password has been successfully updated.',
@@ -355,8 +397,14 @@ export class UserService extends AuthService implements IUserService {
 
   async createAdmin(props: CreateAdminDTO, role: Role): Promise<User> {
     const admin = await this.createUser(props, role);
-    const emailResult =
-      await this.emailService.sendAccountVerificationEmail(admin);
+    const token = await this.issueAccountAction(
+      admin,
+      AccountActionPurpose.EMAIL_VERIFICATION,
+    );
+    const emailResult = await this.emailService.sendAccountVerificationEmail(
+      admin,
+      token,
+    );
     if (!emailResult.isSuccess) {
       throwApplicationError(
         HttpStatus.SERVICE_UNAVAILABLE,
@@ -399,16 +447,72 @@ export class UserService extends AuthService implements IUserService {
     return userDoc.getValue();
   }
 
-  private async validateTokenAndExtractUserInfo(
+  private async issueAccountAction(
+    user: User,
+    purpose: AccountActionPurpose,
+    targetEmail?: string,
+  ): Promise<string> {
+    const tokenId = randomUUID();
+    const state = {
+      tokenHash: this.hashAccountActionTokenId(tokenId),
+      ...(targetEmail ? { email: targetEmail } : {}),
+    };
+    const token = await this.generateAccountActionToken(
+      user.id,
+      purpose,
+      tokenId,
+      targetEmail ?? user.email,
+    );
+    const result = await this.userRepository.updateUser(
+      { _id: user.id },
+      { $set: { [`accountActions.${purpose}`]: state } },
+    );
+    if (!result.isSuccess) {
+      throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Unable to issue account action token',
+      );
+    }
+    return token;
+  }
+
+  private async validateAccountActionToken(
     token: string,
-  ): Promise<{ userId: Types.ObjectId; email: string }> {
-    const isTokenValid = await this.verifyToken(token);
-    if (!isTokenValid) {
+    purpose: AccountActionPurpose,
+  ): Promise<IAccountActionPayload> {
+    const payload = await this.verifyAccountActionToken(token, purpose);
+    if (!Types.ObjectId.isValid(payload.sub)) {
       throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
     }
-    const userInfo = await this.getUserInfoFromToken(token);
-    const { userId, email } = userInfo;
-    return { userId: new Types.ObjectId(userId), email };
+    return payload;
+  }
+
+  private async consumeAccountAction(
+    payload: IAccountActionPayload,
+    prerequisites: Record<string, unknown>,
+    mutation: Record<string, unknown>,
+    auditEmail?: string,
+  ): Promise<User> {
+    const statePath = `accountActions.${payload.purpose}`;
+    const result = await this.userRepository.updateUser(
+      {
+        _id: new Types.ObjectId(payload.sub),
+        [`${statePath}.tokenHash`]: this.hashAccountActionTokenId(payload.jti),
+        ...prerequisites,
+      },
+      {
+        $set: {
+          ...mutation,
+          auditModifiedBy: auditEmail ?? payload.email ?? payload.sub,
+          auditModifiedDateTime: new Date().toISOString(),
+        },
+        $unset: { [statePath]: '' },
+      },
+    );
+    if (!result.isSuccess) {
+      throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
+    }
+    return result.getValue();
   }
 
   private async updateUser<T extends object>(
