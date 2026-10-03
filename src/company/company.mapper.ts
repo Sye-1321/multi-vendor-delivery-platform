@@ -3,7 +3,6 @@ import { AuditMapper } from '../audit/audit.mapper';
 import { IMapper } from '../domain/mapper/mapper';
 import { CompanyDataModel } from 'src/infrastructure/data_access/repositories/schemas/company.schema';
 import { Company } from './company';
-import { Types } from 'mongoose';
 import { UserMapper } from 'src/user/user.mapper';
 
 @Injectable()
@@ -15,14 +14,13 @@ export class CompanyMapper implements IMapper<Company, CompanyDataModel> {
 
   toPersistence(entity: Company): CompanyDataModel {
     const { id, logo, name, phoneNumber, savedAddress } = entity;
-    const ownerId: Types.ObjectId = entity.owner.id;
+    const { ownerId } = entity;
     const document: CompanyDataModel = {
       _id: id,
       logo,
       name,
       phoneNumber,
       ownerId,
-      owner: this.userMapper.toPersistence(entity.owner),
       savedAddress,
       auditCreatedBy: entity.audit.auditCreatedBy,
       auditCreatedDateTime: entity.audit.auditCreatedDateTime,
@@ -35,15 +33,25 @@ export class CompanyMapper implements IMapper<Company, CompanyDataModel> {
   }
 
   toDomain(document: any): Company {
-    const { _id, logo, name, phoneNumber, ownerId, owner, savedAddress } =
-      document;
+    const {
+      _id,
+      logo,
+      name,
+      phoneNumber,
+      ownerId,
+      ownerDetails,
+      savedAddress,
+    } = document;
+    if (!ownerDetails) {
+      throw new Error('Company owner relationship was not loaded');
+    }
     const entity: Company = Company.create(
       {
         logo,
         name,
         phoneNumber,
         ownerId,
-        owner: this.userMapper.toDomain(owner),
+        owner: this.userMapper.toDomain(ownerDetails),
         savedAddress,
         audit: this.auditMapper.toDomain(document),
       },

@@ -36,14 +36,17 @@ export class RestaurantReviewRepository
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const restaurantReview = this.restaurantReviewMapper.toDomain(created);
+    const populated = await created.populate('userDetails');
+    const restaurantReview = this.restaurantReviewMapper.toDomain(populated);
     return Result.ok(restaurantReview);
   }
 
   async getRestaurantReviewById(
     id: Types.ObjectId,
   ): Promise<Result<RestaurantReview>> {
-    const document = await this.DocumentModel.findById(id).exec();
+    const document = await this.DocumentModel.findById(id)
+      .populate('userDetails')
+      .exec();
     if (!document) {
       return Result.fail('System review not found', HttpStatus.NOT_FOUND);
     }
@@ -67,7 +70,9 @@ export class RestaurantReviewRepository
       id,
       { $set: updateData },
       { new: true },
-    ).exec();
+    )
+      .populate('userDetails')
+      .exec();
 
     if (!updated) {
       return Result.fail(

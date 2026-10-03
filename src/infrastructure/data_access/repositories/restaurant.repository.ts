@@ -32,9 +32,9 @@ export class RestaurantRepository
     const restaurantDocument = await this.restaurantModel
       .findOne({ restaurantAdminId: restaurantAdminId })
       .populate('menus')
-      .populate('reviews')
-      .populate('restaurantAdmin')
-      .populate('company');
+      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate('restaurantAdminDetails')
+      .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 
     if (!restaurantDocument) {
       return Result.fail(
@@ -53,9 +53,9 @@ export class RestaurantRepository
     const restaurantDocuments = await this.restaurantModel
       .find({ companyId: companyId })
       .populate('menus')
-      .populate('reviews')
-      .populate('restaurantAdmin')
-      .populate('company');
+      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate('restaurantAdminDetails')
+      .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
     if (!restaurantDocuments || restaurantDocuments.length === 0) {
       return Result.fail(
         'No restaurants found for the given company admin',
@@ -74,9 +74,9 @@ export class RestaurantRepository
     const restaurantDocument = await this.restaurantModel
       .findOne({ _id: restaurantId })
       .populate('menus')
-      .populate('reviews')
-      .populate('restaurantAdmin')
-      .populate('company');
+      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate('restaurantAdminDetails')
+      .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
     if (!restaurantDocument) {
       return Result.fail('Restaurant not found', HttpStatus.NOT_FOUND);
     }
@@ -107,7 +107,13 @@ export class RestaurantRepository
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const restaurant = this.restaurantMapper.toDomain(created);
+    const populated = await created.populate([
+      'restaurantAdminDetails',
+      { path: 'companyDetails', populate: { path: 'ownerDetails' } },
+      { path: 'reviews', populate: { path: 'userDetails' } },
+      'menus',
+    ]);
+    const restaurant = this.restaurantMapper.toDomain(populated);
     return Result.ok(restaurant);
   }
 
@@ -118,9 +124,9 @@ export class RestaurantRepository
     const updatedRestaurantDocument = await this.restaurantModel
       .findOneAndUpdate({ _id: restaurantId }, { $set: update }, { new: true })
       .populate('menus')
-      .populate('reviews')
-      .populate('restaurantAdmin')
-      .populate('company');
+      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate('restaurantAdminDetails')
+      .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 
     if (!updatedRestaurantDocument) {
       return Result.fail('Failed to update restaurant', HttpStatus.NOT_FOUND);
@@ -138,9 +144,9 @@ export class RestaurantRepository
     const query = this.restaurantModel
       .find(filter || {})
       .populate('menus')
-      .populate('reviews')
-      .populate('restaurantAdmin')
-      .populate('company');
+      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate('restaurantAdminDetails')
+      .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 
     if (pagination) {
       query.limit(pagination.limit).skip(pagination.skip);

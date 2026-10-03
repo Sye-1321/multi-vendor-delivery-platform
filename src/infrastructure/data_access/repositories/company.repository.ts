@@ -32,13 +32,14 @@ export class CompanyRepository extends GenericDocumentRepository<
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const company: Company = this.companyMapper.toDomain(created);
+    const populated = await created.populate('ownerDetails');
+    const company: Company = this.companyMapper.toDomain(populated);
     return Result.ok(company);
   }
 
   async getCompanyById(companyId: Types.ObjectId): Promise<Result<Company>> {
     const companyDocument =
-      await this.DocumentModel.findById(companyId).populate('owner');
+      await this.DocumentModel.findById(companyId).populate('ownerDetails');
     if (!companyDocument) {
       return Result.fail(
         `Company with id ${companyId} does not exist`,
@@ -52,7 +53,7 @@ export class CompanyRepository extends GenericDocumentRepository<
   async getCompanyByOwner(ownerId: Types.ObjectId): Promise<Result<Company>> {
     const companyDocument = await this.DocumentModel.findOne({
       ownerId: ownerId,
-    }).populate('owner');
+    }).populate('ownerDetails');
     if (!companyDocument) {
       return Result.fail(
         `Company with owner id ${ownerId} does not exist`,
@@ -71,7 +72,9 @@ export class CompanyRepository extends GenericDocumentRepository<
       companyId,
       { $set: updateData },
       { new: true },
-    ).exec();
+    )
+      .populate('ownerDetails')
+      .exec();
     if (!updatedDocument) {
       return Result.fail(
         'Error while updating company',
@@ -85,7 +88,8 @@ export class CompanyRepository extends GenericDocumentRepository<
   async getCompanies(
     filterQuery: FilterQuery<Company>,
   ): Promise<Result<Company[]>> {
-    const companyDocs = await this.DocumentModel.find(filterQuery);
+    const companyDocs =
+      await this.DocumentModel.find(filterQuery).populate('ownerDetails');
     if (!companyDocs) {
       return Result.fail(
         'Error fetching companies from database',

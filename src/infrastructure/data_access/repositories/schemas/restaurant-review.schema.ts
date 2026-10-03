@@ -18,17 +18,27 @@ export class RestaurantReviewDataModel
   @Prop({ type: Number, required: true, min: 1, max: 5 })
   rating: number;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: UserDataModel.name,
+    required: true,
+  })
   userId: Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: UserDataModel.name })
   @Type(() => UserDataModel)
-  user: UserDataModel;
+  userDetails?: UserDataModel;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, required: true })
   restaurantId: Types.ObjectId;
 }
 
 export const RestaurantReviewSchema = SchemaFactory.createForClass(
   RestaurantReviewDataModel,
 );
+
+RestaurantReviewSchema.virtual('userDetails', {
+  ref: UserDataModel.name,
+  localField: 'userId',
+  foreignField: '_id',
+  justOne: true,
+});

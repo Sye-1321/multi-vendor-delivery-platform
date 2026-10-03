@@ -164,10 +164,8 @@ export class CompanyService implements ICompanyService {
       auditModifiedBy: this.context.email,
       auditModifiedDateTime: new Date().toISOString(),
       ownerId: companyAdmin.id,
-      owner: companyAdmin,
     };
 
-    this.updateCompanyAdmin(data, companyResult.getValue().owner, this.context);
     await this.updateCompanyById(companyId, data);
 
     const updatedCompanyResult =

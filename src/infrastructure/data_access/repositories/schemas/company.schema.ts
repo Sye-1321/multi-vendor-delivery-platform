@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 import { UserDataModel } from './user.schema';
 import { Type } from 'class-transformer';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
@@ -18,12 +18,15 @@ export class CompanyDataModel extends BaseDocument implements ICompanyData {
   @Prop({ type: String, required: true })
   phoneNumber: string;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: UserDataModel.name,
+    required: true,
+  })
   ownerId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: UserDataModel.name })
   @Type(() => UserDataModel)
-  owner: UserDataModel;
+  ownerDetails?: UserDataModel;
 
   @Prop({
     type: {
@@ -39,3 +42,10 @@ export class CompanyDataModel extends BaseDocument implements ICompanyData {
 }
 
 export const CompanySchema = SchemaFactory.createForClass(CompanyDataModel);
+
+CompanySchema.virtual('ownerDetails', {
+  ref: UserDataModel.name,
+  localField: 'ownerId',
+  foreignField: '_id',
+  justOne: true,
+});

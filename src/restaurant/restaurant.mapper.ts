@@ -28,12 +28,10 @@ export class RestaurantMapper
       savedAddress,
       phoneNumber,
       companyId,
-      company,
       deliveryPersonAvailability,
       reviews,
       menus,
       restaurantAdminId,
-      restaurantAdmin,
       status,
       openingHours,
       closingHours,
@@ -49,12 +47,10 @@ export class RestaurantMapper
       savedAddress,
       phoneNumber,
       companyId,
-      company: this.companyMapper.toPersistence(company),
       deliveryPersonAvailability,
       reviews: reviews.map((review) => review.id),
       menus: menus.map((menu) => menu.id),
       restaurantAdminId,
-      restaurantAdmin: this.userMapper.toPersistence(restaurantAdmin),
       status,
       openingHours,
       closingHours,
@@ -77,11 +73,11 @@ export class RestaurantMapper
       savedAddress,
       phoneNumber,
       companyId,
-      company,
+      companyDetails,
       deliveryPersonAvailability,
       reviews,
       menus,
-      restaurantAdmin,
+      restaurantAdminDetails,
       restaurantAdminId,
       status,
       openingHours,
@@ -89,6 +85,12 @@ export class RestaurantMapper
       image,
       logo,
     } = doc;
+    if (!companyDetails) {
+      throw new Error('Restaurant company relationship was not loaded');
+    }
+    if (!restaurantAdminDetails) {
+      throw new Error('Restaurant administrator relationship was not loaded');
+    }
 
     const entity = Restaurant.create(
       {
@@ -97,14 +99,14 @@ export class RestaurantMapper
         savedAddress,
         phoneNumber,
         companyId,
-        company: this.companyMapper.toDomain(company),
+        company: this.companyMapper.toDomain(companyDetails),
         deliveryPersonAvailability,
         reviews: reviews
           ? reviews.map((r) => this.restaurantReviewMapper.toDomain(r))
           : [],
         menus: menus ? menus.map((m) => this.menuMapper.toDomain(m)) : [],
         restaurantAdminId,
-        restaurantAdmin: this.userMapper.toDomain(restaurantAdmin),
+        restaurantAdmin: this.userMapper.toDomain(restaurantAdminDetails),
         status,
         openingHours,
         closingHours,

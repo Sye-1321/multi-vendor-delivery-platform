@@ -18,12 +18,15 @@ export class SystemReviewDataModel
   @Prop({ type: String, required: true })
   reviewText: string;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: UserDataModel.name,
+    required: true,
+  })
   userId: Types.ObjectId;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: UserDataModel.name })
   @Type(() => UserDataModel)
-  user: UserDataModel;
+  userDetails?: UserDataModel;
 }
 
 export const SystemReviewSchema = SchemaFactory.createForClass(

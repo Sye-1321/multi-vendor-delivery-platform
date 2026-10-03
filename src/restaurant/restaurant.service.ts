@@ -240,7 +240,6 @@ export class RestaurantService implements IRestaurantService {
         auditModifiedBy: this.context.email,
         auditModifiedDateTime: new Date().toISOString(),
         restaurantAdminId: restaurantAdmin.id,
-        restaurantAdmin: restaurantAdmin,
       };
 
       this.updateRestaurantAdmin(data, targetRestaurant!, this.context);

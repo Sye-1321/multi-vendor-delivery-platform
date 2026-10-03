@@ -35,7 +35,8 @@ export class SystemReviewRepository
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const systemReview = this.mapper.toDomain(created);
+    const populated = await created.populate('userDetails');
+    const systemReview = this.mapper.toDomain(populated);
     return Result.ok(systemReview);
   }
 
@@ -48,7 +49,9 @@ export class SystemReviewRepository
   }
 
   async getSystemReviewById(id: Types.ObjectId): Promise<Result<SystemReview>> {
-    const document = await this.DocumentModel.findById(id).exec();
+    const document = await this.DocumentModel.findById(id)
+      .populate('userDetails')
+      .exec();
     if (!document) {
       return Result.fail('System review not found', HttpStatus.NOT_FOUND);
     }
@@ -64,7 +67,9 @@ export class SystemReviewRepository
       id,
       { $set: updateData },
       { new: true },
-    ).exec();
+    )
+      .populate('userDetails')
+      .exec();
 
     if (!updated) {
       return Result.fail(
@@ -77,7 +82,9 @@ export class SystemReviewRepository
   }
 
   async getAllSystemReviews(): Promise<Result<SystemReview[]>> {
-    const documents = await this.DocumentModel.find({}).exec();
+    const documents = await this.DocumentModel.find({})
+      .populate('userDetails')
+      .exec();
     if (!documents || documents.length === 0) {
       return Result.fail('No system reviews found', HttpStatus.NOT_FOUND);
     }
@@ -88,7 +95,9 @@ export class SystemReviewRepository
   async getSystemReviewByUserId(
     userId: Types.ObjectId,
   ): Promise<Result<SystemReview>> {
-    const document = await this.DocumentModel.findOne({ userId }).exec();
+    const document = await this.DocumentModel.findOne({ userId })
+      .populate('userDetails')
+      .exec();
     if (!document) {
       return Result.fail(
         'System review not found for user',

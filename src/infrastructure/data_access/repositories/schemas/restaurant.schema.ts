@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Types } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 import { IRestaurantDataModel } from '../models/restaurant-model.interface';
 import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
@@ -36,24 +36,26 @@ export class RestaurantDataModel
   @Prop({ type: String, required: true })
   phoneNumber: string;
 
-  @Prop({ type: Types.ObjectId, ref: CompanyDataModel.name, required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: CompanyDataModel.name,
+    required: true,
+  })
   companyId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: CompanyDataModel.name })
-  company: CompanyDataModel;
+  companyDetails?: CompanyDataModel;
 
   @Prop({ type: Boolean, default: false })
   deliveryPersonAvailability: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: UserDataModel.name, required: true })
-  restaurantAdminId: Types.ObjectId;
-
   @Prop({
-    type: Types.ObjectId,
+    type: MongooseSchema.Types.ObjectId,
     ref: UserDataModel.name,
     required: true,
   })
-  restaurantAdmin: UserDataModel;
+  restaurantAdminId: Types.ObjectId;
+
+  restaurantAdminDetails?: UserDataModel;
 
   @Prop({
     type: String,
@@ -98,6 +100,20 @@ RestaurantSchema.virtual('reviewsDetail', {
   foreignField: '_id',
   justOne: false,
   autopopulate: true,
+});
+
+RestaurantSchema.virtual('companyDetails', {
+  ref: CompanyDataModel.name,
+  localField: 'companyId',
+  foreignField: '_id',
+  justOne: true,
+});
+
+RestaurantSchema.virtual('restaurantAdminDetails', {
+  ref: UserDataModel.name,
+  localField: 'restaurantAdminId',
+  foreignField: '_id',
+  justOne: true,
 });
 
 RestaurantSchema.index({ restaurantAdminId: 1 }, { unique: true });

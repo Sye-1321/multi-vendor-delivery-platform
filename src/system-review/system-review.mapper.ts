@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { Types } from 'mongoose';
 import { IMapper } from '../domain/mapper/mapper';
 import { AuditMapper } from '../audit/audit.mapper';
 import { SystemReviewDataModel } from 'src/infrastructure/data_access/repositories/schemas/system-review.schema';
@@ -16,14 +15,12 @@ export class SystemReviewMapper
   ) {}
 
   toPersistence(entity: SystemReview): SystemReviewDataModel {
-    const { id, reviewText, rating, user } = entity;
-    const userId: Types.ObjectId = user.id;
+    const { id, reviewText, rating, userId } = entity;
     const document: SystemReviewDataModel = {
       _id: id,
       userId,
       rating,
       reviewText,
-      user: this.userMapper.toPersistence(user),
       auditCreatedBy: entity.audit.auditCreatedBy,
       auditCreatedDateTime: entity.audit.auditCreatedDateTime,
       auditModifiedBy: entity.audit.auditModifiedBy,
@@ -35,12 +32,15 @@ export class SystemReviewMapper
   }
 
   toDomain(model: SystemReviewDataModel): SystemReview {
-    const { _id, userId, user, rating, reviewText } = model;
+    const { _id, userId, userDetails, rating, reviewText } = model;
+    if (!userDetails) {
+      throw new Error('System review author relationship was not loaded');
+    }
 
     const entity: SystemReview = SystemReview.create(
       {
         userId,
-        user: this.userMapper.toDomain(user),
+        user: this.userMapper.toDomain(userDetails),
         rating,
         reviewText,
         audit: this.auditMapper.toDomain(model),
