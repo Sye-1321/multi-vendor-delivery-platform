@@ -25,6 +25,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
   let connection: Connection;
   let model: Model<UserDataModel>;
   let service: UserService;
+  let repository: UserRepository;
   let registrationEmails: Array<{
     user: Pick<User, 'name' | 'email'>;
     token: string;
@@ -41,7 +42,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
   beforeEach(() => {
     registrationEmails = [];
     const mapper = new UserMapper(new AuditMapper());
-    const repository = new UserRepository(model as never, connection, mapper);
+    repository = new UserRepository(model as never, connection, mapper);
     const emailService = {
       sendAccountVerificationEmail: () => Promise.resolve(Result.ok(undefined)),
       sendRegistrationCompletionEmail: (
@@ -76,6 +77,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
   });
 
   afterEach(async () => {
+    jest.restoreAllMocks();
     await model.deleteMany({});
   });
 
@@ -115,6 +117,24 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
       { secret: jwtSecret, expiresIn },
     );
   };
+
+  it('rolls back the administrator when registration state persistence fails', async () => {
+    const input = adminInput();
+    jest
+      .spyOn(repository, 'updateUser')
+      .mockResolvedValueOnce(
+        Result.fail('controlled registration failure', 500),
+      );
+
+    await expect(service.createCompanyAdmin(input)).rejects.toMatchObject({
+      status: 503,
+    });
+
+    expect(
+      await model.findOne({ email: input.email }).lean().exec(),
+    ).toBeNull();
+    expect(registrationEmails).toHaveLength(0);
+  });
 
   it('creates a pending administrator without a known or exposed default credential', async () => {
     const result = await service.createCompanyAdmin(adminInput());

@@ -1,7 +1,7 @@
 import { AuthService } from '../infrastructure/auth/auth.service';
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Types } from 'mongoose';
+import { ClientSession, Types } from 'mongoose';
 import { UserRepository } from '../infrastructure/data_access/repositories/user.repository';
 import { saltRounds, Role } from '../application/constants/constants';
 import { TYPES } from '../application/constants/types';
@@ -399,7 +399,8 @@ export class UserService extends AuthService implements IUserService {
   ): Promise<Result<IUserResponse>> {
     const context: Context = this.contextService.getContext();
     if (props.status === UserStatus.SUSPENDED) {
-      const suspendedUser = await this.suspendUserAccess(userId, context);
+      const suspendedUser = await this.suspendUserAccount(userId);
+      this.publishAccessRevocation(userId);
       return Result.ok(UserParser.createUserResponse(suspendedUser));
     }
     const user = await this.getUser(new Types.ObjectId(userId));
@@ -413,18 +414,19 @@ export class UserService extends AuthService implements IUserService {
   }
 
   async suspendUser(userId: Types.ObjectId): Promise<Result<void>> {
-    const context: Context = this.contextService.getContext();
-    await this.suspendUserAccess(userId, context);
+    await this.suspendUserAccount(userId);
+    this.publishAccessRevocation(userId);
     return Result.ok<void>(
       undefined,
       'User account has been successfully suspended.',
     );
   }
 
-  private async suspendUserAccess(
+  async suspendUserAccount(
     userId: Types.ObjectId,
-    context: Context,
+    options?: { session?: ClientSession },
   ): Promise<User> {
+    const context: Context = this.contextService.getContext();
     const updated = await this.userRepository.updateUser(
       { _id: userId },
       {
@@ -433,6 +435,7 @@ export class UserService extends AuthService implements IUserService {
         auditModifiedBy: context.email,
         auditModifiedDateTime: new Date().toISOString(),
       },
+      options,
     );
     if (!updated.isSuccess) {
       throwApplicationError(
@@ -440,16 +443,51 @@ export class UserService extends AuthService implements IUserService {
         'User could not be updated',
       );
     }
-    this.accessRevocations.publish(userId.toString());
     return updated.getValue();
   }
 
+  publishAccessRevocation(userId: Types.ObjectId): void {
+    this.accessRevocations.publish(userId.toString());
+  }
+
   async createAdmin(props: CreateAdminDTO, role: Role): Promise<User> {
-    const admin = await this.createUser(props, role);
+    const session = await this.userRepository.startSession();
+    try {
+      const registration = await session.withTransaction(async () =>
+        this.createAdminRegistration(props, role, { session }),
+      );
+      if (!registration) {
+        throwApplicationError(
+          HttpStatus.SERVICE_UNAVAILABLE,
+          'Error while creating user',
+        );
+      }
+      await this.sendAdminRegistrationEmail(
+        registration.admin,
+        registration.token,
+      );
+      return registration.admin;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async createAdminRegistration(
+    props: CreateAdminDTO,
+    role: Role,
+    options?: { session?: ClientSession },
+  ): Promise<{ admin: User; token: string }> {
+    const admin = await this.createUser(props, role, options);
     const token = await this.issueAccountAction(
       admin,
       AccountActionPurpose.ADMIN_REGISTRATION,
+      undefined,
+      options,
     );
+    return { admin, token };
+  }
+
+  async sendAdminRegistrationEmail(admin: User, token: string): Promise<void> {
     const emailResult = await this.emailService.sendRegistrationCompletionEmail(
       { name: admin.name, email: admin.email },
       token,
@@ -460,12 +498,12 @@ export class UserService extends AuthService implements IUserService {
         'Unable to send registration completion email. Please try again later.',
       );
     }
-    return admin;
   }
 
   private async createUser(
     props: CreateUserDTO | CreateAdminDTO,
     role: Role,
+    options?: { session?: ClientSession },
   ): Promise<User> {
     const existingUser: Result<User> = await this.userRepository.findByEmail(
       props.email,
@@ -486,7 +524,7 @@ export class UserService extends AuthService implements IUserService {
     const hashedPassword = await this.hashData(password, saltRounds);
     const user = UserFactory.createUser(props, role, hashedPassword);
     const userModel = this.userMapper.toPersistence(user);
-    const userDoc = await this.userRepository.createUser(userModel);
+    const userDoc = await this.userRepository.createUser(userModel, options);
     if (!userDoc.isSuccess) {
       throwApplicationError(
         HttpStatus.SERVICE_UNAVAILABLE,
@@ -500,6 +538,7 @@ export class UserService extends AuthService implements IUserService {
     user: User,
     purpose: AccountActionPurpose,
     targetEmail?: string,
+    options?: { session?: ClientSession },
   ): Promise<string> {
     const tokenId = randomUUID();
     const state = {
@@ -515,6 +554,7 @@ export class UserService extends AuthService implements IUserService {
     const result = await this.userRepository.updateUser(
       { _id: user.id },
       { $set: { [`accountActions.${purpose}`]: state } },
+      options,
     );
     if (!result.isSuccess) {
       throwApplicationError(

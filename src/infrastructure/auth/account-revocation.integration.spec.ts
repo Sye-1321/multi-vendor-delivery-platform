@@ -150,6 +150,28 @@ describeWithMongo('Account suspension revocation (MongoDB)', () => {
     expect(publishedUserIds).toEqual([userId.toString()]);
   });
 
+  it('rolls back suspension without publishing revocation when the transaction aborts', async () => {
+    const { userId } = await createActiveUser();
+    const before = await model.findById(userId).lean().exec();
+    const session = await repository.startSession();
+
+    try {
+      await expect(
+        session.withTransaction(async () => {
+          await userService.suspendUserAccount(userId, { session });
+          throw new Error('force transaction abort');
+        }),
+      ).rejects.toThrow('force transaction abort');
+    } finally {
+      await session.endSession();
+    }
+
+    const after = await model.findById(userId).lean().exec();
+    expect(after?.status).toBe(UserStatus.ACTIVE);
+    expect(after?.refreshTokenHash).toBe(before?.refreshTokenHash);
+    expect(publishedUserIds).toHaveLength(0);
+  });
+
   it('atomically clears refresh state and reactivation does not revive the old token', async () => {
     const { userId, tokens } = await createActiveUser();
 

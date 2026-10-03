@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, FilterQuery, Model, Types } from 'mongoose';
+import { ClientSession, Connection, FilterQuery, Model, Types } from 'mongoose';
 import { User } from 'src/user/user';
 import { UserMapper } from '../../../user/user.mapper';
 import { UserDocument, UserDataModel } from './schemas/user.schema';
@@ -22,8 +22,13 @@ export class UserRepository
     super(userModel, connection, userMapper);
   }
 
-  async createUser(userModel: UserDataModel): Promise<Result<User>> {
-    const createdUser = await this.userModel.create(userModel);
+  async createUser(
+    userModel: UserDataModel,
+    options?: { session?: ClientSession },
+  ): Promise<Result<User>> {
+    const [createdUser] = await this.userModel.create([userModel], {
+      session: options?.session,
+    });
     if (!createdUser) {
       return Result.fail(
         'Error while creating user',
@@ -58,11 +63,15 @@ export class UserRepository
     return Result.ok(user);
   }
 
-  async updateUser(filter: any, updateData: any): Promise<Result<User>> {
+  async updateUser(
+    filter: any,
+    updateData: any,
+    options?: { session?: ClientSession },
+  ): Promise<Result<User>> {
     const updatedUserDocument = await this.DocumentModel.findOneAndUpdate(
       filter,
       updateData,
-      { new: true },
+      { new: true, session: options?.session },
     );
     if (!updatedUserDocument) {
       return Result.fail(

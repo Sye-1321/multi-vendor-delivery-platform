@@ -20,17 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
-    services:
-      mongodb:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval \"db.adminCommand('ping').ok\""
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 20
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -43,6 +32,32 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+
+      - name: Start MongoDB replica set
+        run: |
+          docker run --detach --name ci-mongodb --publish 27017:27017 mongo:7 mongod --replSet rs0 --bind_ip_all
+          for attempt in {1..30}; do
+            if docker exec ci-mongodb mongosh --quiet --eval "db.adminCommand('ping').ok" | grep -q 1; then
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "MongoDB did not become ready" >&2
+              exit 1
+            fi
+            sleep 2
+          done
+          docker exec ci-mongodb mongosh --quiet --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'127.0.0.1:27017'}]})"
+          for attempt in {1..30}; do
+            if docker exec ci-mongodb mongosh --quiet --eval "db.hello().isWritablePrimary" | grep -q true; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "MongoDB replica set did not elect a PRIMARY" >&2
+              docker logs ci-mongodb
+              exit 1
+            fi
+            sleep 2
+          done
 
       - name: Check formatting
         run: npm run format:check
@@ -59,4 +74,4 @@ jobs:
       - name: Run MongoDB integration tests
         run: npm run test:integration
         env:
-          MONGODB_TEST_URI: mongodb://127.0.0.1:27017/?directConnection=true
+          MONGODB_TEST_URI: mongodb://127.0.0.1:27017/?replicaSet=rs0&directConnection=true

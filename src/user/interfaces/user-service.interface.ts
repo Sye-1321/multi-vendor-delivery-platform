@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { ClientSession, Types } from 'mongoose';
 import {
   IUserSignedInResponseDTO,
   IUserResponse,
@@ -58,6 +58,17 @@ export interface IUserService {
     props: AdminUpdateUserDTO,
   ): Promise<Result<IUserResponse>>;
   suspendUser(userId: Types.ObjectId): Promise<Result<void>>;
+  suspendUserAccount(
+    userId: Types.ObjectId,
+    options?: { session?: ClientSession },
+  ): Promise<User>;
+  publishAccessRevocation(userId: Types.ObjectId): void;
   getContextUser(): Promise<User>;
   createAdmin(props: CreateAdminDTO, role: Role): Promise<User>;
+  createAdminRegistration(
+    props: CreateAdminDTO,
+    role: Role,
+    options?: { session?: ClientSession },
+  ): Promise<{ admin: User; token: string }>;
+  sendAdminRegistrationEmail(admin: User, token: string): Promise<void>;
 }
