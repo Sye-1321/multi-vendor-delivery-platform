@@ -71,6 +71,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
       mapper,
       { getContext: () => ({ email: 'system@example.com' }) } as never,
       repository,
+      { publish: jest.fn() } as never,
     );
   });
 

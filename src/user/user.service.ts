@@ -42,6 +42,7 @@ import {
   AccountActionPurpose,
   IAccountActionPayload,
 } from '../infrastructure/auth/interfaces/auth.interface';
+import { AccessRevocationPublisher } from 'src/infrastructure/auth/access-revocation.publisher';
 
 @Injectable()
 export class UserService extends AuthService implements IUserService {
@@ -53,6 +54,7 @@ export class UserService extends AuthService implements IUserService {
     @Inject(TYPES.IContextService)
     private readonly contextService: IContextService,
     private readonly userRepository: UserRepository,
+    private readonly accessRevocations: AccessRevocationPublisher,
   ) {
     super(jwtService, configService);
   }
@@ -396,6 +398,10 @@ export class UserService extends AuthService implements IUserService {
     props: AdminUpdateUserDTO,
   ): Promise<Result<IUserResponse>> {
     const context: Context = this.contextService.getContext();
+    if (props.status === UserStatus.SUSPENDED) {
+      const suspendedUser = await this.suspendUserAccess(userId, context);
+      return Result.ok(UserParser.createUserResponse(suspendedUser));
+    }
     const user = await this.getUser(new Types.ObjectId(userId));
     const updatedUser: User = await this.updateUser(
       userId,
@@ -408,17 +414,34 @@ export class UserService extends AuthService implements IUserService {
 
   async suspendUser(userId: Types.ObjectId): Promise<Result<void>> {
     const context: Context = this.contextService.getContext();
-    const user = await this.getUser(new Types.ObjectId(userId));
-    await this.updateUser(
-      userId,
-      { status: UserStatus.SUSPENDED },
-      user,
-      context,
-    );
+    await this.suspendUserAccess(userId, context);
     return Result.ok<void>(
       undefined,
       'User account has been successfully suspended.',
     );
+  }
+
+  private async suspendUserAccess(
+    userId: Types.ObjectId,
+    context: Context,
+  ): Promise<User> {
+    const updated = await this.userRepository.updateUser(
+      { _id: userId },
+      {
+        status: UserStatus.SUSPENDED,
+        refreshTokenHash: null,
+        auditModifiedBy: context.email,
+        auditModifiedDateTime: new Date().toISOString(),
+      },
+    );
+    if (!updated.isSuccess) {
+      throwApplicationError(
+        HttpStatus.NOT_MODIFIED,
+        'User could not be updated',
+      );
+    }
+    this.accessRevocations.publish(userId.toString());
+    return updated.getValue();
   }
 
   async createAdmin(props: CreateAdminDTO, role: Role): Promise<User> {

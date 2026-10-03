@@ -22,6 +22,8 @@ import { IRestaurantRepository } from 'src/infrastructure/data_access/repositori
 import { StructuredLogger } from 'src/infrastructure/logger/structured-logger.service';
 import { OrderParser } from '../order.parser';
 import { OrderEventPublisher } from './order-event.publisher';
+import { AccountAccessService } from 'src/infrastructure/auth/account-access.service';
+import { AccessRevocationPublisher } from 'src/infrastructure/auth/access-revocation.publisher';
 
 interface SocketPrincipal {
   userId: string;
@@ -41,11 +43,14 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
   private readonly server: Server;
 
   private eventSubscription?: Subscription;
+  private revocationSubscription?: Subscription;
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly events: OrderEventPublisher,
+    private readonly accountAccess: AccountAccessService,
+    private readonly accessRevocations: AccessRevocationPublisher,
     private readonly logger: StructuredLogger,
     @Inject(TYPES.IOrderRepository)
     private readonly orderRepository: IOrderRepository,
@@ -57,6 +62,18 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
     this.eventSubscription = this.events.events$.subscribe((event) => {
       this.server.to(this.roomName(event.orderId)).emit('order:updated', event);
     });
+    this.revocationSubscription = this.accessRevocations.revocations$.subscribe(
+      (userId) => {
+        try {
+          this.server.in(this.userRoomName(userId)).disconnectSockets(true);
+        } catch (error) {
+          this.logger.warn('order_socket_revocation_failed', {
+            userId,
+            reason: error instanceof Error ? error.message : 'unknown_error',
+          });
+        }
+      },
+    );
   }
 
   async handleConnection(client: Socket): Promise<void> {
@@ -68,8 +85,18 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
         ),
       });
 
+      const userId = payload.sub?.toString();
+      if (!userId || !(await this.accountAccess.isActive(userId))) {
+        throw new WsException('Authentication is required.');
+      }
+
+      await client.join(this.userRoomName(userId));
+      if (!(await this.accountAccess.isActive(userId))) {
+        throw new WsException('Authentication is required.');
+      }
+
       client.data.principal = {
-        userId: payload.sub.toString(),
+        userId,
         role: payload.role,
       } satisfies SocketPrincipal;
     } catch (error) {
@@ -92,6 +119,10 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
 
     const principal = client.data.principal as SocketPrincipal | undefined;
     if (!principal) {
+      throw new WsException('Authentication is required.');
+    }
+    if (!(await this.accountAccess.isActive(principal.userId))) {
+      client.disconnect(true);
       throw new WsException('Authentication is required.');
     }
 
@@ -132,6 +163,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
 
   onModuleDestroy(): void {
     this.eventSubscription?.unsubscribe();
+    this.revocationSubscription?.unsubscribe();
   }
 
   private async canObserveOrder(
@@ -178,5 +210,9 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
 
   private roomName(orderId: string): string {
     return `order:${orderId}`;
+  }
+
+  private userRoomName(userId: string): string {
+    return `user:${userId}`;
   }
 }

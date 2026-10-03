@@ -69,6 +69,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
       {} as never,
       { getContext: () => ({ email: currentEmail }) } as never,
       repository,
+      { publish: jest.fn() } as never,
     );
   });
 

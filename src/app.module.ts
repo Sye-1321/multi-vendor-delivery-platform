@@ -21,6 +21,7 @@ import { RequestContextMiddleware } from './infrastructure/middlewares/request-c
 import { RequestLoggingMiddleware } from './infrastructure/middlewares/request-logging.middleware';
 import { ObservabilityModule } from './infrastructure/logger/observability.module';
 import { NotificationModule } from './notifications/notification.module';
+import { AccountAccessModule } from './infrastructure/auth/account-access.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { NotificationModule } from './notifications/notification.module';
     RequestContextModule,
     ObservabilityModule,
     HealthModule,
+    AccountAccessModule,
     AuthModule,
     UserModule,
     CompanyModule,
