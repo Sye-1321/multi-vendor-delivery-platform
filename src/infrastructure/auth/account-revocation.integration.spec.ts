@@ -24,9 +24,9 @@ import { AccessRevocationPublisher } from './access-revocation.publisher';
 const mongoUri = process.env.MONGODB_TEST_URI;
 const describeWithMongo = mongoUri ? describe : describe.skip;
 const configValues = {
-  JWT_ACCESS_TOKEN_SECRET: 'a4-access-secret-at-least-32-characters',
+  JWT_ACCESS_TOKEN_SECRET: 'access-token-test-secret-at-least-32-characters',
   JWT_ACCESS_TOKEN_EXPIRATION_TIME: '15m',
-  JWT_REFRESH_TOKEN_SECRET: 'a4-refresh-secret-at-least-32-characters',
+  JWT_REFRESH_TOKEN_SECRET: 'refresh-token-test-secret-at-least-32-characters',
   JWT_REFRESH_TOKEN_EXPIRATION_TIME: '1d',
 };
 
@@ -103,15 +103,16 @@ describeWithMongo('Account suspension revocation (MongoDB)', () => {
 
   async function createActiveUser() {
     const userId = new Types.ObjectId();
+    const email = `${randomUUID()}@example.com`;
     const tokens = await authService.generateAuthTokens({
       userId,
-      email: `${randomUUID()}@example.com`,
+      email,
       role: Role.END_USER,
     });
     await model.create({
       _id: userId,
-      name: 'A4 User',
-      email: `${randomUUID()}@example.com`,
+      name: 'Suspension Test User',
+      email,
       phoneNumber: randomUUID(),
       passwordHash: 'not-used',
       role: Role.END_USER,
@@ -133,7 +134,7 @@ describeWithMongo('Account suspension revocation (MongoDB)', () => {
     return strategy.validate(payload);
   }
 
-  it('accepts a real access token while ACTIVE and rejects the same token after suspension', async () => {
+  it('rejects access after account suspension', async () => {
     const { userId, tokens } = await createActiveUser();
 
     await expect(authenticate(tokens.accessToken)).resolves.toBeDefined();

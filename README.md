@@ -10,7 +10,7 @@ A tenant-aware NestJS backend for multi-vendor food ordering and delivery, desig
 - **Concurrency-safe fulfilment:** lifecycle changes use compare-and-set updates, while courier availability and assignment change atomically to prevent competing claims.
 - **Durable notifications:** the outbox processor atomically claims events, deduplicates delivery, recovers stale locks, retries with exponential backoff, and dead-letters repeated failures.
 - **Authorized real-time updates:** Socket.IO connections are authenticated and order-room subscriptions are checked against customer ownership, restaurant administration, or delivery-operator scope.
-- **Refresh-token replay controls:** refresh tokens are hashed and rotated; reuse of an invalidated token revokes the active refresh session.
+- **Refresh-token replay controls:** refresh tokens are stored as digests and atomically rotated; stale tokens are rejected without invalidating their successfully rotated replacements.
 - **Operational visibility:** structured JSON logs carry correlation IDs and redact sensitive fields; separate liveness and database-readiness endpoints distinguish process health from MongoDB availability.
 
 ## Architecture
@@ -235,6 +235,16 @@ It checks:
 2. ESLint with zero warnings
 3. Production compilation
 4. Focused behavior tests
+
+Run the MongoDB-backed authentication integration tests against the local
+Compose database:
+
+```bash
+MONGODB_TEST_URI="mongodb://127.0.0.1:27018/?directConnection=true" npm run test:integration
+```
+
+CI runs both the focused tests and this integration command against its MongoDB
+service.
 
 The test suite intentionally protects high-risk boundaries rather than pursuing
 a coverage percentage. Current checks cover readiness, request-context

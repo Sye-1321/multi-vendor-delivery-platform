@@ -11,7 +11,7 @@ const hashRefreshToken = (refreshToken: string): string =>
   createHash('sha256').update(refreshToken, 'utf8').digest('hex');
 
 describe('AuthService refresh rotation', () => {
-  it('rejects replay of a real JWT after rotation and leaves the replacement valid', async () => {
+  it('rejects refresh-token replay after rotation and leaves the replacement valid', async () => {
     const userId = new Types.ObjectId();
     const jwtService = new JwtService();
     const config = {

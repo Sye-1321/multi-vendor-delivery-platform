@@ -1,10 +1,5 @@
 import { Types } from 'mongoose';
-import {
-  AccountActionPurpose,
-  IAccountActionPayload,
-  ISignUpTokens,
-  IUserPayload,
-} from './auth.interface';
+import { ISignUpTokens, IUserPayload } from './auth.interface';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 
 export interface IAuthService {
@@ -20,14 +15,4 @@ export interface IAuthService {
     userId: Types.ObjectId,
   );
   logOut(model: GenericDocumentRepository<any, any>, userId: Types.ObjectId);
-  generateAccountActionToken(
-    userId: Types.ObjectId,
-    purpose: AccountActionPurpose,
-    tokenId: string,
-    email?: string,
-  ): Promise<string>;
-  verifyAccountActionToken(
-    token: string,
-    expectedPurpose: AccountActionPurpose,
-  ): Promise<IAccountActionPayload>;
 }

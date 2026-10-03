@@ -171,7 +171,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
     ).resolves.toBe(true);
   });
 
-  it('rejects cross-purpose use in both directions through real JWT validation', async () => {
+  it('rejects cross-purpose account-action tokens in both directions', async () => {
     const result = await service.createCompanyAdmin(adminInput());
     const admin = result.getValue();
     const registration = registrationEmails[0].token;

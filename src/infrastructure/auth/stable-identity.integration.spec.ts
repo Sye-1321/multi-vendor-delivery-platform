@@ -22,11 +22,12 @@ import { AccessTokenStrategy } from './strategies/access-token-strategy';
 const mongoUri = process.env.MONGODB_TEST_URI;
 const describeWithMongo = mongoUri ? describe : describe.skip;
 const configValues = {
-  JWT_ACCESS_TOKEN_SECRET: 'a5-access-secret-at-least-32-characters',
+  JWT_ACCESS_TOKEN_SECRET: 'access-token-test-secret-at-least-32-characters',
   JWT_ACCESS_TOKEN_EXPIRATION_TIME: '15m',
-  JWT_REFRESH_TOKEN_SECRET: 'a5-refresh-secret-at-least-32-characters',
+  JWT_REFRESH_TOKEN_SECRET: 'refresh-token-test-secret-at-least-32-characters',
   JWT_REFRESH_TOKEN_EXPIRATION_TIME: '1d',
-  JWT_VERIFICATION_TOKEN_SECRET: 'a5-action-secret-at-least-32-characters',
+  JWT_VERIFICATION_TOKEN_SECRET:
+    'account-action-test-secret-at-least-32-characters',
   JWT_VERIFICATION_TOKEN_EXPIRATION_TIME: '15m',
 };
 

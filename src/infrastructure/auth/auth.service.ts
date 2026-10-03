@@ -159,7 +159,7 @@ export class AuthService implements IAuthService {
     }
   }
 
-  public async generateAccountActionToken(
+  protected async generateAccountActionToken(
     userId: Types.ObjectId,
     purpose: AccountActionPurpose,
     tokenId: string,
@@ -179,7 +179,7 @@ export class AuthService implements IAuthService {
     });
   }
 
-  public async verifyAccountActionToken(
+  protected async verifyAccountActionToken(
     token: string,
     expectedPurpose: AccountActionPurpose,
   ): Promise<IAccountActionPayload> {
@@ -201,8 +201,10 @@ export class AuthService implements IAuthService {
       }
       return payload;
     } catch {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'Invalid or expired token');
-      throw new Error('Invalid or expired token');
+      return throwApplicationError(
+        HttpStatus.BAD_REQUEST,
+        'Invalid or expired token',
+      );
     }
   }
 

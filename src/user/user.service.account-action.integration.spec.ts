@@ -146,7 +146,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
     );
   };
 
-  it('rejects cross-purpose tokens through the real signed-token consumer path', async () => {
+  it('rejects cross-purpose account-action tokens', async () => {
     const verificationUser = await createUser(UserStatus.PENDING);
     const verification = await issue(
       verificationUser._id,
@@ -301,7 +301,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
     expect(persistedA.accountActions.EMAIL_CHANGE).toEqual(pendingAction);
   });
 
-  it('rejects an expired real JWT without performing its action', async () => {
+  it('rejects an expired password-reset token without changing state', async () => {
     const user = await createUser();
     const token = await issue(
       user._id,
