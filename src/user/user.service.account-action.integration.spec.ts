@@ -25,6 +25,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
   let repository: UserRepository;
   let service: UserService;
   let currentEmail: string;
+  let currentUserId: string;
   let deliveredEmailChangeTokens: string[];
 
   beforeAll(async () => {
@@ -67,7 +68,9 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
       { get: (key: keyof typeof config) => config[key] } as ConfigService,
       emailService as never,
       {} as never,
-      { getContext: () => ({ email: currentEmail }) } as never,
+      {
+        getContext: () => ({ email: currentEmail, userId: currentUserId }),
+      } as never,
       repository,
       { publish: jest.fn() } as never,
     );
@@ -103,6 +106,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
       auditCreatedDateTime: new Date().toISOString(),
     });
     currentEmail = email;
+    currentUserId = document._id.toString();
     return document;
   };
 

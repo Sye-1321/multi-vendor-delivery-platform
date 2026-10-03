@@ -641,22 +641,29 @@ export class UserService extends AuthService implements IUserService {
 
   async getContextUser(): Promise<User> {
     const context: Context = this.contextService.getContext();
-    const userResult = await this.userRepository.findByEmail(context.email);
-    if (!userResult.isSuccess) {
+    if (!context.userId || !Types.ObjectId.isValid(context.userId)) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'User does not exist');
     }
-    return userResult.getValue();
+    return this.getUser(new Types.ObjectId(context.userId));
   }
 
   private async authorizeSelfAccess(userId: Types.ObjectId): Promise<User> {
     const context: Context = this.contextService.getContext();
-    const user = await this.getUser(new Types.ObjectId(userId));
-    if (context.email.toString() !== user.email.toString()) {
+    const requestedUserId = userId?.toString();
+    if (
+      !context.userId ||
+      !Types.ObjectId.isValid(context.userId) ||
+      !requestedUserId ||
+      !Types.ObjectId.isValid(requestedUserId) ||
+      !new Types.ObjectId(context.userId).equals(
+        new Types.ObjectId(requestedUserId),
+      )
+    ) {
       throwApplicationError(
         HttpStatus.FORBIDDEN,
         'You don’t have sufficient privilege',
       );
     }
-    return user;
+    return this.getUser(new Types.ObjectId(requestedUserId));
   }
 }

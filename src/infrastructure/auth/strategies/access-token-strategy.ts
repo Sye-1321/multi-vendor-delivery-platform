@@ -28,16 +28,19 @@ export class AccessTokenStrategy extends PassportStrategy(
 
   async validate(payload: IJwtPayload): Promise<IJwtPayload> {
     const userId = payload.sub?.toString();
-    if (!userId || !(await this.accountAccess.isActive(userId))) {
+    const user = userId
+      ? await this.accountAccess.resolveActiveUser(userId)
+      : undefined;
+    if (!userId || !user) {
       throw new UnauthorizedException('Access denied');
     }
 
     this.contextService.setPrincipal({
       userId,
-      email: payload.email,
+      email: user.email,
       role: payload.role,
     });
 
-    return payload;
+    return { ...payload, email: user.email };
   }
 }
