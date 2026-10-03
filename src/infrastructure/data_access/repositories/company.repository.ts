@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, FilterQuery, Model, Types } from 'mongoose';
+import { ClientSession, Connection, FilterQuery, Model, Types } from 'mongoose';
 import { Company } from 'src/company/company';
 import { CompanyMapper } from 'src/company/company.mapper';
 import { CompanyDataModel } from './schemas/company.schema';
@@ -24,15 +24,21 @@ export class CompanyRepository extends GenericDocumentRepository<
 
   async createCompany(
     companyModel: CompanyDataModel,
+    options?: { session?: ClientSession },
   ): Promise<Result<Company>> {
-    const created = await this.DocumentModel.create(companyModel);
+    const created = options?.session
+      ? (await this.DocumentModel.create([companyModel], options))[0]
+      : await this.DocumentModel.create(companyModel);
     if (!created) {
       return Result.fail(
         'Failed to create company',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-    const populated = await created.populate('ownerDetails');
+    const populated = await created.populate({
+      path: 'ownerDetails',
+      options: { session: options?.session },
+    });
     const company: Company = this.companyMapper.toDomain(populated);
     return Result.ok(company);
   }
@@ -67,11 +73,12 @@ export class CompanyRepository extends GenericDocumentRepository<
   async updateCompany(
     companyId: Types.ObjectId,
     updateData: any,
+    options?: { session?: ClientSession },
   ): Promise<Result<Company>> {
     const updatedDocument = await this.DocumentModel.findByIdAndUpdate(
       companyId,
       { $set: updateData },
-      { new: true },
+      { new: true, session: options?.session },
     )
       .populate('ownerDetails')
       .exec();

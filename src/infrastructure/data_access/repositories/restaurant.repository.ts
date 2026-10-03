@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable, Inject } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model, Types } from 'mongoose';
+import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { Restaurant } from 'src/restaurant/restaurant';
 import { RestaurantMapper } from 'src/restaurant/restaurant.mapper';
 import {
@@ -98,8 +98,11 @@ export class RestaurantRepository
 
   async createRestaurant(
     restaurantDataModel: Partial<RestaurantDataModel>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Restaurant>> {
-    const created = await this.restaurantModel.create(restaurantDataModel);
+    const created = options?.session
+      ? (await this.restaurantModel.create([restaurantDataModel], options))[0]
+      : await this.restaurantModel.create(restaurantDataModel);
 
     if (!created) {
       return Result.fail(
@@ -108,10 +111,27 @@ export class RestaurantRepository
       );
     }
     const populated = await created.populate([
-      'restaurantAdminDetails',
-      { path: 'companyDetails', populate: { path: 'ownerDetails' } },
-      { path: 'reviews', populate: { path: 'userDetails' } },
-      'menus',
+      {
+        path: 'restaurantAdminDetails',
+        options: { session: options?.session },
+      },
+      {
+        path: 'companyDetails',
+        options: { session: options?.session },
+        populate: {
+          path: 'ownerDetails',
+          options: { session: options?.session },
+        },
+      },
+      {
+        path: 'reviews',
+        options: { session: options?.session },
+        populate: {
+          path: 'userDetails',
+          options: { session: options?.session },
+        },
+      },
+      { path: 'menus', options: { session: options?.session } },
     ]);
     const restaurant = this.restaurantMapper.toDomain(populated);
     return Result.ok(restaurant);
@@ -120,9 +140,14 @@ export class RestaurantRepository
   async updateRestaurant(
     restaurantId: Types.ObjectId,
     update: Partial<Restaurant>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Restaurant>> {
     const updatedRestaurantDocument = await this.restaurantModel
-      .findOneAndUpdate({ _id: restaurantId }, { $set: update }, { new: true })
+      .findOneAndUpdate(
+        { _id: restaurantId },
+        { $set: update },
+        { new: true, session: options?.session },
+      )
       .populate('menus')
       .populate({ path: 'reviews', populate: { path: 'userDetails' } })
       .populate('restaurantAdminDetails')

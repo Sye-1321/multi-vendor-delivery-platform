@@ -1,6 +1,5 @@
 import { HttpStatus, Injectable, Inject } from '@nestjs/common';
-import { Types, Connection } from 'mongoose';
-import { InjectConnection } from '@nestjs/mongoose';
+import { ClientSession, Types } from 'mongoose';
 import { TYPES } from '../application/constants/types';
 import { Result } from '../domain/result/result';
 import { throwApplicationError } from '../infrastructure/utilities/exception-instance';
@@ -37,7 +36,6 @@ export class RestaurantService implements IRestaurantService {
     @Inject(TYPES.ICompanyService)
     private readonly companyService: ICompanyService,
     private readonly restaurantMapper: RestaurantMapper,
-    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   private get context(): Context {
@@ -83,66 +81,67 @@ export class RestaurantService implements IRestaurantService {
     logoFile: Express.Multer.File,
     coverImageFile: Express.Multer.File,
   ): Promise<Result<IRestaurantResponse>> {
-    const session = await this.connection.startSession();
+    const { restaurantAdminData } = data;
+    const companyAdmin: User = await this.userService.getContextUser();
+    const company: Company = await this.companyService.getCompanyByCompanyAdmin(
+      companyAdmin.id,
+    );
+    const logo = await SaveFileLocally(logoFile, 'restaurant-logos');
+    const image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
+    const audit: Audit = Audit.createInsertContext(this.context);
+    const session = await this.restaurantRepository.startSession();
     try {
-      session.startTransaction();
-
-      const { restaurantAdminData } = data;
-      const companyAdmin: User = await this.userService.getContextUser();
-      const company: Company =
-        await this.companyService.getCompanyByCompanyAdmin(companyAdmin.id);
-
-      const logo = await SaveFileLocally(logoFile, 'restaurant-logos');
-      const image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
-
-      const restaurantAdmin: User = await this.userService.createAdmin(
-        restaurantAdminData,
-        Role.RESTAURANT_ADMINISTRATOR,
-      );
-
-      const audit: Audit = Audit.createInsertContext(this.context);
-
-      const restaurant: Restaurant = Restaurant.create(
-        {
-          ...data,
-          logo,
-          image,
-          company,
-          restaurantAdminId: restaurantAdmin.id,
-          restaurantAdmin,
-          companyId: company.id,
-          status: RestaurantStatus.ACTIVE,
-          audit,
-        },
-        new Types.ObjectId(),
-      ).getValue();
-
-      const restaurantDataModel =
-        this.restaurantMapper.toPersistence(restaurant);
-      const restaurantResult =
-        await this.restaurantRepository.createRestaurant(restaurantDataModel);
-
-      if (!restaurantResult.isSuccess) {
+      const committed = await session.withTransaction(async () => {
+        const registration = await this.userService.createAdminRegistration(
+          restaurantAdminData,
+          Role.RESTAURANT_ADMINISTRATOR,
+          { session },
+        );
+        const restaurant = Restaurant.create(
+          {
+            ...data,
+            logo,
+            image,
+            company,
+            restaurantAdminId: registration.admin.id,
+            restaurantAdmin: registration.admin,
+            companyId: company.id,
+            status: RestaurantStatus.ACTIVE,
+            audit,
+          },
+          new Types.ObjectId(),
+        ).getValue();
+        const restaurantResult =
+          await this.restaurantRepository.createRestaurant(
+            this.restaurantMapper.toPersistence(restaurant),
+            { session },
+          );
+        if (!restaurantResult.isSuccess) {
+          throwApplicationError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Restaurant could not be created',
+          );
+        }
+        return { registration, restaurantId: restaurantResult.getValue().id };
+      });
+      if (!committed) {
         throwApplicationError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'Restaurant could not be created',
         );
       }
-
-      await session.commitTransaction();
-
-      const newRestaurant = restaurantResult.getValue();
+      await this.userService.sendAdminRegistrationEmail(
+        committed.registration.admin,
+        committed.registration.token,
+      );
       const response = await this.restaurantRepository.getRestaurantById(
-        newRestaurant.id,
+        committed.restaurantId,
       );
 
       return Result.ok(
         RestaurantParser.createRestaurantResponse(response.getValue()),
         'Restaurant created successfully',
       );
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
     } finally {
       await session.endSession();
     }
@@ -202,49 +201,61 @@ export class RestaurantService implements IRestaurantService {
     restaurantId: Types.ObjectId,
     restaurantAdminData: RestaurantAdminDTO,
   ): Promise<Result<IRestaurantResponse>> {
-    const session = await this.connection.startSession();
-    try {
-      session.startTransaction();
+    const companyAdmin: User = await this.userService.getContextUser();
+    const company = await this.companyService.getCompanyByCompanyAdmin(
+      companyAdmin.id,
+    );
+    const restaurantsResult =
+      await this.restaurantRepository.getRestaurantsByCompanyId(company.id);
 
-      const companyAdmin: User = await this.userService.getContextUser();
-      const company = await this.companyService.getCompanyByCompanyAdmin(
-        companyAdmin.id,
+    if (!restaurantsResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Could not retrieve company restaurants',
       );
-      const restaurantsResult =
-        await this.restaurantRepository.getRestaurantsByCompanyId(company.id);
+    }
 
-      if (!restaurantsResult.isSuccess) {
+    const restaurants = restaurantsResult.getValue();
+    const targetRestaurant = restaurants.find(
+      (restaurant) => restaurant?.id?.toString() === restaurantId?.toString(),
+    );
+    if (!targetRestaurant) {
+      throwApplicationError(
+        HttpStatus.UNAUTHORIZED,
+        'You do not have access to this restaurant',
+      );
+    }
+    const authorizedRestaurant = targetRestaurant!;
+    const oldAdminId = authorizedRestaurant.restaurantAdminId;
+    const session = await this.restaurantRepository.startSession();
+    try {
+      const committed = await session.withTransaction(async () => {
+        await this.userService.suspendUserAccount(oldAdminId, { session });
+        const registration = await this.userService.createAdminRegistration(
+          restaurantAdminData,
+          Role.RESTAURANT_ADMINISTRATOR,
+          { session },
+        );
+        const update = {
+          auditModifiedBy: this.context.email,
+          auditModifiedDateTime: new Date().toISOString(),
+          restaurantAdminId: registration.admin.id,
+        };
+        this.updateRestaurantAdmin(update, authorizedRestaurant, this.context);
+        await this.updateRestaurantById(restaurantId, update, { session });
+        return registration;
+      });
+      if (!committed) {
         throwApplicationError(
           HttpStatus.INTERNAL_SERVER_ERROR,
-          'Could not retrieve company restaurants',
+          'Restaurant update failed',
         );
       }
-
-      const restaurants = restaurantsResult.getValue();
-      const targetRestaurant = restaurants.find(
-        (restaurant) => restaurant?.id?.toString() === restaurantId?.toString(),
+      this.userService.publishAccessRevocation(oldAdminId);
+      await this.userService.sendAdminRegistrationEmail(
+        committed.admin,
+        committed.token,
       );
-      if (!targetRestaurant) {
-        throwApplicationError(
-          HttpStatus.UNAUTHORIZED,
-          'You do not have access to this restaurant',
-        );
-      }
-      await this.userService.suspendUser(targetRestaurant!.restaurantAdminId);
-      const restaurantAdmin = await this.userService.createAdmin(
-        restaurantAdminData,
-        Role.RESTAURANT_ADMINISTRATOR,
-      );
-
-      const data = {
-        auditModifiedBy: this.context.email,
-        auditModifiedDateTime: new Date().toISOString(),
-        restaurantAdminId: restaurantAdmin.id,
-      };
-
-      this.updateRestaurantAdmin(data, targetRestaurant!, this.context);
-      await this.updateRestaurantById(restaurantId, data);
-      await session.commitTransaction();
 
       const updatedRestaurantResult =
         await this.restaurantRepository.getRestaurantById(restaurantId);
@@ -261,9 +272,6 @@ export class RestaurantService implements IRestaurantService {
         ),
         'Restaurant admin changed successfully',
       );
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
     } finally {
       await session.endSession();
     }
@@ -407,9 +415,10 @@ export class RestaurantService implements IRestaurantService {
   private async updateRestaurantById(
     id: Types.ObjectId,
     data: any,
+    options?: { session?: ClientSession },
   ): Promise<Restaurant> {
     const updatedRestaurantResult =
-      await this.restaurantRepository.updateRestaurant(id, data);
+      await this.restaurantRepository.updateRestaurant(id, data, options);
     if (!updatedRestaurantResult.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,

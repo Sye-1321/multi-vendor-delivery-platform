@@ -1,6 +1,5 @@
 import { HttpStatus, Injectable, Inject } from '@nestjs/common';
-import { Types, Connection } from 'mongoose';
-import { InjectConnection } from '@nestjs/mongoose';
+import { ClientSession, Types } from 'mongoose';
 import { TYPES } from '../application/constants/types';
 import { Result } from '../domain/result/result';
 import { throwApplicationError } from '../infrastructure/utilities/exception-instance';
@@ -35,7 +34,6 @@ export class CompanyService implements ICompanyService {
     @Inject(TYPES.IUserService) private readonly userService: IUserService,
     @Inject(TYPES.ICompanyRepository)
     private readonly companyRepository: ICompanyRepository,
-    @InjectConnection() private readonly connection: Connection,
     private readonly companyMapper: CompanyMapper,
   ) {}
 
@@ -47,68 +45,70 @@ export class CompanyService implements ICompanyService {
     { name, phoneNumber, savedAddress, companyAdminData }: CreateCompanyDTO,
     logoFile: Express.Multer.File,
   ): Promise<Result<ICompanyResponse>> {
-    const session = await this.connection.startSession();
-    try {
-      session.startTransaction();
-
-      const existingCompany = await this.companyRepository.getCompanies({});
-      if (
-        existingCompany
-          .getValue()
-          .some((company) => company.phoneNumber === phoneNumber)
-      ) {
-        throwApplicationError(
-          HttpStatus.CONFLICT,
-          `Company with phone number ${phoneNumber} already exists`,
-        );
-      }
-
-      const logo = await SaveFileLocally(logoFile, 'company-logos');
-      const audit: Audit = Audit.createInsertContext(this.context);
-
-      const companyAdmin = await this.userService.createAdmin(
-        companyAdminData,
-        Role.BUSINESS_ADMINISTRATOR,
+    const existingCompany = await this.companyRepository.getCompanies({});
+    if (
+      existingCompany
+        .getValue()
+        .some((company) => company.phoneNumber === phoneNumber)
+    ) {
+      throwApplicationError(
+        HttpStatus.CONFLICT,
+        `Company with phone number ${phoneNumber} already exists`,
       );
+    }
 
-      const company = Company.create(
-        {
-          logo,
-          name,
-          phoneNumber,
-          ownerId: companyAdmin.id,
-          audit,
-          owner: companyAdmin,
-          savedAddress,
-        },
-        new Types.ObjectId(),
-      ).getValue();
-
-      const companyModel = this.companyMapper.toPersistence(company);
-      const companyDocument =
-        await this.companyRepository.createCompany(companyModel);
-
-      if (!companyDocument.isSuccess) {
+    const logo = await SaveFileLocally(logoFile, 'company-logos');
+    const audit: Audit = Audit.createInsertContext(this.context);
+    const session = await this.companyRepository.startSession();
+    try {
+      const committed = await session.withTransaction(async () => {
+        const registration = await this.userService.createAdminRegistration(
+          companyAdminData,
+          Role.BUSINESS_ADMINISTRATOR,
+          { session },
+        );
+        const company = Company.create(
+          {
+            logo,
+            name,
+            phoneNumber,
+            ownerId: registration.admin.id,
+            audit,
+            owner: registration.admin,
+            savedAddress,
+          },
+          new Types.ObjectId(),
+        ).getValue();
+        const companyDocument = await this.companyRepository.createCompany(
+          this.companyMapper.toPersistence(company),
+          { session },
+        );
+        if (!companyDocument.isSuccess) {
+          throwApplicationError(
+            HttpStatus.INTERNAL_SERVER_ERROR,
+            'Company could not be created',
+          );
+        }
+        return { registration, companyId: companyDocument.getValue().id };
+      });
+      if (!committed) {
         throwApplicationError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'Company could not be created',
         );
       }
-
-      await session.commitTransaction();
-
-      const newCompany = companyDocument.getValue();
+      await this.userService.sendAdminRegistrationEmail(
+        committed.registration.admin,
+        committed.registration.token,
+      );
       const response = await this.companyRepository.getCompanyById(
-        newCompany.id,
+        committed.companyId,
       );
 
       return Result.ok(
         CompanyParser.createCompanyResponse(response.getValue()),
         'Company created successfully',
       );
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
     } finally {
       await session.endSession();
     }
@@ -153,20 +153,40 @@ export class CompanyService implements ICompanyService {
     }
 
     const ownerId = companyResult.getValue().owner.id;
-    await this.userService.suspendUser(ownerId);
-
-    const companyAdmin = await this.userService.createAdmin(
-      companyAdminData,
-      Role.BUSINESS_ADMINISTRATOR,
-    );
-
-    const data = {
-      auditModifiedBy: this.context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      ownerId: companyAdmin.id,
-    };
-
-    await this.updateCompanyById(companyId, data);
+    const session = await this.companyRepository.startSession();
+    try {
+      const committed = await session.withTransaction(async () => {
+        await this.userService.suspendUserAccount(ownerId, { session });
+        const registration = await this.userService.createAdminRegistration(
+          companyAdminData,
+          Role.BUSINESS_ADMINISTRATOR,
+          { session },
+        );
+        await this.updateCompanyById(
+          companyId,
+          {
+            auditModifiedBy: this.context.email,
+            auditModifiedDateTime: new Date().toISOString(),
+            ownerId: registration.admin.id,
+          },
+          { session },
+        );
+        return registration;
+      });
+      if (!committed) {
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Company update failed',
+        );
+      }
+      this.userService.publishAccessRevocation(ownerId);
+      await this.userService.sendAdminRegistrationEmail(
+        committed.admin,
+        committed.token,
+      );
+    } finally {
+      await session.endSession();
+    }
 
     const updatedCompanyResult =
       await this.companyRepository.getCompanyById(companyId);
@@ -265,10 +285,12 @@ export class CompanyService implements ICompanyService {
   private async updateCompanyById(
     id: Types.ObjectId,
     data: any,
+    options?: { session?: ClientSession },
   ): Promise<Company> {
     const updatedCompanyResult = await this.companyRepository.updateCompany(
       id,
       data,
+      options,
     );
     if (!updatedCompanyResult.isSuccess) {
       throwApplicationError(

@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { ClientSession, Types } from 'mongoose';
 import { Restaurant } from 'src/restaurant/restaurant';
 import {
   RestaurantDataModel,
@@ -22,10 +22,12 @@ export interface IRestaurantRepository
   ): Promise<boolean>;
   createRestaurant(
     restaurantDataModel: Partial<RestaurantDataModel>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Restaurant>>;
   updateRestaurant(
     restaurantId: Types.ObjectId,
     update: Partial<Restaurant>,
+    options?: { session?: ClientSession },
   ): Promise<Result<Restaurant>>;
   getRestaurantsWithFilters(
     filter?: any,
