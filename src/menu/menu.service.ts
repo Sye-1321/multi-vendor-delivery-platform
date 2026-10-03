@@ -1,6 +1,5 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { Types, Connection } from 'mongoose';
-import { InjectConnection } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
 import { TYPES } from '../application/constants/types';
 import { Audit } from '../domain/audit/audit';
 import { Result } from '../domain/result/result';
@@ -31,7 +30,6 @@ export class MenuService implements IMenuService {
     @Inject(TYPES.IRestaurantService)
     private readonly restaurantService: IRestaurantService,
     private readonly menuMapper: MenuMapper,
-    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   private async getRestaurantIdForCurrentAdmin(): Promise<Types.ObjectId> {
@@ -66,11 +64,7 @@ export class MenuService implements IMenuService {
       throwApplicationError(HttpStatus.BAD_REQUEST, 'Menu image is required');
     }
 
-    const session = await this.connection.startSession();
-    let committed = false;
-
     try {
-      session.startTransaction();
       const restaurantId = await this.getRestaurantIdForCurrentAdmin();
       const { name, menuItemsIds } = props;
 
@@ -114,9 +108,6 @@ export class MenuService implements IMenuService {
         );
       }
 
-      await session.commitTransaction();
-      committed = true;
-
       const saved = await this.menuRepository.getMenuById(
         restaurantId,
         createResult.getValue().id,
@@ -124,12 +115,7 @@ export class MenuService implements IMenuService {
       const response = MenuParser.createMenuResponse(saved.getValue());
       return Result.ok(response, 'Menu created successfully');
     } catch {
-      if (!committed) {
-        await session.abortTransaction();
-      }
       return Result.fail('Menu creation failed', HttpStatus.EXPECTATION_FAILED);
-    } finally {
-      await session.endSession();
     }
   }
 

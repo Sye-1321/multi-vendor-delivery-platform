@@ -18,8 +18,6 @@ import {
 import { IMenuItemResponse } from './interfaces/menu-item-response.interface';
 import { MenuItemMapper } from './menu-item.mapper';
 import { SaveFileLocally } from 'src/application/saveFileLocally';
-import { InjectConnection } from '@nestjs/mongoose';
-import { Connection } from 'mongoose';
 
 @Injectable()
 export class MenuItemService implements IMenuItemService {
@@ -30,7 +28,6 @@ export class MenuItemService implements IMenuItemService {
     private readonly menuItemRepository: IMenuItemRepository,
     @Inject(TYPES.IRestaurantService)
     private readonly restaurantService: IRestaurantService,
-    @InjectConnection() private readonly connection: Connection,
     private readonly menuItemMapper: MenuItemMapper,
   ) {}
 
@@ -51,66 +48,54 @@ export class MenuItemService implements IMenuItemService {
       throwApplicationError(HttpStatus.BAD_REQUEST, 'Image file is required');
     }
 
-    const session = await this.connection.startSession();
-    try {
-      session.startTransaction();
+    const restaurantId = await this.getRestaurantIdForCurrentAdmin();
+    const { name } = props;
 
-      const restaurantId = await this.getRestaurantIdForCurrentAdmin();
-      const { name } = props;
-
-      const existingMenuItem = await this.menuItemRepository.findMenuItemByName(
-        restaurantId,
-        name,
+    const existingMenuItem = await this.menuItemRepository.findMenuItemByName(
+      restaurantId,
+      name,
+    );
+    if (existingMenuItem.isSuccess) {
+      throwApplicationError(
+        HttpStatus.CONFLICT,
+        `Menu item ${name} already exists`,
       );
-      if (existingMenuItem.isSuccess) {
-        throwApplicationError(
-          HttpStatus.CONFLICT,
-          `Menu item ${name} already exists`,
-        );
-      }
-
-      const imageUrl = await SaveFileLocally(image, 'menu-item-covers');
-      const audit: Audit = Audit.createInsertContext(this.context);
-
-      const menuItem: MenuItem = MenuItem.create(
-        {
-          restaurantId,
-          ...props,
-          audit,
-          image: imageUrl,
-        },
-        new Types.ObjectId(),
-      ).getValue();
-
-      const menuItemModel = this.menuItemMapper.toPersistence(menuItem);
-      const menuItemResult =
-        await this.menuItemRepository.createMenuItem(menuItemModel);
-
-      if (!menuItemResult.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Menu item could not be created',
-        );
-      }
-
-      await session.commitTransaction();
-
-      const newMenuItem = menuItemResult.getValue();
-      const response = await this.menuItemRepository.getMenuItemById(
-        restaurantId,
-        newMenuItem.id,
-      );
-
-      return Result.ok(
-        MenuItemParser.createMenuItemResponse(response.getValue()),
-        'Menu item created successfully',
-      );
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
     }
+
+    const imageUrl = await SaveFileLocally(image, 'menu-item-covers');
+    const audit: Audit = Audit.createInsertContext(this.context);
+
+    const menuItem: MenuItem = MenuItem.create(
+      {
+        restaurantId,
+        ...props,
+        audit,
+        image: imageUrl,
+      },
+      new Types.ObjectId(),
+    ).getValue();
+
+    const menuItemModel = this.menuItemMapper.toPersistence(menuItem);
+    const menuItemResult =
+      await this.menuItemRepository.createMenuItem(menuItemModel);
+
+    if (!menuItemResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Menu item could not be created',
+      );
+    }
+
+    const newMenuItem = menuItemResult.getValue();
+    const response = await this.menuItemRepository.getMenuItemById(
+      restaurantId,
+      newMenuItem.id,
+    );
+
+    return Result.ok(
+      MenuItemParser.createMenuItemResponse(response.getValue()),
+      'Menu item created successfully',
+    );
   }
 
   async updateMenuItem(
@@ -118,101 +103,78 @@ export class MenuItemService implements IMenuItemService {
     props: UpdateMenuItemDTO,
     imageFile?: Express.Multer.File,
   ): Promise<Result<IMenuItemResponse>> {
-    const session = await this.connection.startSession();
-    try {
-      session.startTransaction();
+    const restaurant = await this.restaurantService.getRestaurantByRAdmin();
+    const restaurantId = restaurant.id;
 
-      const restaurant = await this.restaurantService.getRestaurantByRAdmin();
-      const restaurantId = restaurant.id;
-
-      const menuItemResult = await this.menuItemRepository.getMenuItemById(
-        restaurantId,
-        id,
-      );
-      if (!menuItemResult.isSuccess) {
-        throwApplicationError(HttpStatus.NOT_FOUND, 'Menu item not found');
-      }
-
-      const menuItem = menuItemResult.getValue();
-      const data: any = {
-        auditModifiedBy: this.context.email,
-        auditModifiedDateTime: new Date().toISOString(),
-        ...props,
-      };
-
-      if (imageFile) {
-        data.image = await SaveFileLocally(imageFile, 'menu-item-covers');
-      }
-
-      this.updateMenuItemData(data, menuItem, this.context);
-
-      const updatedModel = this.menuItemMapper.toPersistence(menuItem);
-      const result = await this.menuItemRepository.updateMenuItemById(
-        restaurantId,
-        id,
-        updatedModel,
-      );
-
-      if (!result.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Menu item update failed',
-        );
-      }
-
-      await session.commitTransaction();
-
-      const updatedMenuItem = await this.menuItemRepository.getMenuItemById(
-        restaurantId,
-        id,
-      );
-      return Result.ok(
-        MenuItemParser.createMenuItemResponse(updatedMenuItem.getValue()),
-        'Menu item updated successfully',
-      );
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
+    const menuItemResult = await this.menuItemRepository.getMenuItemById(
+      restaurantId,
+      id,
+    );
+    if (!menuItemResult.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Menu item not found');
     }
+
+    const menuItem = menuItemResult.getValue();
+    const data: any = {
+      auditModifiedBy: this.context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+      ...props,
+    };
+
+    if (imageFile) {
+      data.image = await SaveFileLocally(imageFile, 'menu-item-covers');
+    }
+
+    this.updateMenuItemData(data, menuItem, this.context);
+
+    const updatedModel = this.menuItemMapper.toPersistence(menuItem);
+    const result = await this.menuItemRepository.updateMenuItemById(
+      restaurantId,
+      id,
+      updatedModel,
+    );
+
+    if (!result.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Menu item update failed',
+      );
+    }
+
+    const updatedMenuItem = await this.menuItemRepository.getMenuItemById(
+      restaurantId,
+      id,
+    );
+    return Result.ok(
+      MenuItemParser.createMenuItemResponse(updatedMenuItem.getValue()),
+      'Menu item updated successfully',
+    );
   }
 
   async deleteMenuItem(id: Types.ObjectId): Promise<Result<void>> {
-    const session = await this.connection.startSession();
-    try {
-      session.startTransaction();
+    const restaurant = await this.restaurantService.getRestaurantByRAdmin();
+    const restaurantId = restaurant.id;
 
-      const restaurant = await this.restaurantService.getRestaurantByRAdmin();
-      const restaurantId = restaurant.id;
-
-      const existingMenuItem = await this.menuItemRepository.getMenuItemById(
-        restaurantId,
-        id,
-      );
-      if (!existingMenuItem.isSuccess) {
-        throwApplicationError(HttpStatus.NOT_FOUND, 'Menu item not found');
-      }
-
-      const result = await this.menuItemRepository.deleteMenuItem(
-        restaurantId,
-        id,
-      );
-      if (!result.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Menu item could not be deleted',
-        );
-      }
-
-      await session.commitTransaction();
-      return Result.ok(undefined, 'Menu item deleted successfully');
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
+    const existingMenuItem = await this.menuItemRepository.getMenuItemById(
+      restaurantId,
+      id,
+    );
+    if (!existingMenuItem.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Menu item not found');
     }
+
+    const result = await this.menuItemRepository.deleteMenuItem(
+      restaurantId,
+      id,
+    );
+    if (!result.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Menu item could not be deleted',
+      );
+    }
+
+    return Result.ok(undefined, 'Menu item deleted successfully');
   }
 
   async getMenuItems(): Promise<Result<IMenuItemResponse[]>> {

@@ -19,7 +19,6 @@ describe('MenuItemService tenant scope', () => {
       menuItemRepository as never,
       {} as never,
       {} as never,
-      {} as never,
     );
 
     await expect(
