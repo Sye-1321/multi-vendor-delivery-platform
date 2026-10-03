@@ -33,7 +33,8 @@ import { UpdateUserProfileDTO } from './dtos/user/update-profile.dto';
 import { UpdatePasswordDTO } from './dtos/auth/update-password.dto';
 import { ChangeEmailDTO } from './dtos/auth/change-email.dto';
 import { EmailDTO } from './dtos/shared/email.dto';
-import { ResetPasswordDTO } from './dtos/auth/reset-password.dto';
+import { AccountActionTokenDTO } from './dtos/auth/account-action-token.dto';
+import { AccountActionPasswordDTO } from './dtos/auth/account-action-password.dto';
 import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
 import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
@@ -53,10 +54,12 @@ export class UserController {
     return this.userService.createEndUser(request);
   }
 
-  @Get('/auth/email-verification/:token')
+  @Post('/auth/email-verification')
   @HttpCode(HttpStatus.OK)
-  async verifyEmail(@Param('token') token: string): Promise<Result<any>> {
-    return this.userService.verifyEmail(token);
+  async verifyEmail(
+    @Body() request: AccountActionTokenDTO,
+  ): Promise<Result<any>> {
+    return this.userService.verifyEmail(request.token);
   }
 
   @Post('/auth/login')
@@ -125,10 +128,10 @@ export class UserController {
     return this.userService.requestToChangeEmail(userId, request);
   }
 
-  @Get('/users/new-email-verification/:token')
+  @Post('/users/new-email-verification')
   @HttpCode(HttpStatus.OK)
-  async verifyNewEmail(@Param('token') token: string) {
-    return this.userService.verifyNewEmail(token);
+  async verifyNewEmail(@Body() request: AccountActionTokenDTO) {
+    return this.userService.verifyNewEmail(request.token);
   }
 
   @Post('/auth/password-reset/request')
@@ -137,22 +140,26 @@ export class UserController {
     return this.userService.requestToResetPassword(request);
   }
 
-  @Post('/auth/password-reset/confirm/:token')
+  @Post('/auth/password-reset/confirm')
   @HttpCode(HttpStatus.OK)
-  async verifyPasswordReset(
-    @Param('token') token: string,
-    @Body() request: ResetPasswordDTO,
-  ) {
-    return this.userService.confirmPasswordReset(token, request);
+  async verifyPasswordReset(@Body() request: AccountActionPasswordDTO) {
+    const { token, newPassword, confirmPassword } = request;
+    return this.userService.confirmPasswordReset(token, {
+      newPassword,
+      confirmPassword,
+    });
   }
 
-  @Post('/auth/registration-completion/:token')
+  @Post('/auth/registration-completion')
   @HttpCode(HttpStatus.OK)
   async completeAdminRegistration(
-    @Param('token') token: string,
-    @Body() request: ResetPasswordDTO,
+    @Body() request: AccountActionPasswordDTO,
   ): Promise<Result<IUserResponse>> {
-    return this.userService.completeAdminRegistration(token, request);
+    const { token, newPassword, confirmPassword } = request;
+    return this.userService.completeAdminRegistration(token, {
+      newPassword,
+      confirmPassword,
+    });
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

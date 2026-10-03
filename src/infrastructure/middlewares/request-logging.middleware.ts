@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { StructuredLogger } from '../logger/structured-logger.service';
+import { getSafeRequestPath } from '../utilities/safe-request-path';
 
 @Injectable()
 export class RequestLoggingMiddleware implements NestMiddleware {
@@ -14,7 +15,7 @@ export class RequestLoggingMiddleware implements NestMiddleware {
         Number(process.hrtime.bigint() - startedAt) / 1_000_000;
       const metadata = {
         method: request.method,
-        path: request.originalUrl,
+        path: getSafeRequestPath(request),
         statusCode: response.statusCode,
         durationMs: Number(durationMs.toFixed(2)),
         outcome: response.statusCode >= 400 ? 'failure' : 'success',

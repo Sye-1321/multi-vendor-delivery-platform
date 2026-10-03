@@ -32,7 +32,7 @@ export class EmailService implements IEmailService {
   }
 
   private generateVerificationUrl(token: string, path: string): string {
-    return `${BASE_URL}${path}/${token}`;
+    return `${BASE_URL}${path}#token=${encodeURIComponent(token)}`;
   }
 
   async sendAccountVerificationEmail(

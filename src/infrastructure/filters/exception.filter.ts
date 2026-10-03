@@ -12,6 +12,7 @@ import {
   IRequestException,
 } from './exception-response.interface';
 import { StructuredLogger } from '../logger/structured-logger.service';
+import { getSafeRequestPath } from '../utilities/safe-request-path';
 
 @Catch()
 export class ApplicationExceptionsFilter implements ExceptionFilter {
@@ -22,17 +23,18 @@ export class ApplicationExceptionsFilter implements ExceptionFilter {
     const response = http.getResponse<Response>();
     const request = http.getRequest<Request>();
     const { statusCode, message } = this.getException(exception);
+    const path = getSafeRequestPath(request);
     const responseBody: IExceptionResponse = {
       isSuccess: false,
       statusCode,
       message,
-      path: request.originalUrl,
+      path,
       timeStamp: new Date().toISOString(),
       method: request.method,
     };
     const metadata = {
       method: request.method,
-      path: request.originalUrl,
+      path,
       statusCode,
     };
 
