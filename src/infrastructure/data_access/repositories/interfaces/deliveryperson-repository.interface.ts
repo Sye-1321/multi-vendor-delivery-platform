@@ -7,6 +7,16 @@ import {
   DeliveryPersonOwnership,
   AvailabilityStatus,
 } from 'src/delivery-person/constants/constants';
+import { ISavedAddress } from 'src/delivery-person/interfaces/deliveryperson.interface';
+
+export type DeliveryPersonProfileUpdate = {
+  name?: string;
+  phoneNumber?: string;
+  savedAddress?: ISavedAddress;
+  profileImage?: string;
+  auditModifiedBy: string;
+  auditModifiedDateTime: string;
+};
 
 export type DeliveryPersonScope =
   | {
@@ -30,9 +40,9 @@ export interface IDeliveryPersonRepository
   getDeliveryPersonsByRestaurantId(
     restaurantId: Types.ObjectId,
   ): Promise<Result<DeliveryPerson[]>>;
-  updateDeliveryPersonById(
+  updateProfile(
     id: Types.ObjectId,
-    updateData: Partial<DeliveryPersonDataModel>,
+    update: DeliveryPersonProfileUpdate,
   ): Promise<Result<DeliveryPerson>>;
   getSystemWideDeliveryPersons(): Promise<Result<DeliveryPerson[]>>;
   getDeliveryPersonByIdAndRestaurantId(

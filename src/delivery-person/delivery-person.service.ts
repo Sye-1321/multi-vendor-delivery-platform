@@ -20,6 +20,7 @@ import { IDeliveryPersonResponse } from './interfaces/deliveryperson-response.in
 import { AvailabilityStatus } from './constants/constants';
 import { DeliveryPersonFactory } from './factories/delivery-person.factory';
 import { SaveFileLocally } from 'src/application/saveFileLocally';
+import { DeliveryPersonProfileUpdate } from 'src/infrastructure/data_access/repositories/interfaces/deliveryperson-repository.interface';
 
 @Injectable()
 export class DeliveryPersonService implements IDeliveryPersonService {
@@ -231,7 +232,7 @@ export class DeliveryPersonService implements IDeliveryPersonService {
   ): Promise<Result<IDeliveryPersonResponse>> {
     try {
       const context = this.contextService.getContext();
-      const { deliveryPerson } = await validateMethod(id);
+      await validateMethod(id);
 
       if (props?.phoneNumber) {
         const existing = await this.deliveryPersonRepository.findByPhoneNumber(
@@ -248,28 +249,29 @@ export class DeliveryPersonService implements IDeliveryPersonService {
         }
       }
 
-      const data = {
+      const update: DeliveryPersonProfileUpdate = {
         auditModifiedBy: context.email,
         auditModifiedDateTime: new Date().toISOString(),
-        ...props,
       };
+
+      if (props.name !== undefined) update.name = props.name;
+      if (props.phoneNumber !== undefined)
+        update.phoneNumber = props.phoneNumber;
+      if (props.savedAddress !== undefined)
+        update.savedAddress = props.savedAddress;
 
       if (profileImageFile) {
         const profileImage = await SaveFileLocally(
           profileImageFile,
           'delivery-person-profiles',
         );
-        data['profileImage'] = profileImage;
+        update.profileImage = profileImage;
       }
 
-      this.updateDeliveryPersonData(data, deliveryPerson, context);
-      const updatedModel =
-        this.deliveryPersonMapper.toPersistence(deliveryPerson);
-      const updateResult =
-        await this.deliveryPersonRepository.updateDeliveryPersonById(
-          id,
-          updatedModel,
-        );
+      const updateResult = await this.deliveryPersonRepository.updateProfile(
+        id,
+        update,
+      );
       if (!updateResult.isSuccess) {
         return Result.fail(
           'Failed to update delivery person',
@@ -302,30 +304,6 @@ export class DeliveryPersonService implements IDeliveryPersonService {
       );
     }
     return result.getValue();
-  }
-
-  private updateDeliveryPersonData(
-    data: any,
-    deliveryPerson: DeliveryPerson,
-    context: any,
-  ): void {
-    Object.entries(data).forEach(([key, value]) => {
-      if (value !== undefined && key in deliveryPerson) {
-        (deliveryPerson as any)[key] = value;
-      }
-    });
-    Audit.updateContext(context.email, deliveryPerson);
-  }
-
-  private changeDeliveryPersonStatus(
-    deliveryPerson: DeliveryPerson,
-    context: any,
-  ): void {
-    deliveryPerson.availabilityStatus =
-      deliveryPerson.availabilityStatus === AvailabilityStatus.WORKING
-        ? AvailabilityStatus.AVAILABLE
-        : AvailabilityStatus.WORKING;
-    Audit.updateContext(context.email, deliveryPerson);
   }
 
   async pickFromRestaurant(
@@ -361,72 +339,6 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     }
     return (
       result.getValue().availabilityStatus === AvailabilityStatus.AVAILABLE
-    );
-  }
-
-  async markAsAssigned(deliveryPersonId: Types.ObjectId) {
-    const result =
-      await this.deliveryPersonRepository.getDeliveryPersonById(
-        deliveryPersonId,
-      );
-    if (!result.isSuccess) {
-      throwApplicationError(
-        HttpStatus.BAD_REQUEST,
-        'no delivery person with that Id',
-      );
-    }
-    const context = this.contextService.getContext();
-    const data = {
-      auditModifiedBy: context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      availabilityStatus: AvailabilityStatus.WORKING,
-    };
-    this.changeDeliveryPersonStatus(result.getValue(), context);
-    const update = await this.deliveryPersonRepository.updateDeliveryPersonById(
-      deliveryPersonId,
-      data,
-    );
-    if (!update.isSuccess) {
-      throwApplicationError(
-        HttpStatus.BAD_REQUEST,
-        'delivery person could not be updated',
-      );
-    }
-    return await this.deliveryPersonRepository.getDeliveryPersonById(
-      deliveryPersonId,
-    );
-  }
-
-  async markAsAvailable(deliveryPersonId: Types.ObjectId) {
-    const result =
-      await this.deliveryPersonRepository.getDeliveryPersonById(
-        deliveryPersonId,
-      );
-    if (!result.isSuccess) {
-      throwApplicationError(
-        HttpStatus.BAD_REQUEST,
-        'no delivery person with that Id',
-      );
-    }
-    const context = this.contextService.getContext();
-    const data = {
-      auditModifiedBy: context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      availabilityStatus: AvailabilityStatus.AVAILABLE,
-    };
-    this.changeDeliveryPersonStatus(result.getValue(), context);
-    const update = await this.deliveryPersonRepository.updateDeliveryPersonById(
-      deliveryPersonId,
-      data,
-    );
-    if (!update.isSuccess) {
-      throwApplicationError(
-        HttpStatus.BAD_REQUEST,
-        'delivery person could not be updated',
-      );
-    }
-    return await this.deliveryPersonRepository.getDeliveryPersonById(
-      deliveryPersonId,
     );
   }
 }

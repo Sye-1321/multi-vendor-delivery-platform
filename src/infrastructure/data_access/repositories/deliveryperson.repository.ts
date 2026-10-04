@@ -14,7 +14,10 @@ import {
   DeliveryPersonOwnership,
   DeliveryPersonStatus,
 } from 'src/delivery-person/constants/constants';
-import { DeliveryPersonScope } from './interfaces/deliveryperson-repository.interface';
+import {
+  DeliveryPersonProfileUpdate,
+  DeliveryPersonScope,
+} from './interfaces/deliveryperson-repository.interface';
 
 @Injectable()
 export class DeliveryPersonRepository extends GenericDocumentRepository<
@@ -111,13 +114,13 @@ export class DeliveryPersonRepository extends GenericDocumentRepository<
     return Result.ok(mapped);
   }
 
-  async updateDeliveryPersonById(
+  async updateProfile(
     id: Types.ObjectId,
-    updateData: Partial<DeliveryPersonDataModel>,
+    update: DeliveryPersonProfileUpdate,
   ): Promise<Result<DeliveryPerson>> {
     const updated = await this.DocumentModel.findByIdAndUpdate(
       id,
-      { $set: updateData },
+      { $set: update },
       { new: true },
     ).exec();
 
