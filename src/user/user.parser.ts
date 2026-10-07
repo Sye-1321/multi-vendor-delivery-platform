@@ -3,6 +3,7 @@ import { ISignUpTokens } from '../infrastructure/auth/interfaces/auth.interface'
 import { AuditParser } from '../audit/audit.parser';
 import { User } from './user';
 import {
+  IPublicUserResponse,
   IUserResponse,
   IUserSignedInResponseDTO,
 } from './interfaces/user-response.interface';
@@ -10,6 +11,13 @@ import {
 export type IUserResponseDTO = IUserResponse | IUserSignedInResponseDTO;
 
 export class UserParser {
+  static createPublicUserResponse(user: User): IPublicUserResponse {
+    return {
+      id: user.id,
+      name: user.name,
+    };
+  }
+
   static createUserResponse(
     user: User,
     tokens?: ISignUpTokens,

@@ -17,7 +17,10 @@ import { Result } from '../domain/result/result';
 import { ISystemReviewService } from './interfaces/system-review-service.interface';
 import { TYPES } from 'src/application/constants/types';
 import { CreateReviewDTO, UpdateReviewDTO } from './dtos/system-review.dto';
-import { ISystemReviewResponse } from './interfaces/system-review-response.interface';
+import {
+  IPublicSystemReviewResponse,
+  ISystemReviewResponse,
+} from './interfaces/system-review-response.interface';
 
 @Controller('reviews')
 export class SystemReviewController {
@@ -46,7 +49,7 @@ export class SystemReviewController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getAllReviews(): Promise<Result<ISystemReviewResponse[]>> {
+  async getAllReviews(): Promise<Result<IPublicSystemReviewResponse[]>> {
     return this.systemReviewService.getAllSystemReviews();
   }
 

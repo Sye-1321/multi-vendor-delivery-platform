@@ -11,7 +11,10 @@ import { SystemReviewParser } from './system-review.parser';
 import { IUserService } from 'src/user/interfaces/user-service.interface';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { ISystemReviewRepository } from 'src/infrastructure/data_access/repositories/interfaces/system-review-repository.interface';
-import { ISystemReviewResponse } from './interfaces/system-review-response.interface';
+import {
+  IPublicSystemReviewResponse,
+  ISystemReviewResponse,
+} from './interfaces/system-review-response.interface';
 import { CreateReviewDTO, UpdateReviewDTO } from './dtos/system-review.dto';
 import { IUserUpdateReview } from './interfaces/system-review.interface';
 import { SystemReviewMapper } from './system-review.mapper';
@@ -113,7 +116,7 @@ export class SystemReviewService {
     );
   }
 
-  async getAllSystemReviews(): Promise<Result<ISystemReviewResponse[]>> {
+  async getAllSystemReviews(): Promise<Result<IPublicSystemReviewResponse[]>> {
     const systemReviewsResult =
       await this.systemReviewRepository.getAllSystemReviews();
 
@@ -122,10 +125,11 @@ export class SystemReviewService {
     }
 
     const systemReviews = systemReviewsResult.getValue();
-    let response: ISystemReviewResponse[] = [];
+    let response: IPublicSystemReviewResponse[] = [];
 
     if (systemReviews && systemReviews.length) {
-      response = SystemReviewParser.createSystemReviewsResponse(systemReviews);
+      response =
+        SystemReviewParser.createPublicSystemReviewsResponse(systemReviews);
     }
 
     return Result.ok(response);

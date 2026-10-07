@@ -24,7 +24,10 @@ import {
   RestaurantAdminDTO,
   UpdateRestaurantDTO,
 } from './dtos/create-restaurant.dto';
-import { IRestaurantResponse } from './interfaces/restaurant-response.interface';
+import {
+  IPublicRestaurantResponse,
+  IRestaurantResponse,
+} from './interfaces/restaurant-response.interface';
 import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 
@@ -36,7 +39,7 @@ export class RestaurantController {
   ) {}
 
   @Get('restaurants')
-  async getAllRestaurants(): Promise<Result<IRestaurantResponse[]>> {
+  async getAllRestaurants(): Promise<Result<IPublicRestaurantResponse[]>> {
     return this.restaurantService.getRestaurants();
   }
 
@@ -51,7 +54,7 @@ export class RestaurantController {
   @Get('restaurants/:id')
   async getRestaurantById(
     @Param('id') restaurantId: Types.ObjectId,
-  ): Promise<Result<IRestaurantResponse>> {
+  ): Promise<Result<IPublicRestaurantResponse>> {
     return this.restaurantService.getRestaurantById(restaurantId);
   }
 

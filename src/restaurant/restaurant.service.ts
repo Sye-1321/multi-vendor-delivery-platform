@@ -11,7 +11,10 @@ import { IUserService } from 'src/user/interfaces/user-service.interface';
 import { IRestaurantRepository } from 'src/infrastructure/data_access/repositories/interfaces/restaurant-repository.interface';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { ICompanyService } from 'src/company/interfaces/company-service.interface';
-import { IRestaurantResponse } from './interfaces/restaurant-response.interface';
+import {
+  IPublicRestaurantResponse,
+  IRestaurantResponse,
+} from './interfaces/restaurant-response.interface';
 import {
   CreateRestaurantDTO,
   RestaurantAdminDTO,
@@ -42,7 +45,7 @@ export class RestaurantService implements IRestaurantService {
     return this.contextService.getContext();
   }
 
-  async getRestaurants(): Promise<Result<IRestaurantResponse[]>> {
+  async getRestaurants(): Promise<Result<IPublicRestaurantResponse[]>> {
     const restaurantsResult =
       await this.restaurantRepository.getRestaurantsWithFilters();
     if (!restaurantsResult.isSuccess) {
@@ -52,17 +55,19 @@ export class RestaurantService implements IRestaurantService {
       );
     }
     return Result.ok(
-      RestaurantParser.createRestaurantsResponse(restaurantsResult.getValue()),
+      RestaurantParser.createPublicRestaurantsResponse(
+        restaurantsResult.getValue(),
+      ),
       'Restaurants retrieved successfully',
     );
   }
 
   async getRestaurantById(
     restaurantId: Types.ObjectId,
-  ): Promise<Result<IRestaurantResponse>> {
+  ): Promise<Result<IPublicRestaurantResponse>> {
     const restaurant = await this.getRestaurantByI(restaurantId);
     return Result.ok(
-      RestaurantParser.createRestaurantResponse(restaurant),
+      RestaurantParser.createPublicRestaurantResponse(restaurant),
       'Restaurant retrieved successfully',
     );
   }

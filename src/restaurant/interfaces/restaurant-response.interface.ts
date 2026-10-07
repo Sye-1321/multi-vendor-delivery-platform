@@ -1,9 +1,15 @@
 import { Types } from 'mongoose';
 import { IAudit } from 'src/infrastructure/database/mongoDB/base-document.interface';
-import { IUserResponse } from 'src/user/interfaces/user-response.interface';
+import {
+  IPublicUserResponse,
+  IUserResponse,
+} from 'src/user/interfaces/user-response.interface';
 import { RestaurantStatus } from '../constants/constants';
 import { IMenuResponse } from 'src/menu/interfaces/menu-reponse.interface';
-import { IRestaurantReviewResponse } from 'src/restaurant-review/interfaces/restaurant-review-response.interface';
+import {
+  IPublicRestaurantReviewResponse,
+  IRestaurantReviewResponse,
+} from 'src/restaurant-review/interfaces/restaurant-review-response.interface';
 
 export interface ISavedAddress {
   city: string;
@@ -25,4 +31,10 @@ export interface IRestaurantResponse extends IAudit {
   reviews: IRestaurantReviewResponse[];
   menus: IMenuResponse[];
   description?: string;
+}
+
+export interface IPublicRestaurantResponse
+  extends Omit<IRestaurantResponse, 'restaurantAdmin' | 'reviews'> {
+  restaurantAdmin: IPublicUserResponse;
+  reviews: IPublicRestaurantReviewResponse[];
 }

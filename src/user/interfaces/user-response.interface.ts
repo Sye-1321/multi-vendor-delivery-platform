@@ -2,6 +2,11 @@ import { Types } from 'mongoose';
 import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
 import { IAudit } from 'src/infrastructure/database/mongoDB/base-document.interface';
 
+export interface IPublicUserResponse {
+  id: Types.ObjectId;
+  name: string;
+}
+
 export interface IUserResponse extends IAudit {
   id: Types.ObjectId;
   name: string;

@@ -1,5 +1,8 @@
 import { Types } from 'mongoose';
-import { IRestaurantResponse } from './restaurant-response.interface';
+import {
+  IPublicRestaurantResponse,
+  IRestaurantResponse,
+} from './restaurant-response.interface';
 import { Restaurant } from '../restaurant';
 import {
   CreateRestaurantDTO,
@@ -15,11 +18,11 @@ export interface IRestaurantService {
     coverImageFile: Express.Multer.File,
   ): Promise<Result<IRestaurantResponse>>;
 
-  getRestaurants(): Promise<Result<IRestaurantResponse[]>>;
+  getRestaurants(): Promise<Result<IPublicRestaurantResponse[]>>;
 
   getRestaurantById(
     restaurantId: Types.ObjectId,
-  ): Promise<Result<IRestaurantResponse>>;
+  ): Promise<Result<IPublicRestaurantResponse>>;
 
   updateRestaurant(
     restaurantId: Types.ObjectId,

@@ -1,9 +1,24 @@
 import { UserParser } from 'src/user/user.parser';
-import { IRestaurantReviewResponse } from './interfaces/restaurant-review-response.interface';
+import {
+  IPublicRestaurantReviewResponse,
+  IRestaurantReviewResponse,
+} from './interfaces/restaurant-review-response.interface';
 import { RestaurantReview } from './restaurant-review';
 import { AuditParser } from 'src/audit/audit.parser';
 
 export class RestaurantReviewParser {
+  static createPublicReviewResponse(
+    review: RestaurantReview,
+  ): IPublicRestaurantReviewResponse {
+    return {
+      id: review.id,
+      user: UserParser.createPublicUserResponse(review.user),
+      rating: review.rating,
+      reviewText: review.reviewText,
+      ...AuditParser.createAuditResponse(review.audit),
+    };
+  }
+
   static createReviewResponse(
     review: RestaurantReview,
   ): IRestaurantReviewResponse {
