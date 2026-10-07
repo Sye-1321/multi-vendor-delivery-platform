@@ -42,23 +42,33 @@ export class NotificationProcessor
       }
 
       try {
-        await this.outbox.deliver(event);
-        this.logger.info('notification_outbox_delivered', {
+        const delivered = await this.outbox.deliver(event);
+        const context: Record<string, unknown> = {
           eventId: event.id,
           eventType: event.eventType,
           aggregateId: event.aggregateId.toString(),
           correlationId: event.correlationId,
           attempts: event.attempts,
-        });
+        };
+        if (delivered) {
+          this.logger.info('notification_outbox_delivered', context);
+        } else {
+          this.logger.info('notification_outbox_claim_lost', context);
+        }
       } catch (error) {
-        await this.outbox.reschedule(event, error);
-        this.logger.warn('notification_outbox_delivery_failed', {
+        const rescheduled = await this.outbox.reschedule(event, error);
+        const context: Record<string, unknown> = {
           eventId: event.id,
           eventType: event.eventType,
           aggregateId: event.aggregateId.toString(),
           correlationId: event.correlationId,
           attempts: event.attempts,
-        });
+        };
+        if (rescheduled) {
+          this.logger.warn('notification_outbox_delivery_failed', context);
+        } else {
+          this.logger.info('notification_outbox_claim_lost', context);
+        }
       }
     } catch (error) {
       this.logger.error('notification_outbox_poll_failed', error);

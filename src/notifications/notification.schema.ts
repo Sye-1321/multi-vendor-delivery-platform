@@ -46,6 +46,9 @@ export class NotificationOutboxDataModel {
   @Prop({ type: Date })
   lockedAt?: Date;
 
+  @Prop({ type: String })
+  claimId?: string;
+
   @Prop({ type: Date })
   processedAt?: Date;
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { randomUUID } from 'node:crypto';
 import {
   ClientSession,
   FilterQuery,
@@ -49,6 +50,7 @@ export class NotificationOutboxService {
             'order.status_changed',
             order.id.toString(),
             transition.occurredAt,
+            transition.to,
           ].join(':'),
           eventType: 'order.status_changed',
           aggregateId: order.id,
@@ -70,6 +72,7 @@ export class NotificationOutboxService {
   async claimNext(): Promise<NotificationOutboxDocument | null> {
     const now = new Date();
     const staleLock = new Date(now.getTime() - 60_000);
+    const claimId = randomUUID();
 
     return this.outboxModel
       .findOneAndUpdate(
@@ -89,6 +92,7 @@ export class NotificationOutboxService {
           $set: {
             status: OutboxStatus.PROCESSING,
             lockedAt: now,
+            claimId,
           },
           $inc: { attempts: 1 },
         },
@@ -97,7 +101,7 @@ export class NotificationOutboxService {
       .exec();
   }
 
-  async deliver(event: NotificationOutboxDocument): Promise<void> {
+  async deliver(event: NotificationOutboxDocument): Promise<boolean> {
     const payload = event.payload;
     const copy = this.notificationCopy(payload.status);
 
@@ -116,10 +120,11 @@ export class NotificationOutboxService {
       { upsert: true },
     );
 
-    await this.outboxModel.updateOne(
+    const result = await this.outboxModel.updateOne(
       {
         _id: event._id,
         status: OutboxStatus.PROCESSING,
+        claimId: event.claimId,
       },
       {
         $set: {
@@ -128,16 +133,19 @@ export class NotificationOutboxService {
         },
         $unset: {
           lockedAt: 1,
+          claimId: 1,
           lastError: 1,
         },
       },
     );
+
+    return result.matchedCount === 1;
   }
 
   async reschedule(
     event: NotificationOutboxDocument,
     error: unknown,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const deadLetter = event.attempts >= 5;
     const delayMs = Math.min(2 ** event.attempts * 1_000, 60_000);
     const update: UpdateQuery<NotificationOutboxDataModel> = {
@@ -146,10 +154,19 @@ export class NotificationOutboxService {
         nextAttemptAt: new Date(Date.now() + delayMs),
         lastError: error instanceof Error ? error.name : 'delivery_failed',
       },
-      $unset: { lockedAt: 1 },
+      $unset: { lockedAt: 1, claimId: 1 },
     };
 
-    await this.outboxModel.updateOne({ _id: event._id }, update);
+    const result = await this.outboxModel.updateOne(
+      {
+        _id: event._id,
+        status: OutboxStatus.PROCESSING,
+        claimId: event.claimId,
+      },
+      update,
+    );
+
+    return result.matchedCount === 1;
   }
 
   async getForRecipient(
