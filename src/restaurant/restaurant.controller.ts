@@ -40,19 +40,19 @@ export class RestaurantController {
     return this.restaurantService.getRestaurants();
   }
 
-  @Get('restaurants/:id')
-  async getRestaurantById(
-    @Param('id') restaurantId: Types.ObjectId,
-  ): Promise<Result<IRestaurantResponse>> {
-    return this.restaurantService.getRestaurantById(restaurantId);
-  }
-
   //RAdmin
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Get('restaurants/me')
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   async getRestaurantByRestaurantAdmin(): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.getRestaurantByRestaurantAdmin();
+  }
+
+  @Get('restaurants/:id')
+  async getRestaurantById(
+    @Param('id') restaurantId: Types.ObjectId,
+  ): Promise<Result<IRestaurantResponse>> {
+    return this.restaurantService.getRestaurantById(restaurantId);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
