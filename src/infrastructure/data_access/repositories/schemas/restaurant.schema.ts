@@ -76,11 +76,9 @@ export class RestaurantDataModel
   @Prop({ type: String, required: true })
   logo: string;
 
-  @Prop({ type: [Types.ObjectId], ref: MenuDataModel.name })
-  menus: Types.ObjectId[];
+  menusDetail?: MenuDataModel[];
 
-  @Prop({ type: [Types.ObjectId], ref: RestaurantReviewDataModel.name })
-  reviews: Types.ObjectId[];
+  reviewsDetail?: RestaurantReviewDataModel[];
 }
 
 export const RestaurantSchema =
@@ -88,18 +86,16 @@ export const RestaurantSchema =
 
 RestaurantSchema.virtual('menusDetail', {
   ref: MenuDataModel.name,
-  localField: 'menus',
-  foreignField: '_id',
+  localField: '_id',
+  foreignField: 'restaurantId',
   justOne: false,
-  autopopulate: true,
 });
 
 RestaurantSchema.virtual('reviewsDetail', {
   ref: RestaurantReviewDataModel.name,
-  localField: 'reviews',
-  foreignField: '_id',
+  localField: '_id',
+  foreignField: 'restaurantId',
   justOne: false,
-  autopopulate: true,
 });
 
 RestaurantSchema.virtual('companyDetails', {

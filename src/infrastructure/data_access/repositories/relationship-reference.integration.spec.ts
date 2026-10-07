@@ -45,6 +45,8 @@ describeWithMongo('Canonical relationship references (MongoDB)', () => {
   let userModel: Model<UserDataModel>;
   let companyModel: Model<CompanyDataModel>;
   let restaurantModel: Model<RestaurantDataModel>;
+  let menuModel: Model<MenuDataModel>;
+  let menuItemModel: Model<MenuItemDataModel>;
   let restaurantReviewModel: Model<RestaurantReviewDataModel>;
   let systemReviewModel: Model<SystemReviewDataModel>;
   let userMapper: UserMapper;
@@ -75,8 +77,8 @@ describeWithMongo('Canonical relationship references (MongoDB)', () => {
       SystemReviewDataModel.name,
       SystemReviewSchema,
     );
-    connection.model(MenuDataModel.name, MenuSchema);
-    connection.model(MenuItemDataModel.name, MenuItemSchema);
+    menuModel = connection.model(MenuDataModel.name, MenuSchema);
+    menuItemModel = connection.model(MenuItemDataModel.name, MenuItemSchema);
 
     const auditMapper = new AuditMapper();
     userMapper = new UserMapper(auditMapper);
@@ -120,6 +122,8 @@ describeWithMongo('Canonical relationship references (MongoDB)', () => {
       userModel.deleteMany({}),
       companyModel.deleteMany({}),
       restaurantModel.deleteMany({}),
+      menuModel.deleteMany({}),
+      menuItemModel.deleteMany({}),
       restaurantReviewModel.deleteMany({}),
       systemReviewModel.deleteMany({}),
     ]);
@@ -271,6 +275,83 @@ describeWithMongo('Canonical relationship references (MongoDB)', () => {
     expect(relationshipJson).not.toContain('refreshTokenHash');
     expect(relationshipJson).not.toContain('_passwordHash');
     expect(relationshipJson).not.toContain('_refreshTokenHash');
+  });
+
+  it('loads restaurant children from their restaurantId relationships', async () => {
+    const owner = await createUser('RestaurantOwner');
+    const administrator = await createUser('RestaurantAdministrator');
+    const author = await createUser('RestaurantReviewAuthor');
+    const company = await createCompany(owner);
+    const restaurant = await createRestaurant(company, administrator);
+    const auditFields = {
+      auditCreatedBy: 'relationship-test@example.com',
+      auditCreatedDateTime: new Date().toISOString(),
+    };
+    const menuItemId = new Types.ObjectId();
+
+    await menuItemModel.create({
+      _id: menuItemId,
+      name: 'Loaded menu item',
+      image: 'menu-item-image',
+      description: 'Persisted menu item description',
+      price: 125,
+      restaurantId: restaurant.id,
+      availability: true,
+      ...auditFields,
+    });
+    await menuModel.create({
+      _id: new Types.ObjectId(),
+      name: 'Loaded menu',
+      image: 'menu-image',
+      restaurantId: restaurant.id,
+      menuItems: [menuItemId],
+      ...auditFields,
+    });
+    await menuModel.create({
+      _id: new Types.ObjectId(),
+      name: 'Other restaurant menu',
+      image: 'other-menu-image',
+      restaurantId: new Types.ObjectId(),
+      menuItems: [],
+      ...auditFields,
+    });
+    await restaurantReviewModel.create({
+      _id: new Types.ObjectId(),
+      userId: author.id,
+      restaurantId: restaurant.id,
+      rating: 5,
+      reviewText: 'Loaded restaurant review',
+      ...auditFields,
+    });
+
+    const [rawRestaurant, rawMenus, rawReviews] = await Promise.all([
+      restaurantModel.collection.findOne({ _id: restaurant.id }),
+      menuModel.collection.find({ restaurantId: restaurant.id }).toArray(),
+      restaurantReviewModel.collection
+        .find({ restaurantId: restaurant.id })
+        .toArray(),
+    ]);
+    const loadedRestaurant = (
+      await restaurantRepository.getRestaurantById(restaurant.id)
+    ).getValue();
+
+    expect(rawRestaurant).not.toHaveProperty('menus');
+    expect(rawRestaurant).not.toHaveProperty('reviews');
+    expect(rawMenus).toHaveLength(1);
+    expect(rawReviews).toHaveLength(1);
+    expect(loadedRestaurant.menus).toHaveLength(1);
+    expect(loadedRestaurant.menus[0].restaurantId).toEqual(restaurant.id);
+    expect(loadedRestaurant.menus[0].menuItems).toHaveLength(1);
+    expect(loadedRestaurant.menus[0].menuItems[0]).toMatchObject({
+      id: menuItemId,
+      name: 'Loaded menu item',
+      description: 'Persisted menu item description',
+      price: 125,
+    });
+    expect(loadedRestaurant.reviews).toHaveLength(1);
+    expect(loadedRestaurant.reviews[0].restaurantId).toEqual(restaurant.id);
+    expect(loadedRestaurant.reviews[0].user.id).toEqual(author.id);
+    expect(loadedRestaurant.reviews[0].user.name).toBe(author.name);
   });
 
   it('ignores contradictory historical relationship fields', async () => {

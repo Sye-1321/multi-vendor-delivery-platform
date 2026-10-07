@@ -31,8 +31,11 @@ export class RestaurantRepository
   ): Promise<Result<Restaurant>> {
     const restaurantDocument = await this.restaurantModel
       .findOne({ restaurantAdminId: restaurantAdminId })
-      .populate('menus')
-      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate({ path: 'menusDetail', populate: { path: 'menuItems' } })
+      .populate({
+        path: 'reviewsDetail',
+        populate: { path: 'userDetails' },
+      })
       .populate('restaurantAdminDetails')
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 
@@ -52,8 +55,11 @@ export class RestaurantRepository
   ): Promise<Result<Restaurant[]>> {
     const restaurantDocuments = await this.restaurantModel
       .find({ companyId: companyId })
-      .populate('menus')
-      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate({ path: 'menusDetail', populate: { path: 'menuItems' } })
+      .populate({
+        path: 'reviewsDetail',
+        populate: { path: 'userDetails' },
+      })
       .populate('restaurantAdminDetails')
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
     if (!restaurantDocuments || restaurantDocuments.length === 0) {
@@ -73,8 +79,11 @@ export class RestaurantRepository
   ): Promise<Result<Restaurant>> {
     const restaurantDocument = await this.restaurantModel
       .findOne({ _id: restaurantId })
-      .populate('menus')
-      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate({ path: 'menusDetail', populate: { path: 'menuItems' } })
+      .populate({
+        path: 'reviewsDetail',
+        populate: { path: 'userDetails' },
+      })
       .populate('restaurantAdminDetails')
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
     if (!restaurantDocument) {
@@ -124,14 +133,21 @@ export class RestaurantRepository
         },
       },
       {
-        path: 'reviews',
+        path: 'reviewsDetail',
         options: { session: options?.session },
         populate: {
           path: 'userDetails',
           options: { session: options?.session },
         },
       },
-      { path: 'menus', options: { session: options?.session } },
+      {
+        path: 'menusDetail',
+        options: { session: options?.session },
+        populate: {
+          path: 'menuItems',
+          options: { session: options?.session },
+        },
+      },
     ]);
     const restaurant = this.restaurantMapper.toDomain(populated);
     return Result.ok(restaurant);
@@ -148,8 +164,11 @@ export class RestaurantRepository
         { $set: update },
         { new: true, session: options?.session },
       )
-      .populate('menus')
-      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate({ path: 'menusDetail', populate: { path: 'menuItems' } })
+      .populate({
+        path: 'reviewsDetail',
+        populate: { path: 'userDetails' },
+      })
       .populate('restaurantAdminDetails')
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 
@@ -168,8 +187,11 @@ export class RestaurantRepository
   ): Promise<Result<Restaurant[]>> {
     const query = this.restaurantModel
       .find(filter || {})
-      .populate('menus')
-      .populate({ path: 'reviews', populate: { path: 'userDetails' } })
+      .populate({ path: 'menusDetail', populate: { path: 'menuItems' } })
+      .populate({
+        path: 'reviewsDetail',
+        populate: { path: 'userDetails' },
+      })
       .populate('restaurantAdminDetails')
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 

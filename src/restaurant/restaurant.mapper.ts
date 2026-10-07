@@ -29,8 +29,6 @@ export class RestaurantMapper
       phoneNumber,
       companyId,
       deliveryPersonAvailability,
-      reviews,
-      menus,
       restaurantAdminId,
       status,
       openingHours,
@@ -48,8 +46,6 @@ export class RestaurantMapper
       phoneNumber,
       companyId,
       deliveryPersonAvailability,
-      reviews: reviews.map((review) => review.id),
-      menus: menus.map((menu) => menu.id),
       restaurantAdminId,
       status,
       openingHours,
@@ -75,8 +71,8 @@ export class RestaurantMapper
       companyId,
       companyDetails,
       deliveryPersonAvailability,
-      reviews,
-      menus,
+      reviewsDetail,
+      menusDetail,
       restaurantAdminDetails,
       restaurantAdminId,
       status,
@@ -101,10 +97,12 @@ export class RestaurantMapper
         companyId,
         company: this.companyMapper.toDomain(companyDetails),
         deliveryPersonAvailability,
-        reviews: reviews
-          ? reviews.map((r) => this.restaurantReviewMapper.toDomain(r))
+        reviews: reviewsDetail
+          ? reviewsDetail.map((r) => this.restaurantReviewMapper.toDomain(r))
           : [],
-        menus: menus ? menus.map((m) => this.menuMapper.toDomain(m)) : [],
+        menus: menusDetail
+          ? menusDetail.map((m) => this.menuMapper.toDomain(m))
+          : [],
         restaurantAdminId,
         restaurantAdmin: this.userMapper.toDomain(restaurantAdminDetails),
         status,
