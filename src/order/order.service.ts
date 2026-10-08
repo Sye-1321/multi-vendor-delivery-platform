@@ -112,9 +112,27 @@ export class OrderService implements IOrderService {
             item.menuItemId,
           );
 
-          const subTotalInMinorUnits =
-            this.toMinorUnits(menuItem.price) * item.quantity;
-          totalPriceInMinorUnits += subTotalInMinorUnits;
+          const unitPriceInMinorUnits = this.toMinorUnits(menuItem.price);
+          const subTotalInMinorUnits = unitPriceInMinorUnits * item.quantity;
+
+          if (!Number.isSafeInteger(subTotalInMinorUnits)) {
+            throwApplicationError(
+              HttpStatus.UNPROCESSABLE_ENTITY,
+              'Order total is outside the supported numeric range.',
+            );
+          }
+
+          const nextTotalInMinorUnits =
+            totalPriceInMinorUnits + subTotalInMinorUnits;
+
+          if (!Number.isSafeInteger(nextTotalInMinorUnits)) {
+            throwApplicationError(
+              HttpStatus.UNPROCESSABLE_ENTITY,
+              'Order total is outside the supported numeric range.',
+            );
+          }
+
+          totalPriceInMinorUnits = nextTotalInMinorUnits;
 
           return CartItem.create({
             menuItemId: menuItem.id,
@@ -221,7 +239,20 @@ export class OrderService implements IOrderService {
   }
 
   private toMinorUnits(amount: number): number {
-    return Math.round((amount + Number.EPSILON) * 100);
+    const minorUnits = Math.round((amount + Number.EPSILON) * 100);
+
+    if (
+      !Number.isFinite(amount) ||
+      amount < 0 ||
+      !Number.isSafeInteger(minorUnits)
+    ) {
+      throwApplicationError(
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        'Order total is outside the supported numeric range.',
+      );
+    }
+
+    return minorUnits;
   }
 
   private fromMinorUnits(amount: number): number {

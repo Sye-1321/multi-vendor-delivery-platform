@@ -117,7 +117,7 @@ export class MenuItemRepository
     const updatedMenuItem = await this.DocumentModel.findOneAndUpdate(
       { _id: id, restaurantId },
       { $set: updateData },
-      { new: true },
+      { new: true, runValidators: true },
     ).exec();
 
     if (!updatedMenuItem) {

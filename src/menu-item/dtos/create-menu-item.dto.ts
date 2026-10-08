@@ -10,7 +10,7 @@ export class CreateMenuItemDTO {
   @IsString()
   name: string;
 
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price: number;
 
@@ -28,7 +28,7 @@ export class UpdateMenuItemDTO {
   name?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   price?: number;
 

@@ -114,7 +114,7 @@ describe('Request body validation', () => {
 
   afterAll(async () => app.close());
 
-  it('rejects negative menu-item prices and accepts zero', async () => {
+  it('enforces non-negative menu-item prices with at most two decimals', async () => {
     await request(app.getHttpServer())
       .post('/validation/menu-items')
       .send({ name: 'Item', price: -1, availability: true })
@@ -127,6 +127,18 @@ describe('Request body validation', () => {
       .post('/validation/menu-items')
       .send({ name: 'Item', price: 0, availability: true })
       .expect(201);
+    await request(app.getHttpServer())
+      .post('/validation/menu-items')
+      .send({ name: 'Item', price: 10.99, availability: true })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/validation/menu-items')
+      .send({ name: 'Item', price: 10.999, availability: true })
+      .expect(400);
+    await request(app.getHttpServer())
+      .patch('/validation/menu-items')
+      .send({ price: 10.999 })
+      .expect(400);
   });
 
   it('rejects missing required nested create inputs', async () => {
