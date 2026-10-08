@@ -19,7 +19,7 @@ export class MenuItemDataModel
   @Prop({ type: String })
   description?: string;
 
-  @Prop({ type: Number, required: true })
+  @Prop({ type: Number, required: true, min: 0 })
   price: number;
 
   @Prop({

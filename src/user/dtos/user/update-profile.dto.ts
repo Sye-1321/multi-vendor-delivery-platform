@@ -1,4 +1,12 @@
-import { IsOptional, IsString, MinLength, Matches } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MinLength,
+  Matches,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { UserSavedAddressDTO } from './user-saved-address.dto';
 
 export class UpdateUserProfileDTO {
   @IsOptional()
@@ -7,14 +15,14 @@ export class UpdateUserProfileDTO {
   readonly name?: string;
 
   @IsOptional()
-  @Matches(/^\+251\d{9}$/, {
-    message: 'Phone number must be in the format +251 followed by 9 digits.',
+  @IsString()
+  @Matches(/^251\d{9}$/, {
+    message: 'Phone number must be in the format 251 followed by 9 digits.',
   })
   readonly phoneNumber?: string;
 
   @IsOptional()
-  readonly savedAddress?: {
-    city: string;
-    subCity: string;
-  };
+  @ValidateNested()
+  @Type(() => UserSavedAddressDTO)
+  readonly savedAddress?: UserSavedAddressDTO;
 }

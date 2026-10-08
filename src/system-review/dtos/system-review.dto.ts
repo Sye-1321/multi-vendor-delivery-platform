@@ -10,7 +10,7 @@ import {
 export class CreateReviewDTO {
   @IsString()
   @MinLength(150, {
-    message: 'Review text must be at least 50 characters long.',
+    message: 'Review text must be at least 150 characters long.',
   })
   reviewText: string;
 

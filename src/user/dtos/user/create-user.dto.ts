@@ -4,7 +4,10 @@ import {
   MinLength,
   Matches,
   IsOptional,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { UserSavedAddressDTO } from './user-saved-address.dto';
 
 const passwordStrengthRegEx =
   /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
@@ -32,8 +35,7 @@ export class CreateUserDTO {
   readonly password: string;
 
   @IsOptional()
-  readonly savedAddress?: {
-    city: string;
-    subCity: string;
-  };
+  @ValidateNested()
+  @Type(() => UserSavedAddressDTO)
+  readonly savedAddress?: UserSavedAddressDTO;
 }

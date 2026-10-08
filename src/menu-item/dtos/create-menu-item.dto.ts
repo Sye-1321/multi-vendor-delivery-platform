@@ -1,10 +1,17 @@
-import { IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+} from 'class-validator';
 
 export class CreateMenuItemDTO {
   @IsString()
   name: string;
 
   @IsNumber()
+  @Min(0)
   price: number;
 
   @IsBoolean()
@@ -22,6 +29,7 @@ export class UpdateMenuItemDTO {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   price?: number;
 
   @IsOptional()

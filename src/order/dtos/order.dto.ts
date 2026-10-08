@@ -9,11 +9,14 @@ import {
   IsOptional,
   IsString,
   MaxLength,
+  Max,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from '../constants/constants';
+
+const MAX_CART_ITEM_QUANTITY = 100;
 
 export class CreateDeliveryAddressDTO {
   @IsString()
@@ -31,6 +34,7 @@ export class CreateCartItemDTO {
 
   @IsInt()
   @Min(1)
+  @Max(MAX_CART_ITEM_QUANTITY)
   quantity: number;
 
   @IsOptional()

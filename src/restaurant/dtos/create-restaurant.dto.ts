@@ -6,6 +6,8 @@ import {
   IsEmail,
   Matches,
   IsNotEmpty,
+  IsDefined,
+  IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
@@ -34,6 +36,7 @@ export class RestaurantAdminDTO {
   })
   readonly phoneNumber: string;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => SavedAddressDTO)
   savedAddress: SavedAddressDTO;
@@ -44,6 +47,7 @@ export class CreateRestaurantDTO {
   @MinLength(3, { message: 'Name must be at least 3 characters long.' })
   readonly name: string;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => SavedAddressDTO)
   savedAddress: SavedAddressDTO;
@@ -60,12 +64,14 @@ export class CreateRestaurantDTO {
   @IsString()
   readonly closingHours: string;
 
+  @IsOptional()
   @IsString()
   readonly description?: string;
 
   @IsBoolean()
   readonly deliveryPersonAvailability: boolean;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => RestaurantAdminDTO)
   restaurantAdminData: RestaurantAdminDTO;

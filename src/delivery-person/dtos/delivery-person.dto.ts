@@ -5,6 +5,7 @@ import {
   Matches,
   MinLength,
   ValidateNested,
+  IsDefined,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PartialType } from '@nestjs/mapped-types';
@@ -31,6 +32,7 @@ export class CreateDeliveryPersonDTO {
   })
   phoneNumber: string;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => SavedAddressDTO)
   savedAddress: SavedAddressDTO;

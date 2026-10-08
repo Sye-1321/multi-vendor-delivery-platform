@@ -6,6 +6,7 @@ import {
   IsOptional,
   MinLength,
   IsEmail,
+  IsDefined,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -33,6 +34,7 @@ export class CompanyAdminDTO {
   })
   readonly phoneNumber: string;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => SavedAddressDTO)
   savedAddress: SavedAddressDTO;
@@ -51,10 +53,12 @@ export class CreateCompanyDTO {
   })
   phoneNumber: string;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => SavedAddressDTO)
   savedAddress: SavedAddressDTO;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => CompanyAdminDTO)
   companyAdminData: CompanyAdminDTO;
