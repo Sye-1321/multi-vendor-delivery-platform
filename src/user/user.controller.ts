@@ -38,6 +38,7 @@ import { AccountActionPasswordDTO } from './dtos/auth/account-action-password.dt
 import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
 import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller()
 export class UserController {
@@ -202,7 +203,7 @@ export class UserController {
   @Patch('/admin/users/:id')
   @HttpCode(HttpStatus.OK)
   async updateUser(
-    @Param('id') userId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) userId: Types.ObjectId,
     @Body() request: AdminUpdateUserDTO,
   ) {
     return this.userService.adminUpdateUser(userId, request);

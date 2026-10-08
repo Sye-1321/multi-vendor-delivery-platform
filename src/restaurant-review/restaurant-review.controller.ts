@@ -19,6 +19,7 @@ import {
 import { IRestaurantReviewResponse } from './interfaces/restaurant-review-response.interface';
 import { TYPES } from 'src/application/constants/types';
 import { IRestaurantReviewService } from './interfaces/restaurant-review-service.interface';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @UseGuards(AccessAuthGuard)
 @Controller('restaurant-reviews')
@@ -31,7 +32,7 @@ export class RestaurantReviewController {
   @Post(':restaurantId')
   @HttpCode(HttpStatus.CREATED)
   async createReview(
-    @Param('restaurantId') restaurantId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() body: CreateReviewDTO,
   ): Promise<Result<IRestaurantReviewResponse>> {
     return this.restaurantReviewService.createReview(restaurantId, body);
@@ -40,12 +41,9 @@ export class RestaurantReviewController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async updateReview(
-    @Param('id') id: string,
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateReviewDTO,
   ): Promise<Result<IRestaurantReviewResponse>> {
-    return this.restaurantReviewService.updateRestaurantReview(
-      new Types.ObjectId(id),
-      body,
-    );
+    return this.restaurantReviewService.updateRestaurantReview(id, body);
   }
 }

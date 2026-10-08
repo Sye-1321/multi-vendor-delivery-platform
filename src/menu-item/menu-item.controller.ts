@@ -28,6 +28,7 @@ import { Role } from 'src/application/constants/constants';
 import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller()
 export class MenuItemController {
@@ -61,7 +62,7 @@ export class MenuItemController {
   @Get('me/menu-items/:id')
   @HttpCode(HttpStatus.OK)
   async getItemById(
-    @Param('id') itemId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse>> {
     return await this.itemService.getMenuItemById(itemId);
   }
@@ -72,7 +73,7 @@ export class MenuItemController {
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('image'), ParseStringifiedJsonInterceptor)
   async updateItem(
-    @Param('id') itemId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
     @Body() request: UpdateMenuItemDTO,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<Result<IMenuItemResponse>> {
@@ -83,14 +84,16 @@ export class MenuItemController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Delete('me/menu-items/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteItem(@Param('id') itemId: Types.ObjectId): Promise<Result<void>> {
+  async deleteItem(
+    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
+  ): Promise<Result<void>> {
     return await this.itemService.deleteMenuItem(itemId);
   }
 
   @Get(':restaurantId/menu-items')
   @HttpCode(HttpStatus.OK)
   async getRestaurantItems(
-    @Param('restaurantId') restaurantId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse[]>> {
     return await this.itemService.getRestaurantMenuItems(restaurantId);
   }
@@ -98,8 +101,8 @@ export class MenuItemController {
   @Get(':restaurantId/menu-items/:id')
   @HttpCode(HttpStatus.OK)
   async getRestaurantItemById(
-    @Param('restaurantId') restaurantId: Types.ObjectId,
-    @Param('id') itemId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse>> {
     return await this.itemService.getRestaurantMenuItemById(
       restaurantId,

@@ -21,6 +21,7 @@ import {
   IPublicSystemReviewResponse,
   ISystemReviewResponse,
 } from './interfaces/system-review-response.interface';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller('reviews')
 export class SystemReviewController {
@@ -41,7 +42,7 @@ export class SystemReviewController {
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   async updateReview(
-    @Param('id') id: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateReviewDTO,
   ): Promise<Result<ISystemReviewResponse>> {
     return this.systemReviewService.updateSystemReview(id, body);
@@ -56,7 +57,9 @@ export class SystemReviewController {
   @UseGuards(AccessAuthGuard)
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deleteReview(@Param('id') id: Types.ObjectId): Promise<Result<void>> {
+  async deleteReview(
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+  ): Promise<Result<void>> {
     return this.systemReviewService.deleteSystemReviewById(id);
   }
 }

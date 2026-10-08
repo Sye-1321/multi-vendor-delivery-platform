@@ -27,6 +27,7 @@ import {
 import { IDeliveryPersonResponse } from './interfaces/deliveryperson-response.interface';
 import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller('delivery-person')
 export class DeliveryPersonController {
@@ -96,7 +97,7 @@ export class DeliveryPersonController {
   @Get('system/delivery-persons/:id')
   @HttpCode(HttpStatus.OK)
   async getSystemWideDeliveryPersonById(
-    @Param('id') id: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<IDeliveryPersonResponse>> {
     return this.deliveryPersonService.getSystemWideDeliveryPersonById(id);
   }
@@ -106,7 +107,7 @@ export class DeliveryPersonController {
   @Get('restaurant/delivery-persons/:id')
   @HttpCode(HttpStatus.OK)
   async getRestaurantDeliveryPersonById(
-    @Param('id') id: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<IDeliveryPersonResponse>> {
     return this.deliveryPersonService.getRestaurantDeliveryPersonById(id);
   }
@@ -120,7 +121,7 @@ export class DeliveryPersonController {
   @Patch('system/delivery-persons/:id')
   @HttpCode(HttpStatus.OK)
   async updateSystemWideDeliveryPerson(
-    @Param('id') id: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
@@ -140,7 +141,7 @@ export class DeliveryPersonController {
   @Patch('restaurant/delivery-persons/:id')
   @HttpCode(HttpStatus.OK)
   async updateRestaurantDeliveryPerson(
-    @Param('id') id: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {

@@ -6,6 +6,7 @@ import { Result } from 'src/domain/result/result';
 import { AccessAuthGuard } from 'src/infrastructure/guards/access-auth.guard';
 import { RoleGuard } from 'src/infrastructure/guards/role-guard';
 import { RestaurantController } from './restaurant.controller';
+import { Types } from 'mongoose';
 
 describe('RestaurantController routing', () => {
   let app: INestApplication;
@@ -59,9 +60,21 @@ describe('RestaurantController routing', () => {
       .expect(200);
 
     expect(restaurantService.getRestaurantById).toHaveBeenCalledTimes(1);
-    expect(restaurantService.getRestaurantById).toHaveBeenCalledWith(
-      restaurantId,
-    );
+    const [receivedRestaurantId] =
+      restaurantService.getRestaurantById.mock.calls[0];
+    expect(receivedRestaurantId).toBeInstanceOf(Types.ObjectId);
+    expect(receivedRestaurantId.toString()).toBe(restaurantId);
+    expect(
+      restaurantService.getRestaurantByRestaurantAdmin,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed restaurant id before calling the service', async () => {
+    await request(app.getHttpServer())
+      .get('/restaurants/not-an-id')
+      .expect(400);
+
+    expect(restaurantService.getRestaurantById).not.toHaveBeenCalled();
     expect(
       restaurantService.getRestaurantByRestaurantAdmin,
     ).not.toHaveBeenCalled();

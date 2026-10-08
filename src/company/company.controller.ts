@@ -28,6 +28,7 @@ import {
 } from './dtos/company.dto';
 import { ICompanyResponse } from './interfaces/company-response.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller('companies')
 export class CompanyController {
@@ -79,7 +80,7 @@ export class CompanyController {
   @Put(':companyId/change-admin')
   @HttpCode(HttpStatus.OK)
   async changeCompanyAdmin(
-    @Param('companyId') companyId: Types.ObjectId,
+    @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,
     @Body() newAdminData: CompanyAdminDTO,
   ): Promise<Result<ICompanyResponse>> {
     return this.companyService.changeCompanyAdmin(companyId, newAdminData);
@@ -90,7 +91,7 @@ export class CompanyController {
   @Get(':companyId')
   @HttpCode(HttpStatus.OK)
   async getCompanyById(
-    @Param('companyId') companyId: Types.ObjectId,
+    @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,
   ): Promise<Result<ICompanyResponse>> {
     return this.companyService.getCompanyById(companyId);
   }

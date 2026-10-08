@@ -30,6 +30,7 @@ import {
 } from './interfaces/restaurant-response.interface';
 import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller()
 export class RestaurantController {
@@ -53,7 +54,7 @@ export class RestaurantController {
 
   @Get('restaurants/:id')
   async getRestaurantById(
-    @Param('id') restaurantId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) restaurantId: Types.ObjectId,
   ): Promise<Result<IPublicRestaurantResponse>> {
     return this.restaurantService.getRestaurantById(restaurantId);
   }
@@ -94,7 +95,7 @@ export class RestaurantController {
   @Get('company/restaurants/:id')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async getCompanyRestaurantById(
-    @Param('id') restaurantId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) restaurantId: Types.ObjectId,
   ): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.getCompanyRestaurantById(restaurantId);
   }
@@ -103,7 +104,7 @@ export class RestaurantController {
   @Put('company/restaurants/:id')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async changeRestaurantAdmin(
-    @Param('id') restaurantId: Types.ObjectId,
+    @Param('id', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() data: RestaurantAdminDTO,
   ): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.changeRestaurantAdmin(restaurantId, data);

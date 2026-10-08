@@ -13,6 +13,7 @@ import { Result } from 'src/domain/result/result';
 import { IContextService } from 'src/infrastructure/context/context-service.interface';
 import { AccessAuthGuard } from 'src/infrastructure/guards/access-auth.guard';
 import { throwApplicationError } from 'src/infrastructure/utilities/exception-instance';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import {
   NotificationOutboxService,
   NotificationView,
@@ -35,17 +36,10 @@ export class NotificationController {
 
   @Patch(':notificationId/read')
   async markRead(
-    @Param('notificationId') notificationId: string,
+    @Param('notificationId', ParseObjectIdPipe) notificationId: Types.ObjectId,
   ): Promise<Result<{ read: true }>> {
-    if (!Types.ObjectId.isValid(notificationId)) {
-      return throwApplicationError(
-        HttpStatus.BAD_REQUEST,
-        'Invalid notification ID.',
-      );
-    }
-
     const updated = await this.notifications.markRead(
-      new Types.ObjectId(notificationId),
+      notificationId,
       this.getRecipientId(),
     );
     if (!updated) {

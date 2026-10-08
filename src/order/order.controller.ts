@@ -21,6 +21,7 @@ import { Role } from 'src/application/constants/constants';
 import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { TYPES } from 'src/application/constants/types';
 import { CancelOrderDTO } from './dtos/cancel-order.dto';
+import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @Controller('orders')
 export class OrderController {
@@ -34,7 +35,7 @@ export class OrderController {
   @HttpCode(HttpStatus.CREATED)
   @Post(':restaurantId')
   async createOrder(
-    @Param('restaurantId') restaurantId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() orderData: CreateOrderDTO,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.createOrder(restaurantId, orderData);
@@ -45,7 +46,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Patch(':orderId/cancel')
   async cancelOrder(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
     @Body() request: CancelOrderDTO,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.cancelOrder(orderId, request);
@@ -56,7 +57,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Patch(':orderId/accept')
   async acceptOrder(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.acceptOrder(orderId);
   }
@@ -66,7 +67,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Patch(':orderId/prepared')
   async orderPrepared(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.orderPrepared(orderId);
   }
@@ -76,7 +77,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Patch(':orderId/delivered')
   async markDelivered(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.markDelivered(orderId);
   }
@@ -86,8 +87,9 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Patch(':orderId/assign-delivery-person/:deliveryPersonId')
   async assignDeliveryPerson(
-    @Param('orderId') orderId: Types.ObjectId,
-    @Param('deliveryPersonId') deliveryPersonId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
+    @Param('deliveryPersonId', ParseObjectIdPipe)
+    deliveryPersonId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.assignDeliveryPerson(
       orderId,
@@ -116,7 +118,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Get('restaurant/orders/:orderId')
   async getRestaurantOrderById(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.getRestaurantOrderById(orderId);
   }
@@ -134,7 +136,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Get(':orderId')
   async getOrderById(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.getOrderById(orderId);
   }
@@ -144,7 +146,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @Get('user/orders/:orderId')
   async getOrderByIdForCurrentUser(
-    @Param('orderId') orderId: Types.ObjectId,
+    @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
     return await this.orderService.getOrderByIdForCurrentUser(orderId);
   }
