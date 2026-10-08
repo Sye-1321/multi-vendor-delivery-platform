@@ -398,18 +398,24 @@ export class UserService extends AuthService implements IUserService {
     props: AdminUpdateUserDTO,
   ): Promise<Result<IUserResponse>> {
     const context: Context = this.contextService.getContext();
-    if (props.status === UserStatus.SUSPENDED) {
-      const suspendedUser = await this.suspendUserAccount(userId);
-      this.publishAccessRevocation(userId);
-      return Result.ok(UserParser.createUserResponse(suspendedUser));
-    }
     const user = await this.getUser(new Types.ObjectId(userId));
-    const updatedUser: User = await this.updateUser(
-      userId,
-      props,
-      user,
-      context,
-    );
+    const roleChanged = props.role !== undefined && props.role !== user.role;
+    const statusChanged =
+      props.status !== undefined && props.status !== user.status;
+    const statusDisablesAccess =
+      props.status !== undefined && props.status !== UserStatus.ACTIVE;
+    const update = {
+      ...props,
+      ...(statusDisablesAccess ? { refreshTokenHash: null } : {}),
+      auditModifiedBy: context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+    };
+    const updatedUser = await this.updateUserById(userId, update);
+
+    if (roleChanged || (statusChanged && statusDisablesAccess)) {
+      this.publishAccessRevocation(userId);
+    }
+
     return Result.ok(UserParser.createUserResponse(updatedUser));
   }
 

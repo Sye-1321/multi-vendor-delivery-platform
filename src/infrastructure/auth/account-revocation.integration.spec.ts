@@ -210,6 +210,82 @@ describeWithMongo('Account suspension revocation (MongoDB)', () => {
     ).rejects.toBeDefined();
   });
 
+  it('rejects invalid role and status values at the repository boundary', async () => {
+    const { userId } = await createActiveUser();
+
+    await expect(
+      repository.updateUser({ _id: userId }, { role: 'NOT_A_ROLE' } as never),
+    ).rejects.toThrow();
+    await expect(
+      repository.updateUser({ _id: userId }, {
+        status: 'NOT_A_STATUS',
+      } as never),
+    ).rejects.toThrow();
+
+    const persisted = await model.findById(userId).lean().exec();
+    expect(persisted?.role).toBe(Role.END_USER);
+    expect(persisted?.status).toBe(UserStatus.ACTIVE);
+  });
+
+  it('uses a persisted role change for an existing access and refresh token', async () => {
+    const { userId, tokens } = await createActiveUser();
+
+    await userService.adminUpdateUser(userId, {
+      role: Role.BUSINESS_ADMINISTRATOR,
+    });
+
+    const persisted = await model.findById(userId).lean().exec();
+    expect(persisted?.role).toBe(Role.BUSINESS_ADMINISTRATOR);
+    expect(persisted).not.toHaveProperty('roles');
+    expect(publishedUserIds).toEqual([userId.toString()]);
+
+    const authenticated = await authenticate(tokens.accessToken);
+    expect(principal).toMatchObject({
+      userId: userId.toString(),
+      role: Role.BUSINESS_ADMINISTRATOR,
+    });
+    expect(authenticated.role).toBe(Role.BUSINESS_ADMINISTRATOR);
+
+    const replacementTokens = await authService.updateRefreshToken(
+      repository,
+      userId,
+      tokens.refreshToken,
+    );
+    const replacementPayload = await jwtService.verifyAsync(
+      replacementTokens.accessToken,
+      { secret: configValues.JWT_ACCESS_TOKEN_SECRET },
+    );
+    expect(replacementPayload.role).toBe(Role.BUSINESS_ADMINISTRATOR);
+  });
+
+  it('applies a role change and suspension in one administrator update', async () => {
+    const { userId } = await createActiveUser();
+
+    await userService.adminUpdateUser(userId, {
+      role: Role.BUSINESS_ADMINISTRATOR,
+      status: UserStatus.SUSPENDED,
+    });
+
+    const persisted = await model.findById(userId).lean().exec();
+    expect(persisted?.role).toBe(Role.BUSINESS_ADMINISTRATOR);
+    expect(persisted?.status).toBe(UserStatus.SUSPENDED);
+    expect(persisted?.refreshTokenHash).toBeNull();
+    expect(publishedUserIds).toEqual([userId.toString()]);
+  });
+
+  it('clears refresh state and revokes access for any non-ACTIVE status', async () => {
+    const { userId } = await createActiveUser();
+
+    await userService.adminUpdateUser(userId, {
+      status: UserStatus.INACTIVE,
+    });
+
+    const persisted = await model.findById(userId).lean().exec();
+    expect(persisted?.status).toBe(UserStatus.INACTIVE);
+    expect(persisted?.refreshTokenHash).toBeNull();
+    expect(publishedUserIds).toEqual([userId.toString()]);
+  });
+
   it('rejects non-ACTIVE and missing users without setting a principal', async () => {
     const { userId, tokens } = await createActiveUser();
     await model.updateOne({ _id: userId }, { status: UserStatus.PENDING });
@@ -268,6 +344,60 @@ describeWithMongo('Account suspension revocation (MongoDB)', () => {
     await gateway.handleConnection(suspendedClient as never);
     expect(suspendedClient.disconnect).toHaveBeenCalledWith(true);
     expect(suspendedClient.join).not.toHaveBeenCalled();
+    gateway.onModuleDestroy();
+  });
+
+  it('disconnects sockets after a role change and reconnects with the persisted role', async () => {
+    const { userId, tokens } = await createActiveUser();
+    const gateway = new OrderGateway(
+      jwtService,
+      {
+        getOrThrow: (key: keyof typeof configValues) => configValues[key],
+      } as ConfigService,
+      new OrderEventPublisher(),
+      new AccountAccessService(repository),
+      accessRevocations,
+      { warn: jest.fn() } as never,
+      {} as never,
+      {} as never,
+    );
+    const disconnectSockets = jest.fn();
+    (gateway as unknown as { server: unknown }).server = {
+      to: jest.fn().mockReturnValue({ emit: jest.fn() }),
+      in: jest.fn().mockReturnValue({ disconnectSockets }),
+    };
+    gateway.afterInit();
+    const originalClient = {
+      id: 'original-role-socket',
+      handshake: { auth: { token: tokens.accessToken }, headers: {} },
+      data: {},
+      join: jest.fn().mockResolvedValue(undefined),
+      disconnect: jest.fn(),
+    };
+    await gateway.handleConnection(originalClient as never);
+    expect(originalClient.data).toMatchObject({
+      principal: { role: Role.END_USER },
+    });
+
+    await userService.adminUpdateUser(userId, {
+      role: Role.BUSINESS_ADMINISTRATOR,
+    });
+    expect(disconnectSockets).toHaveBeenCalledWith(true);
+
+    const reconnectedClient = {
+      id: 'reconnected-role-socket',
+      handshake: { auth: { token: tokens.accessToken }, headers: {} },
+      data: {},
+      join: jest.fn().mockResolvedValue(undefined),
+      disconnect: jest.fn(),
+    };
+    await gateway.handleConnection(reconnectedClient as never);
+    expect(reconnectedClient.data).toMatchObject({
+      principal: {
+        userId: userId.toString(),
+        role: Role.BUSINESS_ADMINISTRATOR,
+      },
+    });
     gateway.onModuleDestroy();
   });
 });

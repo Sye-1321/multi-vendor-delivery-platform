@@ -30,7 +30,9 @@ describe('OrderGateway room authorization', () => {
       {} as never,
       {} as never,
       {} as never,
-      { isActive: jest.fn().mockResolvedValue(true) } as never,
+      {
+        resolveActiveUser: jest.fn().mockResolvedValue({ role: Role.END_USER }),
+      } as never,
       {} as never,
       { warn: jest.fn() } as never,
       orderRepository as never,
@@ -44,6 +46,60 @@ describe('OrderGateway room authorization', () => {
     ).rejects.toBeInstanceOf(WsException);
     expect(client.join).not.toHaveBeenCalled();
   });
+
+  it('uses the persisted role when authorizing a subscription', async () => {
+    const orderId = new Types.ObjectId();
+    const orderRepository = {
+      getOrderById: jest.fn().mockResolvedValue(
+        Result.ok({
+          id: orderId,
+          userId: new Types.ObjectId(),
+          restaurantId: new Types.ObjectId(),
+          deliveryAddress: { city: 'Addis Ababa', subCity: 'Bole' },
+          status: 'pending',
+          totalPrice: 100,
+          paymentStatus: 'pending',
+          timeline: [],
+          deliveryPerson: undefined,
+          audit: {
+            auditCreatedBy: 'test@example.com',
+            auditCreatedDateTime: new Date().toISOString(),
+          },
+        }),
+      ),
+    };
+    const principal = {
+      userId: new Types.ObjectId().toString(),
+      role: Role.END_USER,
+    };
+    const client = {
+      data: { principal },
+      join: jest.fn(),
+      disconnect: jest.fn(),
+    };
+    const gateway = new OrderGateway(
+      {} as never,
+      {} as never,
+      {} as never,
+      {
+        resolveActiveUser: jest
+          .fn()
+          .mockResolvedValue({ role: Role.SYSTEM_ADMINISTRATOR }),
+      } as never,
+      {} as never,
+      { warn: jest.fn() } as never,
+      orderRepository as never,
+      {} as never,
+    );
+
+    await expect(
+      gateway.subscribeToOrder(client as never, {
+        orderId: orderId.toString(),
+      }),
+    ).resolves.toMatchObject({ event: 'order:subscribed' });
+    expect(principal.role).toBe(Role.SYSTEM_ADMINISTRATOR);
+    expect(client.join).toHaveBeenCalledWith(`order:${orderId}`);
+  });
 });
 
 describe('OrderGateway account revocation', () => {
@@ -55,7 +111,11 @@ describe('OrderGateway account revocation', () => {
       {} as never,
       {} as never,
       new OrderEventPublisher(),
-      { isActive: jest.fn().mockResolvedValue(isActive) } as never,
+      {
+        resolveActiveUser: jest
+          .fn()
+          .mockResolvedValue(isActive ? { role: Role.END_USER } : undefined),
+      } as never,
       revocations,
       logger as never,
       {} as never,
@@ -104,10 +164,10 @@ describe('OrderGateway account revocation', () => {
 
   it('disconnects without establishing a principal when suspension lands during handshake', async () => {
     const userId = new Types.ObjectId().toString();
-    const isActive = jest
+    const resolveActiveUser = jest
       .fn()
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+      .mockResolvedValueOnce({ role: Role.END_USER })
+      .mockResolvedValueOnce(undefined);
     const client = {
       id: 'racing-socket',
       handshake: { auth: { token: 'signed-access-token' }, headers: {} },
@@ -125,7 +185,7 @@ describe('OrderGateway account revocation', () => {
       } as never,
       { getOrThrow: jest.fn().mockReturnValue('access-secret') } as never,
       new OrderEventPublisher(),
-      { isActive } as never,
+      { resolveActiveUser } as never,
       new AccessRevocationPublisher(),
       { warn: jest.fn() } as never,
       {} as never,

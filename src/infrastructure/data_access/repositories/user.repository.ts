@@ -71,7 +71,7 @@ export class UserRepository
     const updatedUserDocument = await this.DocumentModel.findOneAndUpdate(
       filter,
       updateData,
-      { new: true, session: options?.session },
+      { new: true, runValidators: true, session: options?.session },
     );
     if (!updatedUserDocument) {
       return Result.fail(

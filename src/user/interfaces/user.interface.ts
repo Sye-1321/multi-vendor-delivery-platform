@@ -28,7 +28,7 @@ export interface IUpdateProfile {
 
 export interface IAdminUpdateUser {
   status?: UserStatus;
-  roles?: Role;
+  role?: Role;
   auditModifiedBy: string;
   auditModifiedDateTime: string;
 }

@@ -18,6 +18,9 @@ import { CreateOrderDTO } from 'src/order/dtos/order.dto';
 import { CreateRestaurantDTO } from 'src/restaurant/dtos/create-restaurant.dto';
 import { CreateUserDTO } from 'src/user/dtos/user/create-user.dto';
 import { UpdateUserProfileDTO } from 'src/user/dtos/user/update-profile.dto';
+import { AdminUpdateUserDTO } from 'src/user/dtos/user/admin-update-user.dto';
+import { Role } from 'src/application/constants/constants';
+import { UserStatus } from 'src/user/constants/constants';
 import { validatePipeInstance } from './validation-pipe-instance';
 
 @Controller('validation')
@@ -54,6 +57,11 @@ class RequestBodyValidationController {
 
   @Patch('users')
   updateUser(@Body() body: UpdateUserProfileDTO) {
+    return body;
+  }
+
+  @Patch('admin/users')
+  adminUpdateUser(@Body() body: AdminUpdateUserDTO) {
     return body;
   }
 
@@ -180,6 +188,29 @@ describe('Request body validation', () => {
       .patch('/validation/users')
       .send({ phoneNumber: '+251911111111' })
       .expect(400);
+  });
+
+  it('validates administrator role and status updates', async () => {
+    for (const body of [
+      { role: Role.BUSINESS_ADMINISTRATOR },
+      { status: UserStatus.SUSPENDED },
+    ]) {
+      await request(app.getHttpServer())
+        .patch('/validation/admin/users')
+        .send(body)
+        .expect(200);
+    }
+
+    for (const body of [
+      { role: 'NOT_A_ROLE' },
+      { status: 'NOT_A_STATUS' },
+      { roles: Role.END_USER },
+    ]) {
+      await request(app.getHttpServer())
+        .patch('/validation/admin/users')
+        .send(body)
+        .expect(400);
+    }
   });
 
   it('trims cancellation reasons before validating their length', async () => {

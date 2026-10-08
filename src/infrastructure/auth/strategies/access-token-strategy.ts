@@ -38,9 +38,9 @@ export class AccessTokenStrategy extends PassportStrategy(
     this.contextService.setPrincipal({
       userId,
       email: user.email,
-      role: payload.role,
+      role: user.role,
     });
 
-    return { ...payload, email: user.email };
+    return { ...payload, email: user.email, role: user.role };
   }
 }

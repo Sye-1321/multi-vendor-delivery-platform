@@ -86,18 +86,19 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
       });
 
       const userId = payload.sub?.toString();
-      if (!userId || !(await this.accountAccess.isActive(userId))) {
+      if (!userId || !(await this.accountAccess.resolveActiveUser(userId))) {
         throw new WsException('Authentication is required.');
       }
 
       await client.join(this.userRoomName(userId));
-      if (!(await this.accountAccess.isActive(userId))) {
+      const user = await this.accountAccess.resolveActiveUser(userId);
+      if (!user) {
         throw new WsException('Authentication is required.');
       }
 
       client.data.principal = {
         userId,
-        role: payload.role,
+        role: user.role,
       } satisfies SocketPrincipal;
     } catch (error) {
       this.logger.warn('order_socket_authentication_rejected', {
@@ -121,10 +122,12 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
     if (!principal) {
       throw new WsException('Authentication is required.');
     }
-    if (!(await this.accountAccess.isActive(principal.userId))) {
+    const user = await this.accountAccess.resolveActiveUser(principal.userId);
+    if (!user) {
       client.disconnect(true);
       throw new WsException('Authentication is required.');
     }
+    principal.role = user.role;
 
     const orderResult = await this.orderRepository.getOrderById(
       new Types.ObjectId(request.orderId),
