@@ -19,7 +19,10 @@ import { IDeliveryPersonService } from './interfaces/delivery-person-service.int
 import { IDeliveryPersonResponse } from './interfaces/deliveryperson-response.interface';
 import { AvailabilityStatus } from './constants/constants';
 import { DeliveryPersonFactory } from './factories/delivery-person.factory';
-import { SaveFileLocally } from 'src/application/saveFileLocally';
+import {
+  DeleteFileLocally,
+  SaveFileLocally,
+} from 'src/application/saveFileLocally';
 import { DeliveryPersonProfileUpdate } from 'src/infrastructure/data_access/repositories/interfaces/deliveryperson-repository.interface';
 
 @Injectable()
@@ -136,30 +139,38 @@ export class DeliveryPersonService implements IDeliveryPersonService {
       profileImageFile,
       'delivery-person-profiles',
     );
-    const newProps: CreateDeliveryPersonWithProfileImageDTO = {
-      ...props,
-      profileImage,
-    };
-    const deliveryPerson = DeliveryPersonFactory.createDeliveryPerson(
-      newProps,
-      audit,
-      restaurantId,
-    );
-    const model = this.deliveryPersonMapper.toPersistence(deliveryPerson);
-    const result =
-      await this.deliveryPersonRepository.createDeliveryPerson(model);
-    if (!result.isSuccess) {
-      throwApplicationError(
-        HttpStatus.BAD_REQUEST,
-        'Delivery person could not be created. Try again later.',
+    let persisted = false;
+    try {
+      const newProps: CreateDeliveryPersonWithProfileImageDTO = {
+        ...props,
+        profileImage,
+      };
+      const deliveryPerson = DeliveryPersonFactory.createDeliveryPerson(
+        newProps,
+        audit,
+        restaurantId,
       );
+      const model = this.deliveryPersonMapper.toPersistence(deliveryPerson);
+      const result =
+        await this.deliveryPersonRepository.createDeliveryPerson(model);
+      if (!result.isSuccess) {
+        throwApplicationError(
+          HttpStatus.BAD_REQUEST,
+          'Delivery person could not be created. Try again later.',
+        );
+      }
+      persisted = true;
+      const response =
+        await this.deliveryPersonRepository.getDeliveryPersonById(
+          result.getValue().id,
+        );
+      return Result.ok(
+        DeliveryPersonParser.createDeliveryPersonResponse(response.getValue()),
+      );
+    } catch (error) {
+      if (!persisted) await DeleteFileLocally(profileImage);
+      throw error;
     }
-    const response = await this.deliveryPersonRepository.getDeliveryPersonById(
-      result.getValue().id,
-    );
-    return Result.ok(
-      DeliveryPersonParser.createDeliveryPersonResponse(response.getValue()),
-    );
   }
 
   private async getDeliveryPersonsByFilter(
@@ -231,7 +242,7 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     profileImageFile?: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
     const context = this.contextService.getContext();
-    await validateMethod(id);
+    const { deliveryPerson } = await validateMethod(id);
 
     if (props?.phoneNumber) {
       const existing = await this.deliveryPersonRepository.findByPhoneNumber(
@@ -258,23 +269,34 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     if (props.savedAddress !== undefined)
       update.savedAddress = props.savedAddress;
 
-    if (profileImageFile) {
-      const profileImage = await SaveFileLocally(
-        profileImageFile,
-        'delivery-person-profiles',
+    let newProfileImage: string | undefined;
+    try {
+      if (profileImageFile) {
+        newProfileImage = await SaveFileLocally(
+          profileImageFile,
+          'delivery-person-profiles',
+        );
+        update.profileImage = newProfileImage;
+      }
+
+      const updateResult = await this.deliveryPersonRepository.updateProfile(
+        id,
+        update,
       );
-      update.profileImage = profileImage;
+      if (!updateResult.isSuccess) {
+        await DeleteFileLocally(newProfileImage);
+        return Result.fail(
+          'Failed to update delivery person',
+          HttpStatus.INTERNAL_SERVER_ERROR,
+        );
+      }
+    } catch (error) {
+      await DeleteFileLocally(newProfileImage);
+      throw error;
     }
 
-    const updateResult = await this.deliveryPersonRepository.updateProfile(
-      id,
-      update,
-    );
-    if (!updateResult.isSuccess) {
-      return Result.fail(
-        'Failed to update delivery person',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    if (newProfileImage) {
+      await DeleteFileLocally(deliveryPerson.profileImage);
     }
     const updated =
       await this.deliveryPersonRepository.getDeliveryPersonById(id);

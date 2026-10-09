@@ -85,3 +85,19 @@ export async function SaveFileLocally(
   }
   return path.posix.join(category, sanitizedFilename);
 }
+
+export async function DeleteFileLocally(
+  storageKey?: string | null,
+): Promise<void> {
+  if (!storageKey || path.isAbsolute(storageKey)) {
+    return;
+  }
+
+  const target = path.resolve(UPLOADS_ROOT, storageKey);
+  const relative = path.relative(UPLOADS_ROOT, target);
+  if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+    return;
+  }
+
+  await fs.rm(target, { force: true }).catch(() => undefined);
+}

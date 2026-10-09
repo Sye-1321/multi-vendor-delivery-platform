@@ -24,7 +24,10 @@ import { User } from 'src/user/user';
 import { Company } from 'src/company/company';
 import { Audit } from 'src/domain/audit/audit';
 import { Role } from 'src/application/constants/constants';
-import { SaveFileLocally } from 'src/application/saveFileLocally';
+import {
+  DeleteFileLocally,
+  SaveFileLocally,
+} from 'src/application/saveFileLocally';
 import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { RestaurantStatus } from './constants/constants';
 
@@ -91,12 +94,16 @@ export class RestaurantService implements IRestaurantService {
     const company: Company = await this.companyService.getCompanyByCompanyAdmin(
       companyAdmin.id,
     );
-    const logo = await SaveFileLocally(logoFile, 'restaurant-logos');
-    const image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
-    const audit: Audit = Audit.createInsertContext(this.context);
-    const session = await this.restaurantRepository.startSession();
+    let logo: string | undefined;
+    let image: string | undefined;
+    let committed = false;
+    let session: ClientSession | undefined;
     try {
-      const committed = await session.withTransaction(async () => {
+      logo = await SaveFileLocally(logoFile, 'restaurant-logos');
+      image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
+      const audit: Audit = Audit.createInsertContext(this.context);
+      session = await this.restaurantRepository.startSession();
+      const transaction = await session.withTransaction(async () => {
         const registration = await this.userService.createAdminRegistration(
           restaurantAdminData,
           Role.RESTAURANT_ADMINISTRATOR,
@@ -105,8 +112,8 @@ export class RestaurantService implements IRestaurantService {
         const restaurant = Restaurant.create(
           {
             ...data,
-            logo,
-            image,
+            logo: logo!,
+            image: image!,
             company,
             restaurantAdminId: registration.admin.id,
             restaurantAdmin: registration.admin,
@@ -129,26 +136,33 @@ export class RestaurantService implements IRestaurantService {
         }
         return { registration, restaurantId: restaurantResult.getValue().id };
       });
-      if (!committed) {
+      if (!transaction) {
         throwApplicationError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'Restaurant could not be created',
         );
       }
+      committed = true;
       await this.userService.sendAdminRegistrationEmail(
-        committed.registration.admin,
-        committed.registration.token,
+        transaction.registration.admin,
+        transaction.registration.token,
       );
       const response = await this.restaurantRepository.getRestaurantById(
-        committed.restaurantId,
+        transaction.restaurantId,
       );
 
       return Result.ok(
         RestaurantParser.createRestaurantResponse(response.getValue()),
         'Restaurant created successfully',
       );
+    } catch (error) {
+      if (!committed) {
+        await DeleteFileLocally(logo);
+        await DeleteFileLocally(image);
+      }
+      throw error;
     } finally {
-      await session.endSession();
+      if (session) await session.endSession();
     }
   }
 
@@ -306,22 +320,37 @@ export class RestaurantService implements IRestaurantService {
     }
 
     const restaurant = restaurantsResult.getValue();
+    const oldLogo = restaurant.logo;
+    const oldImage = restaurant.image;
     const data: any = {
       auditModifiedBy: this.context.email,
       auditModifiedDateTime: new Date().toISOString(),
       ...restaurantData,
     };
 
-    if (logoFile) {
-      data.logo = await SaveFileLocally(logoFile, 'restaurant-logos');
+    let newLogo: string | undefined;
+    let newImage: string | undefined;
+    try {
+      if (logoFile) {
+        newLogo = await SaveFileLocally(logoFile, 'restaurant-logos');
+        data.logo = newLogo;
+      }
+
+      if (coverImageFile) {
+        newImage = await SaveFileLocally(coverImageFile, 'restaurant-covers');
+        data.image = newImage;
+      }
+
+      this.updateRestaurantData(data, restaurant);
+      await this.updateRestaurantById(restaurant.id, data);
+    } catch (error) {
+      await DeleteFileLocally(newLogo);
+      await DeleteFileLocally(newImage);
+      throw error;
     }
 
-    if (coverImageFile) {
-      data.image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
-    }
-
-    this.updateRestaurantData(data, restaurant);
-    await this.updateRestaurantById(restaurant.id, data);
+    if (newLogo) await DeleteFileLocally(oldLogo);
+    if (newImage) await DeleteFileLocally(oldImage);
 
     const updatedRestaurantResult =
       await this.restaurantRepository.getRestaurantById(restaurant.id);

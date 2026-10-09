@@ -9,10 +9,23 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
 import { MenuMapper } from './menu.mapper';
 import { Menu } from './menu';
 import { MenuService } from './menu.service';
+import {
+  DeleteFileLocally,
+  SaveFileLocally,
+} from 'src/application/saveFileLocally';
 
 jest.mock('src/application/saveFileLocally', () => ({
   SaveFileLocally: jest.fn(() => Promise.resolve('menu-covers/image.png')),
+  DeleteFileLocally: jest.fn(() => Promise.resolve()),
 }));
+
+const saveFile = jest.mocked(SaveFileLocally);
+const deleteFile = jest.mocked(DeleteFileLocally);
+
+beforeEach(() => {
+  saveFile.mockReset().mockResolvedValue('menu-covers/new.png');
+  deleteFile.mockReset().mockResolvedValue();
+});
 
 describe('MenuService error semantics', () => {
   const restaurantId = new Types.ObjectId();
@@ -69,6 +82,7 @@ describe('MenuService error semantics', () => {
     await expect(service.createMenu({ name: 'Lunch' }, image)).rejects.toBe(
       unexpected,
     );
+    expect(deleteFile).toHaveBeenCalledWith('menu-covers/new.png');
   });
 });
 
@@ -111,6 +125,7 @@ describe('MenuService update contract', () => {
     const repository = {
       getMenuById: jest.fn().mockResolvedValue(Result.ok(menu)),
       updateMenuById: jest.fn().mockResolvedValue(Result.ok(menu)),
+      deleteMenu: jest.fn().mockResolvedValue(Result.ok(undefined)),
     };
     const menuItemService = { getMenuItemsByIds: jest.fn() };
     const mapper = new MenuMapper(
@@ -171,5 +186,43 @@ describe('MenuService update contract', () => {
     const model = repository.updateMenuById.mock.calls[0][2];
     expect(model.menuItems).toHaveLength(1);
     expect(model.menuItems[0]._id).toEqual(selectedItem.id);
+  });
+
+  it('cleans a failed replacement and retains the old cover', async () => {
+    const { service, repository } = setup([]);
+    repository.updateMenuById.mockResolvedValue(Result.fail('failed', 500));
+
+    await expect(
+      service.updateMenu({}, menuId, {} as Express.Multer.File),
+    ).rejects.toMatchObject({ status: 500 });
+
+    expect(deleteFile).toHaveBeenCalledWith('menu-covers/new.png');
+    expect(deleteFile).not.toHaveBeenCalledWith('menu.png');
+  });
+
+  it('deletes the old cover and retains the new cover after replacement', async () => {
+    const { service } = setup([]);
+
+    await service.updateMenu({}, menuId, {} as Express.Multer.File);
+
+    expect(deleteFile).toHaveBeenCalledWith('menu.png');
+    expect(deleteFile).not.toHaveBeenCalledWith('menu-covers/new.png');
+  });
+
+  it('deletes the owned cover after menu deletion succeeds', async () => {
+    const { service } = setup([]);
+    await service.deleteMenu(menuId);
+
+    expect(deleteFile).toHaveBeenCalledWith('menu.png');
+  });
+
+  it('retains the cover when menu deletion fails', async () => {
+    const { service, repository } = setup([]);
+    repository.deleteMenu.mockResolvedValue(Result.fail('failed', 500));
+
+    await expect(service.deleteMenu(menuId)).rejects.toMatchObject({
+      status: 500,
+    });
+    expect(deleteFile).not.toHaveBeenCalled();
   });
 });

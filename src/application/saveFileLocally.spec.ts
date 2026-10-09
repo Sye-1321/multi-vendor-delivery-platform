@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { MAX_IMAGE_FILE_SIZE } from './image-upload.options';
-import { SaveFileLocally } from './saveFileLocally';
+import { DeleteFileLocally, SaveFileLocally } from './saveFileLocally';
 
 const TEST_CATEGORY = 'test-image-uploads';
 const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
@@ -79,5 +79,36 @@ describe('SaveFileLocally', () => {
     await expectBadRequest(
       SaveFileLocally(file(buffer, 'image/png'), TEST_CATEGORY),
     );
+  });
+
+  it('deletes an owned file under the upload root', async () => {
+    const key = await SaveFileLocally(
+      file(pngBuffer, 'image/png'),
+      TEST_CATEGORY,
+    );
+
+    await DeleteFileLocally(key);
+
+    await expect(
+      fs.access(path.join(uploadsRoot, ...key.split('/'))),
+    ).rejects.toMatchObject({ code: 'ENOENT' });
+  });
+
+  it('tolerates a legitimate missing storage key', async () => {
+    await expect(
+      DeleteFileLocally(`${TEST_CATEGORY}/missing.png`),
+    ).resolves.toBeUndefined();
+  });
+
+  it('does not delete a traversal target outside uploads', async () => {
+    const outsideFile = path.join(__dirname, '..', '..', 'outside-upload-test');
+    await fs.writeFile(outsideFile, 'keep me');
+
+    try {
+      await DeleteFileLocally('../outside-upload-test');
+      await expect(fs.readFile(outsideFile, 'utf8')).resolves.toBe('keep me');
+    } finally {
+      await fs.rm(outsideFile, { force: true });
+    }
   });
 });

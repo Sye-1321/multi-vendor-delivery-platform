@@ -30,14 +30,21 @@ import {
 } from './schemas/restaurant.schema';
 import { UserDataModel, UserSchema } from './schemas/user.schema';
 import { UserRepository } from './user.repository';
+import {
+  DeleteFileLocally,
+  SaveFileLocally,
+} from 'src/application/saveFileLocally';
 
 jest.mock('src/application/saveFileLocally', () => ({
   SaveFileLocally: jest.fn((_file, folder) =>
     Promise.resolve(`${folder}/deterministic.png`),
   ),
+  DeleteFileLocally: jest.fn(() => Promise.resolve()),
 }));
 
 const mongoUri = process.env.MONGODB_TEST_URI;
+const saveFile = jest.mocked(SaveFileLocally);
+const deleteFile = jest.mocked(DeleteFileLocally);
 const describeWithMongo = mongoUri ? describe : describe.skip;
 
 describeWithMongo(
@@ -103,6 +110,8 @@ describeWithMongo(
     });
 
     beforeEach(() => {
+      saveFile.mockClear();
+      deleteFile.mockClear();
       contextUserId = undefined;
       emails = [];
       revocations = [];
@@ -274,6 +283,9 @@ describeWithMongo(
         await users.findOne({ email: input.companyAdminData.email }),
       ).toBeNull();
       expect(emails).toHaveLength(0);
+      expect(deleteFile).toHaveBeenCalledWith(
+        'company-logos/deterministic.png',
+      );
     });
 
     it('rolls back restaurant creation after the real parent insert', async () => {
@@ -297,6 +309,12 @@ describeWithMongo(
         await users.findOne({ email: input.restaurantAdminData.email }),
       ).toBeNull();
       expect(emails).toHaveLength(0);
+      expect(deleteFile).toHaveBeenCalledWith(
+        'restaurant-logos/deterministic.png',
+      );
+      expect(deleteFile).toHaveBeenCalledWith(
+        'restaurant-covers/deterministic.png',
+      );
     });
 
     it('rolls back the complete company administrator replacement', async () => {
@@ -373,6 +391,29 @@ describeWithMongo(
       expect(persisted?.accountActions?.ADMIN_REGISTRATION).toBeDefined();
       expect(committedWhenEmailed).toBe(true);
       expect(emails).toEqual([input.companyAdminData.email]);
+    });
+
+    it('retains the committed company logo when registration email fails', async () => {
+      const input = companyInput();
+      const unexpected = new Error('email unavailable');
+      jest
+        .spyOn(userService, 'sendAdminRegistrationEmail')
+        .mockRejectedValue(unexpected);
+
+      await expect(companyService.createCompany(input, file)).rejects.toBe(
+        unexpected,
+      );
+
+      const persistedAdmin = await users.findOne({
+        email: input.companyAdminData.email,
+      });
+      expect(persistedAdmin).not.toBeNull();
+      expect(await companies.exists({ ownerId: persistedAdmin!._id })).not.toBe(
+        null,
+      );
+      expect(deleteFile).not.toHaveBeenCalledWith(
+        'company-logos/deterministic.png',
+      );
     });
 
     it('commits restaurant replacement before publishing and emailing exactly once', async () => {

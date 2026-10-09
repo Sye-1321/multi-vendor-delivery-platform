@@ -24,7 +24,10 @@ import {
   IUpdateCompanyAdmin,
 } from './interfaces/company.interface';
 import { Audit } from 'src/domain/audit/audit';
-import { SaveFileLocally } from 'src/application/saveFileLocally';
+import {
+  DeleteFileLocally,
+  SaveFileLocally,
+} from 'src/application/saveFileLocally';
 
 @Injectable()
 export class CompanyService implements ICompanyService {
@@ -58,10 +61,12 @@ export class CompanyService implements ICompanyService {
     }
 
     const logo = await SaveFileLocally(logoFile, 'company-logos');
-    const audit: Audit = Audit.createInsertContext(this.context);
-    const session = await this.companyRepository.startSession();
+    let committed = false;
+    let session: ClientSession | undefined;
     try {
-      const committed = await session.withTransaction(async () => {
+      const audit: Audit = Audit.createInsertContext(this.context);
+      session = await this.companyRepository.startSession();
+      const transaction = await session.withTransaction(async () => {
         const registration = await this.userService.createAdminRegistration(
           companyAdminData,
           Role.BUSINESS_ADMINISTRATOR,
@@ -91,26 +96,32 @@ export class CompanyService implements ICompanyService {
         }
         return { registration, companyId: companyDocument.getValue().id };
       });
-      if (!committed) {
+      if (!transaction) {
         throwApplicationError(
           HttpStatus.INTERNAL_SERVER_ERROR,
           'Company could not be created',
         );
       }
+      committed = true;
       await this.userService.sendAdminRegistrationEmail(
-        committed.registration.admin,
-        committed.registration.token,
+        transaction.registration.admin,
+        transaction.registration.token,
       );
       const response = await this.companyRepository.getCompanyById(
-        committed.companyId,
+        transaction.companyId,
       );
 
       return Result.ok(
         CompanyParser.createCompanyResponse(response.getValue()),
         'Company created successfully',
       );
+    } catch (error) {
+      if (!committed) {
+        await DeleteFileLocally(logo);
+      }
+      throw error;
     } finally {
-      await session.endSession();
+      if (session) await session.endSession();
     }
   }
 
@@ -228,24 +239,33 @@ export class CompanyService implements ICompanyService {
     }
 
     const company = companyResult.getValue();
+    const oldLogo = company.logo;
     const data: any = {
       auditModifiedBy: this.context.email,
       auditModifiedDateTime: new Date().toISOString(),
       ...props,
     };
 
-    if (logoFile) {
-      const logo = await SaveFileLocally(logoFile, 'company-logos');
-      data.logo = logo;
+    let newLogo: string | undefined;
+    try {
+      if (logoFile) {
+        newLogo = await SaveFileLocally(logoFile, 'company-logos');
+        data.logo = newLogo;
+      }
+
+      this.updateCompanyData(data, company);
+
+      if ((props as any).companyAdminData) {
+        this.updateCompanyAdmin((props as any).companyAdminData, company.owner);
+      }
+
+      await this.updateCompanyById(company.id, data);
+    } catch (error) {
+      await DeleteFileLocally(newLogo);
+      throw error;
     }
 
-    this.updateCompanyData(data, company);
-
-    if ((props as any).companyAdminData) {
-      this.updateCompanyAdmin((props as any).companyAdminData, company.owner);
-    }
-
-    await this.updateCompanyById(company.id, data);
+    if (newLogo) await DeleteFileLocally(oldLogo);
 
     const refreshedCompanyResult = await this.companyRepository.getCompanyById(
       company.id,

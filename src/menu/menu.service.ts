@@ -11,7 +11,10 @@ import { IRestaurantService } from 'src/restaurant/interfaces/restaurant-service
 import { MenuMapper } from './menu.mapper';
 import { MenuParser } from './menu.parser';
 import { Menu } from './menu';
-import { SaveFileLocally } from 'src/application/saveFileLocally';
+import {
+  DeleteFileLocally,
+  SaveFileLocally,
+} from 'src/application/saveFileLocally';
 import { IMenuService } from './interfaces/menu-service.interface';
 import { MenuItem } from 'src/menu-item/menu-item';
 import { IMenuResponse } from './interfaces/menu-reponse.interface';
@@ -72,10 +75,6 @@ export class MenuService implements IMenuService {
       throwApplicationError(HttpStatus.CONFLICT, `Menu ${name} already exists`);
     }
 
-    const imageUrl = await SaveFileLocally(image, 'menu-covers');
-    const context = this.contextService.getContext();
-    const audit = Audit.createInsertContext(context);
-
     let menuItems: MenuItem[] = [];
     if (menuItemsIds?.length) {
       menuItems = await this.menuItemService.getMenuItemsByIds(
@@ -84,29 +83,40 @@ export class MenuService implements IMenuService {
       );
     }
 
-    const menuEntity = Menu.create({
-      restaurantId,
-      name,
-      image: imageUrl,
-      menuItems,
-      audit,
-    }).getValue();
+    const imageUrl = await SaveFileLocally(image, 'menu-covers');
+    let persisted = false;
+    try {
+      const context = this.contextService.getContext();
+      const audit = Audit.createInsertContext(context);
 
-    const model = this.menuMapper.toPersistence(menuEntity);
-    const createResult = await this.menuRepository.createMenu(model);
-    if (!createResult.isSuccess) {
-      throwApplicationError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to create menu',
+      const menuEntity = Menu.create({
+        restaurantId,
+        name,
+        image: imageUrl,
+        menuItems,
+        audit,
+      }).getValue();
+
+      const model = this.menuMapper.toPersistence(menuEntity);
+      const createResult = await this.menuRepository.createMenu(model);
+      if (!createResult.isSuccess) {
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Failed to create menu',
+        );
+      }
+      persisted = true;
+
+      const saved = await this.menuRepository.getMenuById(
+        restaurantId,
+        createResult.getValue().id,
       );
+      const response = MenuParser.createMenuResponse(saved.getValue());
+      return Result.ok(response, 'Menu created successfully');
+    } catch (error) {
+      if (!persisted) await DeleteFileLocally(imageUrl);
+      throw error;
     }
-
-    const saved = await this.menuRepository.getMenuById(
-      restaurantId,
-      createResult.getValue().id,
-    );
-    const response = MenuParser.createMenuResponse(saved.getValue());
-    return Result.ok(response, 'Menu created successfully');
   }
 
   async getMenus(): Promise<Result<IMenuResponse[]>> {
@@ -147,16 +157,13 @@ export class MenuService implements IMenuService {
     }
 
     const entity = existing.getValue();
+    const oldImage = entity.image;
     const context = this.contextService.getContext();
     const { menuItemsIds, ...menuUpdates } = props;
 
     const data: any = {
       ...menuUpdates,
     };
-
-    if (image) {
-      data.image = await SaveFileLocally(image, 'menu-covers');
-    }
 
     if (menuItemsIds !== undefined) {
       data.menuItems = menuItemsIds.length
@@ -167,21 +174,34 @@ export class MenuService implements IMenuService {
         : [];
     }
 
-    Object.assign(entity, data);
-    entity.audit = Audit.updateContext(context.email, entity);
+    let newImage: string | undefined;
+    try {
+      if (image) {
+        newImage = await SaveFileLocally(image, 'menu-covers');
+        data.image = newImage;
+      }
 
-    const model = this.menuMapper.toPersistence(entity);
-    const update = await this.menuRepository.updateMenuById(
-      restaurantId,
-      id,
-      model,
-    );
-    if (!update.isSuccess) {
-      throwApplicationError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Failed to update menu',
+      Object.assign(entity, data);
+      entity.audit = Audit.updateContext(context.email, entity);
+
+      const model = this.menuMapper.toPersistence(entity);
+      const update = await this.menuRepository.updateMenuById(
+        restaurantId,
+        id,
+        model,
       );
+      if (!update.isSuccess) {
+        throwApplicationError(
+          HttpStatus.INTERNAL_SERVER_ERROR,
+          'Failed to update menu',
+        );
+      }
+    } catch (error) {
+      await DeleteFileLocally(newImage);
+      throw error;
     }
+
+    if (newImage) await DeleteFileLocally(oldImage);
 
     const saved = await this.menuRepository.getMenuById(restaurantId, id);
     const response = MenuParser.createMenuResponse(saved.getValue());
@@ -201,6 +221,7 @@ export class MenuService implements IMenuService {
         'Failed to delete menu',
       );
     }
+    await DeleteFileLocally(exists.getValue().image);
     return Result.ok(undefined, 'Menu deleted successfully');
   }
 
