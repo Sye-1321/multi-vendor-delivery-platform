@@ -16,32 +16,16 @@ export class Audit extends ValueObjects<IAudit> {
     return this.props.auditModifiedBy;
   }
 
-  set auditModifiedBy(email: string | undefined) {
-    this.props.auditModifiedBy = email;
-  }
-
   get auditModifiedDateTime(): string | undefined {
     return this.props.auditModifiedDateTime;
-  }
-
-  set auditModifiedDateTime(date: string | undefined) {
-    this.props.auditModifiedDateTime = date;
   }
 
   get auditDeletedBy(): string | undefined {
     return this.props.auditDeletedBy;
   }
 
-  set auditDeletedBy(email: string | undefined) {
-    this.props.auditDeletedBy = email;
-  }
-
   get auditDeletedDateTime(): string | undefined {
     return this.props.auditDeletedDateTime;
-  }
-
-  set auditDeletedDateTime(date: string | undefined) {
-    this.props.auditDeletedDateTime = date;
   }
 
   static create(props: IAudit): Result<Audit> {
@@ -56,13 +40,14 @@ export class Audit extends ValueObjects<IAudit> {
     return Audit.create(audit).getValue();
   }
 
-  static updateContext(email: string, entity: any): IAudit {
-    const audit: IAudit = {
+  static updateContext(email: string, entity: { audit: Audit }): Audit {
+    return Audit.create({
       auditCreatedDateTime: entity.audit.auditCreatedDateTime,
       auditCreatedBy: entity.audit.auditCreatedBy,
       auditModifiedBy: email,
       auditModifiedDateTime: new Date().toISOString(),
-    };
-    return audit;
+      auditDeletedBy: entity.audit.auditDeletedBy,
+      auditDeletedDateTime: entity.audit.auditDeletedDateTime,
+    }).getValue();
   }
 }

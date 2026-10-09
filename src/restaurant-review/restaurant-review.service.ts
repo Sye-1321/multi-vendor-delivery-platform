@@ -17,7 +17,6 @@ import {
 } from 'src/system-review/dtos/system-review.dto';
 import { IRestaurantReviewResponse } from './interfaces/restaurant-review-response.interface';
 import { IUserUpdateReview } from 'src/system-review/interfaces/system-review.interface';
-import { Context } from 'src/infrastructure/context/context';
 
 @Injectable()
 export class RestaurantReviewService implements IRestaurantReviewService {
@@ -89,7 +88,7 @@ export class RestaurantReviewService implements IRestaurantReviewService {
       auditModifiedDateTime: new Date().toISOString(),
       ...props,
     };
-    this.updateRestaurantReviewData(data, existingReview, context);
+    this.updateRestaurantReviewData(data, existingReview);
     const updateRestaurantReviewResult =
       await this.restaurantReviewRepository.updateRestaurantReviewById(
         existingReview.id,
@@ -110,7 +109,6 @@ export class RestaurantReviewService implements IRestaurantReviewService {
   private updateRestaurantReviewData(
     data: IUserUpdateReview,
     restaurantReview: RestaurantReview,
-    context: Context,
   ) {
     const { reviewText, rating } = data;
     if (reviewText !== undefined) {
@@ -119,6 +117,5 @@ export class RestaurantReviewService implements IRestaurantReviewService {
     if (rating !== undefined) {
       restaurantReview.rating = rating;
     }
-    Audit.updateContext(context.email, restaurantReview);
   }
 }

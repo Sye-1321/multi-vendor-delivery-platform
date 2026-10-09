@@ -116,8 +116,6 @@ export class MenuItemService implements IMenuItemService {
 
     const menuItem = menuItemResult.getValue();
     const data: any = {
-      auditModifiedBy: this.context.email,
-      auditModifiedDateTime: new Date().toISOString(),
       ...props,
     };
 
@@ -125,7 +123,8 @@ export class MenuItemService implements IMenuItemService {
       data.image = await SaveFileLocally(imageFile, 'menu-item-covers');
     }
 
-    this.updateMenuItemData(data, menuItem, this.context);
+    this.updateMenuItemData(data, menuItem);
+    menuItem.audit = Audit.updateContext(this.context.email, menuItem);
 
     const updatedModel = this.menuItemMapper.toPersistence(menuItem);
     const result = await this.menuItemRepository.updateMenuItemById(
@@ -275,16 +274,11 @@ export class MenuItemService implements IMenuItemService {
     return menuItems;
   }
 
-  private updateMenuItemData(
-    data: any,
-    menuItem: MenuItem,
-    context: Context,
-  ): void {
+  private updateMenuItemData(data: any, menuItem: MenuItem): void {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in menuItem) {
         (menuItem as any)[key] = value;
       }
     });
-    Audit.updateContext(context.email, menuItem);
   }
 }

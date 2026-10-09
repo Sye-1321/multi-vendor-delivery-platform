@@ -4,7 +4,6 @@ import { Types } from 'mongoose';
 import { TYPES } from '../application/constants/types';
 import { Audit } from '../domain/audit/audit';
 import { Result } from '../domain/result/result';
-import { Context } from '../infrastructure/context/context';
 import { SystemReview } from './system-review';
 import { throwApplicationError } from '../infrastructure/utilities/exception-instance';
 import { SystemReviewParser } from './system-review.parser';
@@ -98,7 +97,7 @@ export class SystemReviewService {
       ...props,
     };
 
-    this.updateSystemReviewData(data, systemReviewResult.getValue(), context);
+    this.updateSystemReviewData(data, systemReviewResult.getValue());
     const updateSystemReviewResult =
       await this.systemReviewRepository.updateSystemReviewById(reviewId, data);
 
@@ -188,14 +187,11 @@ export class SystemReviewService {
   private updateSystemReviewData(
     data: IUserUpdateReview,
     systemReview: SystemReview,
-    context: Context,
   ) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in systemReview) {
         (systemReview as any)[key] = value;
       }
     });
-
-    Audit.updateContext(context.email, systemReview);
   }
 }

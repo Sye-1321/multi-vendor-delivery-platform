@@ -148,26 +148,27 @@ export class MenuService implements IMenuService {
 
     const entity = existing.getValue();
     const context = this.contextService.getContext();
+    const { menuItemsIds, ...menuUpdates } = props;
 
     const data: any = {
-      auditModifiedBy: context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      ...props,
+      ...menuUpdates,
     };
 
     if (image) {
       data.image = await SaveFileLocally(image, 'menu-covers');
     }
 
-    if (props.menuItemsIds?.length) {
-      data.menuItems = await this.menuItemService.getMenuItemsByIds(
-        restaurantId,
-        props.menuItemsIds,
-      );
+    if (menuItemsIds !== undefined) {
+      data.menuItems = menuItemsIds.length
+        ? await this.menuItemService.getMenuItemsByIds(
+            restaurantId,
+            menuItemsIds,
+          )
+        : [];
     }
 
     Object.assign(entity, data);
-    Audit.updateContext(context.email, entity);
+    entity.audit = Audit.updateContext(context.email, entity);
 
     const model = this.menuMapper.toPersistence(entity);
     const update = await this.menuRepository.updateMenuById(

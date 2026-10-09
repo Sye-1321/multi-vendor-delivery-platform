@@ -239,14 +239,10 @@ export class CompanyService implements ICompanyService {
       data.logo = logo;
     }
 
-    this.updateCompanyData(data, company, this.context);
+    this.updateCompanyData(data, company);
 
     if ((props as any).companyAdminData) {
-      this.updateCompanyAdmin(
-        (props as any).companyAdminData,
-        company.owner,
-        this.context,
-      );
+      this.updateCompanyAdmin((props as any).companyAdminData, company.owner);
     }
 
     await this.updateCompanyById(company.id, data);
@@ -269,17 +265,12 @@ export class CompanyService implements ICompanyService {
     );
   }
 
-  private updateCompanyData(
-    data: IUpdateCompany,
-    company: Company,
-    context: Context,
-  ) {
+  private updateCompanyData(data: IUpdateCompany, company: Company) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in company) {
         (company as any)[key] = value;
       }
     });
-    Audit.updateContext(context.email, company);
   }
 
   private async updateCompanyById(
@@ -301,17 +292,12 @@ export class CompanyService implements ICompanyService {
     return updatedCompanyResult.getValue();
   }
 
-  private updateCompanyAdmin(
-    data: IUpdateCompanyAdmin,
-    user: User,
-    context: Context,
-  ) {
+  private updateCompanyAdmin(data: IUpdateCompanyAdmin, user: User) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in user) {
         (user as any)[key] = value;
       }
     });
-    Audit.updateContext(context.email, user);
   }
 
   async getCompanyByCompanyAdmin(ownerId: Types.ObjectId): Promise<Company> {

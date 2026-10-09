@@ -246,7 +246,7 @@ export class RestaurantService implements IRestaurantService {
           auditModifiedDateTime: new Date().toISOString(),
           restaurantAdminId: registration.admin.id,
         };
-        this.updateRestaurantAdmin(update, authorizedRestaurant, this.context);
+        this.updateRestaurantAdmin(update, authorizedRestaurant);
         await this.updateRestaurantById(restaurantId, update, { session });
         return registration;
       });
@@ -320,7 +320,7 @@ export class RestaurantService implements IRestaurantService {
       data.image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
     }
 
-    this.updateRestaurantData(data, restaurant, this.context);
+    this.updateRestaurantData(data, restaurant);
     await this.updateRestaurantById(restaurant.id, data);
 
     const updatedRestaurantResult =
@@ -371,7 +371,7 @@ export class RestaurantService implements IRestaurantService {
       data.image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
     }
 
-    this.updateRestaurantData(data, restaurant, this.context);
+    this.updateRestaurantData(data, restaurant);
     await this.updateRestaurantById(restaurantId, data);
 
     const updatedRestaurantResult =
@@ -391,30 +391,20 @@ export class RestaurantService implements IRestaurantService {
     );
   }
 
-  private updateRestaurantData(
-    data: any,
-    restaurant: Restaurant,
-    context: Context,
-  ) {
+  private updateRestaurantData(data: any, restaurant: Restaurant) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in restaurant) {
         (restaurant as any)[key] = value;
       }
     });
-    Audit.updateContext(context.email, restaurant);
   }
 
-  private updateRestaurantAdmin(
-    data: any,
-    restaurant: Restaurant,
-    context: Context,
-  ) {
+  private updateRestaurantAdmin(data: any, restaurant: Restaurant) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in restaurant) {
         (restaurant as any)[key] = value;
       }
     });
-    Audit.updateContext(context.email, restaurant);
   }
 
   private async updateRestaurantById(

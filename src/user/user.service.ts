@@ -5,7 +5,6 @@ import { ClientSession, Types } from 'mongoose';
 import { UserRepository } from '../infrastructure/data_access/repositories/user.repository';
 import { saltRounds, Role } from '../application/constants/constants';
 import { TYPES } from '../application/constants/types';
-import { Audit } from '../domain/audit/audit';
 import { Result } from '../domain/result/result';
 import {
   ISignUpTokens,
@@ -622,19 +621,17 @@ export class UserService extends AuthService implements IUserService {
       ...props,
     };
 
-    this.updateUserData(data, user, context);
+    this.updateUserData(data, user);
     const updatedUser: User = await this.updateUserById(userId, data);
     return updatedUser;
   }
 
-  updateUserData(data: any, user: User, context: Context) {
+  updateUserData(data: any, user: User) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in user) {
         (user as any)[key] = value;
       }
     });
-
-    Audit.updateContext(context.email, user);
   }
 
   private async updateUserById(userId: Types.ObjectId, data: any) {
