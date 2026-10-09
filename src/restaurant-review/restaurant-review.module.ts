@@ -22,6 +22,7 @@ import { UserRepository } from 'src/infrastructure/data_access/repositories/user
 import { AuthService } from 'src/infrastructure/auth/auth.service';
 import { UserService } from 'src/user/user.service';
 import { EmailService } from 'src/infrastructure/email/email-service';
+import { RestaurantModule } from 'src/restaurant/restaurant.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EmailService } from 'src/infrastructure/email/email-service';
     ]),
     forwardRef(() => UserModule),
     AuditModule,
+    RestaurantModule,
   ],
 
   providers: [

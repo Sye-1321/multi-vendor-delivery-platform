@@ -36,6 +36,11 @@ export const RestaurantReviewSchema = SchemaFactory.createForClass(
   RestaurantReviewDataModel,
 );
 
+RestaurantReviewSchema.index(
+  { userId: 1, restaurantId: 1 },
+  { unique: true, name: 'uniq_restaurant_review_user_restaurant' },
+);
+
 RestaurantReviewSchema.virtual('userDetails', {
   ref: UserDataModel.name,
   localField: 'userId',

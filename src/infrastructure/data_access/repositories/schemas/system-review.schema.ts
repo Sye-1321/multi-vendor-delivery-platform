@@ -33,6 +33,11 @@ export const SystemReviewSchema = SchemaFactory.createForClass(
   SystemReviewDataModel,
 );
 
+SystemReviewSchema.index(
+  { userId: 1 },
+  { unique: true, name: 'uniq_system_review_user' },
+);
+
 SystemReviewSchema.pre('save', function (next) {
   if (this.isNew && this.reviewText && this.reviewText.length < 150) {
     return next(new Error('Review text must be at least 150 characters long.'));

@@ -72,6 +72,6 @@ import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
     UserRepository,
     MenuItemMapper,
   ],
-  exports: [TYPES.IRestaurantService],
+  exports: [TYPES.IRestaurantService, TYPES.IRestaurantRepository],
 })
 export class RestaurantModule {}

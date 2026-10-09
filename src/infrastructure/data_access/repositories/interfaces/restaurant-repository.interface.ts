@@ -16,6 +16,7 @@ export interface IRestaurantRepository
     companyAdminId: Types.ObjectId,
   ): Promise<Result<Restaurant[]>>;
   getRestaurantById(restaurantId: Types.ObjectId): Promise<Result<Restaurant>>;
+  existsById(restaurantId: Types.ObjectId): Promise<boolean>;
   isRestaurantAdmin(
     restaurantId: Types.ObjectId,
     restaurantAdminId: Types.ObjectId,

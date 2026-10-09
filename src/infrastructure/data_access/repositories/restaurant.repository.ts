@@ -93,6 +93,10 @@ export class RestaurantRepository
     return Result.ok(restaurant);
   }
 
+  async existsById(restaurantId: Types.ObjectId): Promise<boolean> {
+    return (await this.restaurantModel.exists({ _id: restaurantId })) !== null;
+  }
+
   async isRestaurantAdmin(
     restaurantId: Types.ObjectId,
     restaurantAdminId: Types.ObjectId,

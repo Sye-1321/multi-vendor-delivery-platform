@@ -17,6 +17,7 @@ import {
 } from 'src/system-review/dtos/system-review.dto';
 import { IRestaurantReviewResponse } from './interfaces/restaurant-review-response.interface';
 import { IUserUpdateReview } from 'src/system-review/interfaces/system-review.interface';
+import { IRestaurantRepository } from 'src/infrastructure/data_access/repositories/interfaces/restaurant-repository.interface';
 
 @Injectable()
 export class RestaurantReviewService implements IRestaurantReviewService {
@@ -26,6 +27,8 @@ export class RestaurantReviewService implements IRestaurantReviewService {
     @Inject(TYPES.IUserService) private readonly userService: IUserService,
     @Inject(TYPES.IRestaurantReviewRepository)
     private readonly restaurantReviewRepository: IRestaurantReviewRepository,
+    @Inject(TYPES.IRestaurantRepository)
+    private readonly restaurantRepository: IRestaurantRepository,
     private readonly restaurantReviewMapper: RestaurantReviewMapper,
   ) {}
 
@@ -35,6 +38,9 @@ export class RestaurantReviewService implements IRestaurantReviewService {
   ): Promise<Result<IRestaurantReviewResponse>> {
     const context = this.contextService.getContext();
     const user = await this.userService.getContextUser();
+    if (!(await this.restaurantRepository.existsById(restaurantId))) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Restaurant not found');
+    }
     const audit = Audit.createInsertContext(context);
     const restauranReview: RestaurantReview = RestaurantReview.create(
       {
