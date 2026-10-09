@@ -29,6 +29,7 @@ import {
 import { ICompanyResponse } from './interfaces/company-response.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 
 @Controller('companies')
 export class CompanyController {
@@ -39,7 +40,10 @@ export class CompanyController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
-  @UseInterceptors(FileInterceptor('logo'), ParseStringifiedJsonInterceptor)
+  @UseInterceptors(
+    FileInterceptor('logo', IMAGE_UPLOAD_OPTIONS),
+    ParseStringifiedJsonInterceptor,
+  )
   @Post()
   createCompany(
     @Body() body: CreateCompanyDTO,
@@ -58,7 +62,10 @@ export class CompanyController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
-  @UseInterceptors(FileInterceptor('logo'), ParseStringifiedJsonInterceptor)
+  @UseInterceptors(
+    FileInterceptor('logo', IMAGE_UPLOAD_OPTIONS),
+    ParseStringifiedJsonInterceptor,
+  )
   @Put('me')
   async updateMyCompany(
     @UploadedFile() logoFile: Express.Multer.File,

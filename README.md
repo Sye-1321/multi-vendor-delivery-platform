@@ -253,6 +253,15 @@ cross-customer WebSocket subscription.
 
 ## Operational Notes
 
+### Uploaded media
+
+Uploaded images are stored beneath the local `uploads/` root. API and database
+values such as `restaurant-covers/<uuid>.png` are storage-relative media keys,
+not absolute URLs. This Nest application does not expose `uploads/` as a static
+route; deployments must persist or mount the directory and expose it through
+their chosen reverse proxy, media host, CDN, or equivalent. Clients should
+resolve returned keys against the deployment's configured media base URL.
+
 - Transactions require the provided MongoDB replica-set configuration.
 - JSON logs are written to the console and daily rotating files.
 - Correlation IDs propagate through HTTP requests, order timelines, real-time

@@ -29,6 +29,7 @@ import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 
 @Controller()
 export class MenuItemController {
@@ -41,7 +42,10 @@ export class MenuItemController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Post('me/menu-items')
   @HttpCode(HttpStatus.CREATED)
-  @UseInterceptors(FileInterceptor('image'), ParseStringifiedJsonInterceptor)
+  @UseInterceptors(
+    FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
+    ParseStringifiedJsonInterceptor,
+  )
   async createItem(
     @Body() request: CreateMenuItemDTO,
     @UploadedFile() image: Express.Multer.File,
@@ -71,7 +75,10 @@ export class MenuItemController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Put('me/menu-items/:id')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('image'), ParseStringifiedJsonInterceptor)
+  @UseInterceptors(
+    FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
+    ParseStringifiedJsonInterceptor,
+  )
   async updateItem(
     @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
     @Body() request: UpdateMenuItemDTO,

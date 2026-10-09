@@ -28,6 +28,7 @@ import { IDeliveryPersonResponse } from './interfaces/deliveryperson-response.in
 import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 
 @Controller('delivery-person')
 export class DeliveryPersonController {
@@ -39,7 +40,7 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @UseInterceptors(
-    FileInterceptor('profileImage'),
+    FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
   @Post('system/delivery-persons')
@@ -57,7 +58,7 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @UseInterceptors(
-    FileInterceptor('profileImage'),
+    FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
   @Post('restaurant/delivery-persons')
@@ -115,7 +116,7 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @UseInterceptors(
-    FileInterceptor('profileImage'),
+    FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
   @Patch('system/delivery-persons/:id')
@@ -135,7 +136,7 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @UseInterceptors(
-    FileInterceptor('profileImage'),
+    FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
   @Patch('restaurant/delivery-persons/:id')

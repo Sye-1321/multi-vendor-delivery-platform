@@ -26,6 +26,7 @@ import { IMenuService } from 'src/menu/interfaces/menu-service.interface';
 import { IMenuResponse } from './interfaces/menu-reponse.interface';
 import { CreateMenuDTO, UpdateMenuDTO } from './dtos/menu.dto';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 
 @Controller()
 export class MenuController {
@@ -35,7 +36,10 @@ export class MenuController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @UseInterceptors(FileInterceptor('image'), ParseStringifiedJsonInterceptor)
+  @UseInterceptors(
+    FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
+    ParseStringifiedJsonInterceptor,
+  )
   @HttpCode(HttpStatus.CREATED)
   @Post('me/menus')
   async createMenu(
@@ -65,7 +69,10 @@ export class MenuController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @UseInterceptors(FileInterceptor('image'), ParseStringifiedJsonInterceptor)
+  @UseInterceptors(
+    FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
+    ParseStringifiedJsonInterceptor,
+  )
   @HttpCode(HttpStatus.OK)
   @Put('me/menus/:id')
   async updateMenu(

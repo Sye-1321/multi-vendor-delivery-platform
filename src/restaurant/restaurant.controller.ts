@@ -31,6 +31,7 @@ import {
 import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 
 @Controller()
 export class RestaurantController {
@@ -63,10 +64,13 @@ export class RestaurantController {
   @Put('restaurants/me')
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'logo', maxCount: 1 },
-      { name: 'image', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'logo', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+      ],
+      IMAGE_UPLOAD_OPTIONS,
+    ),
     ParseStringifiedJsonInterceptor,
   )
   async updateRestaurant(
@@ -114,10 +118,13 @@ export class RestaurantController {
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   @Post()
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'logo', maxCount: 1 },
-      { name: 'image', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'logo', maxCount: 1 },
+        { name: 'image', maxCount: 1 },
+      ],
+      IMAGE_UPLOAD_OPTIONS,
+    ),
     ParseStringifiedJsonInterceptor,
   )
   async createRestaurant(
