@@ -56,15 +56,16 @@ describe('OrderService checkout pricing', () => {
     cartItemRepository.insertManyWithSession.mockResolvedValue(Result.ok([]));
     cartRepository.create.mockResolvedValue(Result.ok({}));
 
+    const menuItemRepository = {
+      getAvailableMenuItemsByIds: jest.fn().mockResolvedValue(Result.ok(items)),
+    };
     const service = new OrderService(
       { getContext: () => context } as never,
       { getContextUser: () => Promise.resolve({ id: userId }) } as never,
       {} as never,
       orderRepository as never,
       {} as never,
-      {
-        getAvailableMenuItemsByIds: () => Promise.resolve(Result.ok(items)),
-      } as never,
+      menuItemRepository as never,
       { toPersistence: (item) => item } as never,
       cartItemRepository as never,
       { toPersistence: (cart) => cart } as never,
@@ -74,7 +75,14 @@ describe('OrderService checkout pricing', () => {
       { enqueueOrderStatusChange: jest.fn() } as never,
     );
 
-    return { service, orderRepository, cartItemRepository, cartRepository };
+    return {
+      service,
+      session,
+      orderRepository,
+      menuItemRepository,
+      cartItemRepository,
+      cartRepository,
+    };
   }
 
   function orderData(items: Array<{ item: MenuItem; quantity: number }>) {
@@ -152,5 +160,27 @@ describe('OrderService checkout pricing', () => {
     expect(Number.isSafeInteger(lineSubtotal)).toBe(true);
     expect(Number.isSafeInteger(lineSubtotal + lineSubtotal)).toBe(false);
     await expectUnsafeCheckout([menuItem(price), menuItem(price)], [1, 1]);
+  });
+
+  it('propagates unexpected checkout errors while cleaning up without writes', async () => {
+    const item = menuItem(10);
+    const dependencies = buildService([item]);
+    const unexpected = new Error('menu lookup failed');
+    dependencies.menuItemRepository.getAvailableMenuItemsByIds.mockRejectedValue(
+      unexpected,
+    );
+
+    await expect(
+      dependencies.service.createOrder(
+        restaurantId,
+        orderData([{ item, quantity: 1 }]),
+      ),
+    ).rejects.toBe(unexpected);
+    expect(dependencies.session.endSession).toHaveBeenCalledTimes(1);
+    expect(
+      dependencies.cartItemRepository.insertManyWithSession,
+    ).not.toHaveBeenCalled();
+    expect(dependencies.cartRepository.create).not.toHaveBeenCalled();
+    expect(dependencies.orderRepository.createOrder).not.toHaveBeenCalled();
   });
 });

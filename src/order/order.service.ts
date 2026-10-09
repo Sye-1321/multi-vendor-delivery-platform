@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { OrderMapper } from './order.mapper';
 import { TYPES } from './../application/constants/types';
@@ -224,15 +224,6 @@ export class OrderService implements IOrderService {
 
       this.orderEvents.publish(savedOrder, context.correlationId);
       return Result.ok(OrderParser.createOrderResponse(savedOrder));
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      return Result.fail(
-        'Failed to create order.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
     } finally {
       await session.endSession();
     }

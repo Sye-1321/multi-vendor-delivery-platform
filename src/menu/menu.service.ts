@@ -64,59 +64,49 @@ export class MenuService implements IMenuService {
       throwApplicationError(HttpStatus.BAD_REQUEST, 'Menu image is required');
     }
 
-    try {
-      const restaurantId = await this.getRestaurantIdForCurrentAdmin();
-      const { name, menuItemsIds } = props;
+    const restaurantId = await this.getRestaurantIdForCurrentAdmin();
+    const { name, menuItemsIds } = props;
 
-      const exists = await this.menuRepository.findMenuByName(
-        restaurantId,
-        name,
-      );
-      if (exists.isSuccess) {
-        throwApplicationError(
-          HttpStatus.BAD_REQUEST,
-          `Menu ${name} already exists`,
-        );
-      }
-
-      const imageUrl = await SaveFileLocally(image, 'menu-covers');
-      const context = this.contextService.getContext();
-      const audit = Audit.createInsertContext(context);
-
-      let menuItems: MenuItem[] = [];
-      if (menuItemsIds?.length) {
-        menuItems = await this.menuItemService.getMenuItemsByIds(
-          restaurantId,
-          menuItemsIds,
-        );
-      }
-
-      const menuEntity = Menu.create({
-        restaurantId,
-        name,
-        image: imageUrl,
-        menuItems,
-        audit,
-      }).getValue();
-
-      const model = this.menuMapper.toPersistence(menuEntity);
-      const createResult = await this.menuRepository.createMenu(model);
-      if (!createResult.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Failed to create menu',
-        );
-      }
-
-      const saved = await this.menuRepository.getMenuById(
-        restaurantId,
-        createResult.getValue().id,
-      );
-      const response = MenuParser.createMenuResponse(saved.getValue());
-      return Result.ok(response, 'Menu created successfully');
-    } catch {
-      return Result.fail('Menu creation failed', HttpStatus.EXPECTATION_FAILED);
+    const exists = await this.menuRepository.findMenuByName(restaurantId, name);
+    if (exists.isSuccess) {
+      throwApplicationError(HttpStatus.CONFLICT, `Menu ${name} already exists`);
     }
+
+    const imageUrl = await SaveFileLocally(image, 'menu-covers');
+    const context = this.contextService.getContext();
+    const audit = Audit.createInsertContext(context);
+
+    let menuItems: MenuItem[] = [];
+    if (menuItemsIds?.length) {
+      menuItems = await this.menuItemService.getMenuItemsByIds(
+        restaurantId,
+        menuItemsIds,
+      );
+    }
+
+    const menuEntity = Menu.create({
+      restaurantId,
+      name,
+      image: imageUrl,
+      menuItems,
+      audit,
+    }).getValue();
+
+    const model = this.menuMapper.toPersistence(menuEntity);
+    const createResult = await this.menuRepository.createMenu(model);
+    if (!createResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to create menu',
+      );
+    }
+
+    const saved = await this.menuRepository.getMenuById(
+      restaurantId,
+      createResult.getValue().id,
+    );
+    const response = MenuParser.createMenuResponse(saved.getValue());
+    return Result.ok(response, 'Menu created successfully');
   }
 
   async getMenus(): Promise<Result<IMenuResponse[]>> {
@@ -139,7 +129,7 @@ export class MenuService implements IMenuService {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
     const found = await this.menuRepository.getMenuById(restaurantId, id);
     if (!found.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'Menu not found');
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Menu not found');
     }
     const response = MenuParser.createMenuResponse(found.getValue());
     return Result.ok(response);
@@ -150,62 +140,58 @@ export class MenuService implements IMenuService {
     id: Types.ObjectId,
     image?: Express.Multer.File,
   ): Promise<Result<IMenuResponse>> {
-    try {
-      const restaurantId = await this.getRestaurantIdForCurrentAdmin();
-      const existing = await this.menuRepository.getMenuById(restaurantId, id);
-      if (!existing.isSuccess) {
-        throwApplicationError(HttpStatus.BAD_REQUEST, 'Menu not found');
-      }
-
-      const entity = existing.getValue();
-      const context = this.contextService.getContext();
-
-      const data: any = {
-        auditModifiedBy: context.email,
-        auditModifiedDateTime: new Date().toISOString(),
-        ...props,
-      };
-
-      if (image) {
-        data.image = await SaveFileLocally(image, 'menu-covers');
-      }
-
-      if (props.menuItemsIds?.length) {
-        data.menuItems = await this.menuItemService.getMenuItemsByIds(
-          restaurantId,
-          props.menuItemsIds,
-        );
-      }
-
-      Object.assign(entity, data);
-      Audit.updateContext(context.email, entity);
-
-      const model = this.menuMapper.toPersistence(entity);
-      const update = await this.menuRepository.updateMenuById(
-        restaurantId,
-        id,
-        model,
-      );
-      if (!update.isSuccess) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Failed to update menu',
-        );
-      }
-
-      const saved = await this.menuRepository.getMenuById(restaurantId, id);
-      const response = MenuParser.createMenuResponse(saved.getValue());
-      return Result.ok(response, 'Menu updated successfully');
-    } catch {
-      return Result.fail('Menu update failed', HttpStatus.EXPECTATION_FAILED);
+    const restaurantId = await this.getRestaurantIdForCurrentAdmin();
+    const existing = await this.menuRepository.getMenuById(restaurantId, id);
+    if (!existing.isSuccess) {
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Menu not found');
     }
+
+    const entity = existing.getValue();
+    const context = this.contextService.getContext();
+
+    const data: any = {
+      auditModifiedBy: context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+      ...props,
+    };
+
+    if (image) {
+      data.image = await SaveFileLocally(image, 'menu-covers');
+    }
+
+    if (props.menuItemsIds?.length) {
+      data.menuItems = await this.menuItemService.getMenuItemsByIds(
+        restaurantId,
+        props.menuItemsIds,
+      );
+    }
+
+    Object.assign(entity, data);
+    Audit.updateContext(context.email, entity);
+
+    const model = this.menuMapper.toPersistence(entity);
+    const update = await this.menuRepository.updateMenuById(
+      restaurantId,
+      id,
+      model,
+    );
+    if (!update.isSuccess) {
+      throwApplicationError(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        'Failed to update menu',
+      );
+    }
+
+    const saved = await this.menuRepository.getMenuById(restaurantId, id);
+    const response = MenuParser.createMenuResponse(saved.getValue());
+    return Result.ok(response, 'Menu updated successfully');
   }
 
   async deleteMenu(id: Types.ObjectId): Promise<Result<void>> {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
     const exists = await this.menuRepository.getMenuById(restaurantId, id);
     if (!exists.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'Menu not found');
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Menu not found');
     }
     const del = await this.menuRepository.deleteMenu(restaurantId, id);
     if (!del.isSuccess) {
@@ -234,7 +220,7 @@ export class MenuService implements IMenuService {
   ): Promise<Result<IMenuResponse>> {
     const found = await this.menuRepository.getMenuById(restaurantId, id);
     if (!found.isSuccess) {
-      throwApplicationError(HttpStatus.BAD_REQUEST, 'Menu not found');
+      throwApplicationError(HttpStatus.NOT_FOUND, 'Menu not found');
     }
     const response = MenuParser.createMenuResponse(found.getValue());
     return Result.ok(response);

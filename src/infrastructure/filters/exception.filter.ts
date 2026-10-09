@@ -48,6 +48,18 @@ export class ApplicationExceptionsFilter implements ExceptionFilter {
   }
 
   private getException(exception: unknown): IRequestException {
+    if (
+      typeof exception === 'object' &&
+      exception !== null &&
+      'code' in exception &&
+      exception.code === 11000
+    ) {
+      return {
+        statusCode: HttpStatus.CONFLICT,
+        message: 'Resource already exists.',
+      };
+    }
+
     if (!(exception instanceof HttpException)) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

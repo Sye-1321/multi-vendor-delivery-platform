@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { RestaurantModule } from './restaurant/restaurant.module';
@@ -22,6 +22,7 @@ import { RequestLoggingMiddleware } from './infrastructure/middlewares/request-l
 import { ObservabilityModule } from './infrastructure/logger/observability.module';
 import { NotificationModule } from './notifications/notification.module';
 import { AccountAccessModule } from './infrastructure/auth/account-access.module';
+import { ResultHttpStatusInterceptor } from './infrastructure/interceptors/result-http-status.interceptor';
 
 @Module({
   imports: [
@@ -64,6 +65,10 @@ import { AccountAccessModule } from './infrastructure/auth/account-access.module
     {
       provide: APP_FILTER,
       useClass: ApplicationExceptionsFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResultHttpStatusInterceptor,
     },
   ],
 })

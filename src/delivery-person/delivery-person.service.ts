@@ -230,66 +230,58 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     ) => Promise<{ deliveryPerson: DeliveryPerson }>,
     profileImageFile?: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
-    try {
-      const context = this.contextService.getContext();
-      await validateMethod(id);
+    const context = this.contextService.getContext();
+    await validateMethod(id);
 
-      if (props?.phoneNumber) {
-        const existing = await this.deliveryPersonRepository.findByPhoneNumber(
-          props.phoneNumber,
-        );
-        if (
-          existing.isSuccess &&
-          existing.getValue().id.toString() !== id.toString()
-        ) {
-          throwApplicationError(
-            HttpStatus.CONFLICT,
-            'A delivery person with this phone number already exists.',
-          );
-        }
-      }
-
-      const update: DeliveryPersonProfileUpdate = {
-        auditModifiedBy: context.email,
-        auditModifiedDateTime: new Date().toISOString(),
-      };
-
-      if (props.name !== undefined) update.name = props.name;
-      if (props.phoneNumber !== undefined)
-        update.phoneNumber = props.phoneNumber;
-      if (props.savedAddress !== undefined)
-        update.savedAddress = props.savedAddress;
-
-      if (profileImageFile) {
-        const profileImage = await SaveFileLocally(
-          profileImageFile,
-          'delivery-person-profiles',
-        );
-        update.profileImage = profileImage;
-      }
-
-      const updateResult = await this.deliveryPersonRepository.updateProfile(
-        id,
-        update,
+    if (props?.phoneNumber) {
+      const existing = await this.deliveryPersonRepository.findByPhoneNumber(
+        props.phoneNumber,
       );
-      if (!updateResult.isSuccess) {
-        return Result.fail(
-          'Failed to update delivery person',
-          HttpStatus.INTERNAL_SERVER_ERROR,
+      if (
+        existing.isSuccess &&
+        existing.getValue().id.toString() !== id.toString()
+      ) {
+        throwApplicationError(
+          HttpStatus.CONFLICT,
+          'A delivery person with this phone number already exists.',
         );
       }
-      const updated =
-        await this.deliveryPersonRepository.getDeliveryPersonById(id);
-      return Result.ok(
-        DeliveryPersonParser.createDeliveryPersonResponse(updated.getValue()),
-        'Delivery person updated successfully',
+    }
+
+    const update: DeliveryPersonProfileUpdate = {
+      auditModifiedBy: context.email,
+      auditModifiedDateTime: new Date().toISOString(),
+    };
+
+    if (props.name !== undefined) update.name = props.name;
+    if (props.phoneNumber !== undefined) update.phoneNumber = props.phoneNumber;
+    if (props.savedAddress !== undefined)
+      update.savedAddress = props.savedAddress;
+
+    if (profileImageFile) {
+      const profileImage = await SaveFileLocally(
+        profileImageFile,
+        'delivery-person-profiles',
       );
-    } catch {
+      update.profileImage = profileImage;
+    }
+
+    const updateResult = await this.deliveryPersonRepository.updateProfile(
+      id,
+      update,
+    );
+    if (!updateResult.isSuccess) {
       return Result.fail(
-        'Delivery person update failed',
-        HttpStatus.EXPECTATION_FAILED,
+        'Failed to update delivery person',
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+    const updated =
+      await this.deliveryPersonRepository.getDeliveryPersonById(id);
+    return Result.ok(
+      DeliveryPersonParser.createDeliveryPersonResponse(updated.getValue()),
+      'Delivery person updated successfully',
+    );
   }
 
   public async getDeliveryPersonById(
