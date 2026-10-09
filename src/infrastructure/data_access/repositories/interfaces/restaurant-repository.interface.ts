@@ -6,6 +6,7 @@ import {
 } from '../schemas/restaurant.schema';
 import { Result } from 'src/domain/result/result';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
+import { RestaurantStatus } from 'src/restaurant/constants/constants';
 
 export interface IRestaurantRepository
   extends IGenericDocument<Restaurant, RestaurantDocument> {
@@ -17,6 +18,10 @@ export interface IRestaurantRepository
   ): Promise<Result<Restaurant[]>>;
   getRestaurantById(restaurantId: Types.ObjectId): Promise<Result<Restaurant>>;
   existsById(restaurantId: Types.ObjectId): Promise<boolean>;
+  getStatusById(
+    restaurantId: Types.ObjectId,
+    options?: { session?: ClientSession },
+  ): Promise<RestaurantStatus | null>;
   isRestaurantAdmin(
     restaurantId: Types.ObjectId,
     restaurantAdminId: Types.ObjectId,

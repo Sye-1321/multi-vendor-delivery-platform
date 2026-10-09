@@ -37,6 +37,8 @@ import { IOrderTransition } from './interfaces/order.interface';
 import { OrderEventPublisher } from './realtime/order-event.publisher';
 import { NotificationOutboxService } from 'src/notifications/notification-outbox.service';
 import { CancelOrderDTO } from './dtos/cancel-order.dto';
+import { IRestaurantRepository } from 'src/infrastructure/data_access/repositories/interfaces/restaurant-repository.interface';
+import { RestaurantStatus } from 'src/restaurant/constants/constants';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -46,6 +48,8 @@ export class OrderService implements IOrderService {
     @Inject(TYPES.IUserService) private readonly userService: IUserService,
     @Inject(TYPES.IRestaurantService)
     private readonly restaurantService: RestaurantService,
+    @Inject(TYPES.IRestaurantRepository)
+    private readonly restaurantRepository: IRestaurantRepository,
     @Inject(TYPES.IOrderRepository)
     private readonly orderRepository: IOrderRepository,
     @Inject(TYPES.IDeliveryPersonRepository)
@@ -77,6 +81,22 @@ export class OrderService implements IOrderService {
     const session = await this.orderRepository.startSession();
     try {
       const savedOrder = await session.withTransaction(async () => {
+        const restaurantStatus = await this.restaurantRepository.getStatusById(
+          restaurantObjectId,
+          { session },
+        );
+
+        if (restaurantStatus === null) {
+          throwApplicationError(HttpStatus.NOT_FOUND, 'Restaurant not found');
+        }
+
+        if (restaurantStatus !== RestaurantStatus.ACTIVE) {
+          throwApplicationError(
+            HttpStatus.CONFLICT,
+            'Restaurant is not accepting orders',
+          );
+        }
+
         const audit = Audit.createInsertContext(context);
         const cartItems = orderData.cart.cartItems;
         const uniqueMenuItemIds = [

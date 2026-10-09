@@ -10,6 +10,7 @@ import {
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { Result } from 'src/domain/result/result';
 import { IRestaurantRepository } from './interfaces/restaurant-repository.interface';
+import { RestaurantStatus } from 'src/restaurant/constants/constants';
 
 @Injectable()
 export class RestaurantRepository
@@ -95,6 +96,22 @@ export class RestaurantRepository
 
   async existsById(restaurantId: Types.ObjectId): Promise<boolean> {
     return (await this.restaurantModel.exists({ _id: restaurantId })) !== null;
+  }
+
+  async getStatusById(
+    restaurantId: Types.ObjectId,
+    options?: { session?: ClientSession },
+  ): Promise<RestaurantStatus | null> {
+    const query = this.restaurantModel
+      .findById(restaurantId)
+      .select({ status: 1 });
+
+    if (options?.session) {
+      query.session(options.session);
+    }
+
+    const restaurant = await query.lean().exec();
+    return restaurant?.status ?? null;
   }
 
   async isRestaurantAdmin(

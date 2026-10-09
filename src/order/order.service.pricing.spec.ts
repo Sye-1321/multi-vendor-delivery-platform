@@ -7,6 +7,7 @@ import { Context } from 'src/infrastructure/context/context';
 import { MenuItem } from 'src/menu-item/menu-item';
 import { CreateOrderDTO } from './dtos/order.dto';
 import { OrderService } from './order.service';
+import { RestaurantStatus } from 'src/restaurant/constants/constants';
 
 describe('OrderService checkout pricing', () => {
   const restaurantId = new Types.ObjectId();
@@ -59,10 +60,14 @@ describe('OrderService checkout pricing', () => {
     const menuItemRepository = {
       getAvailableMenuItemsByIds: jest.fn().mockResolvedValue(Result.ok(items)),
     };
+    const restaurantRepository = {
+      getStatusById: jest.fn().mockResolvedValue(RestaurantStatus.ACTIVE),
+    };
     const service = new OrderService(
       { getContext: () => context } as never,
       { getContextUser: () => Promise.resolve({ id: userId }) } as never,
       {} as never,
+      restaurantRepository as never,
       orderRepository as never,
       {} as never,
       menuItemRepository as never,
