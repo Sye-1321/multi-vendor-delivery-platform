@@ -201,6 +201,18 @@ cp .env.example .env
 The committed values are local-development examples. Replace all JWT secrets
 and SMTP credentials outside local development.
 
+For a fresh database, temporarily set both privileged-operator credential
+groups documented in `.env.example`, then run:
+
+```bash
+npm run bootstrap:operators
+```
+
+This explicit CLI command creates only missing system and delivery-company
+administrator roles as active users, hashes their passwords, and never
+overwrites an existing role. It does not expose an HTTP bootstrap route. Remove
+or unset the bootstrap password variables after provisioning.
+
 Start the MongoDB replica set:
 
 ```bash
