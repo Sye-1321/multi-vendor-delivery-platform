@@ -22,6 +22,7 @@ export interface IUserService {
   createCompanyAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>>;
   createRestaurantAdmin(props: CreateAdminDTO): Promise<Result<IUserResponse>>;
   verifyEmail(token: string): Promise<Result<IUserResponse>>;
+  resendEmailVerification(props: EmailDTO): Promise<Result<void>>;
   signIn(props: LoginDTO): Promise<Result<IUserSignedInResponseDTO>>;
   signOut(userId: Types.ObjectId): Promise<Result<void>>;
   getAccessTokenAndUpdateRefreshToken(
@@ -52,6 +53,7 @@ export interface IUserService {
     token: string,
     props: ResetPasswordDTO,
   ): Promise<Result<IUserResponse>>;
+  resendAdminRegistration(props: EmailDTO): Promise<Result<void>>;
   getUsers(): Promise<Result<IUserResponse[]>>;
   adminUpdateUser(
     userId: Types.ObjectId,

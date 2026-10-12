@@ -30,6 +30,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
     user: Pick<User, 'name' | 'email'>;
     token: string;
   }>;
+  let registrationEmailShouldFail: boolean;
 
   beforeAll(async () => {
     connection = await createConnection(mongoUri!, {
@@ -41,6 +42,7 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
 
   beforeEach(() => {
     registrationEmails = [];
+    registrationEmailShouldFail = false;
     const mapper = new UserMapper(new AuditMapper());
     repository = new UserRepository(model as never, connection, mapper);
     const emailService = {
@@ -50,7 +52,11 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
         token: string,
       ) => {
         registrationEmails.push({ user, token });
-        return Promise.resolve(Result.ok(undefined));
+        return Promise.resolve(
+          registrationEmailShouldFail
+            ? Result.fail('controlled email failure', 503)
+            : Result.ok(undefined),
+        );
       },
       sendPasswordResetInstructionsEmail: () =>
         Promise.resolve(Result.ok(undefined)),
@@ -117,6 +123,106 @@ describeWithMongo('UserService administrator registration (MongoDB)', () => {
       { secret: jwtSecret, expiresIn },
     );
   };
+
+  it('rotates an administrator registration link and only accepts the replacement', async () => {
+    const result = await service.createCompanyAdmin(adminInput());
+    const admin = result.getValue();
+    const firstToken = registrationEmails[0].token;
+    const firstState = (await load(admin.id)).accountActions.ADMIN_REGISTRATION;
+
+    await service.resendAdminRegistration({ email: admin.email });
+
+    const secondToken = registrationEmails[1].token;
+    const secondState = (await load(admin.id)).accountActions
+      .ADMIN_REGISTRATION;
+    expect(secondToken).not.toBe(firstToken);
+    expect(secondState.tokenHash).not.toBe(firstState.tokenHash);
+    await expect(
+      service.completeAdminRegistration(firstToken, {
+        newPassword: 'Selected1!',
+        confirmPassword: 'Selected1!',
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    await service.completeAdminRegistration(secondToken, {
+      newPassword: 'Selected1!',
+      confirmPassword: 'Selected1!',
+    });
+    const persisted = await load(admin.id);
+    expect(persisted.status).toBe(UserStatus.ACTIVE);
+    expect(persisted.accountActions?.ADMIN_REGISTRATION).toBeUndefined();
+  });
+
+  it('returns the same admin resend result without mutation for missing and ineligible accounts', async () => {
+    const activeAdminResult = await service.createRestaurantAdmin(adminInput());
+    const activeAdmin = activeAdminResult.getValue();
+    await model.findByIdAndUpdate(activeAdmin.id, {
+      status: UserStatus.ACTIVE,
+    });
+    const endUserEmail = `${randomUUID()}@example.com`;
+    const endUser = await model.create({
+      _id: new Types.ObjectId(),
+      name: 'Pending End User',
+      email: endUserEmail,
+      phoneNumber: '251933333333',
+      passwordHash: await bcrypt.hash('Current1!', 4),
+      role: Role.END_USER,
+      status: UserStatus.PENDING,
+      accountActions: {},
+      auditCreatedBy: endUserEmail,
+      auditCreatedDateTime: new Date().toISOString(),
+    });
+    const activeBefore = await load(activeAdmin.id);
+    const endUserBefore = await load(endUser._id);
+    registrationEmails = [];
+
+    const results = await Promise.all([
+      service.resendAdminRegistration({ email: 'missing@example.com' }),
+      service.resendAdminRegistration({ email: activeAdmin.email }),
+      service.resendAdminRegistration({ email: endUser.email }),
+    ]);
+
+    expect(
+      results.map(({ isSuccess, message }) => ({ isSuccess, message })),
+    ).toEqual([
+      { isSuccess: true, message: results[0].message },
+      { isSuccess: true, message: results[0].message },
+      { isSuccess: true, message: results[0].message },
+    ]);
+    expect(registrationEmails).toHaveLength(0);
+    expect(await load(activeAdmin.id)).toEqual(activeBefore);
+    expect(await load(endUser._id)).toEqual(endUserBefore);
+  });
+
+  it('preserves a fresh action after email failure and recovers on a later resend', async () => {
+    const result = await service.createCompanyAdmin(adminInput());
+    const admin = result.getValue();
+    const originalState = (await load(admin.id)).accountActions
+      .ADMIN_REGISTRATION;
+    registrationEmailShouldFail = true;
+
+    await expect(
+      service.resendAdminRegistration({ email: admin.email }),
+    ).rejects.toMatchObject({ status: 503 });
+
+    const afterFailure = await load(admin.id);
+    expect(afterFailure.status).toBe(UserStatus.PENDING);
+    expect(afterFailure.accountActions.ADMIN_REGISTRATION.tokenHash).not.toBe(
+      originalState.tokenHash,
+    );
+
+    registrationEmailShouldFail = false;
+    await service.resendAdminRegistration({ email: admin.email });
+    const recoveryToken =
+      registrationEmails[registrationEmails.length - 1].token;
+    await service.completeAdminRegistration(recoveryToken, {
+      newPassword: 'Recovered1!',
+      confirmPassword: 'Recovered1!',
+    });
+    const recovered = await load(admin.id);
+    expect(recovered.status).toBe(UserStatus.ACTIVE);
+    expect(recovered.accountActions?.ADMIN_REGISTRATION).toBeUndefined();
+  });
 
   it('rolls back the administrator when registration state persistence fails', async () => {
     const input = adminInput();

@@ -13,6 +13,7 @@ import {
 } from 'src/infrastructure/data_access/repositories/schemas/user.schema';
 import { AuditMapper } from 'src/audit/audit.mapper';
 import { UserStatus } from './constants/constants';
+import { User } from './user';
 import { UserMapper } from './user.mapper';
 import { UserService } from './user.service';
 
@@ -27,6 +28,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
   let currentEmail: string;
   let currentUserId: string;
   let deliveredEmailChangeTokens: string[];
+  let deliveredVerificationTokens: Array<{ email: string; token: string }>;
 
   beforeAll(async () => {
     connection = await createConnection(mongoUri!, {
@@ -43,8 +45,12 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
 
   beforeEach(() => {
     deliveredEmailChangeTokens = [];
+    deliveredVerificationTokens = [];
     const emailService = {
-      sendAccountVerificationEmail: () => Promise.resolve(Result.ok(undefined)),
+      sendAccountVerificationEmail: (user: User, token: string) => {
+        deliveredVerificationTokens.push({ email: user.email, token });
+        return Promise.resolve(Result.ok(undefined));
+      },
       sendRegistrationCompletionEmail: () =>
         Promise.resolve(Result.ok(undefined)),
       sendPasswordResetInstructionsEmail: () =>
@@ -91,6 +97,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
   const createUser = async (
     status = UserStatus.ACTIVE,
     email = `${randomUUID()}@example.com`,
+    role: Role = Role.END_USER,
   ) => {
     const document = await model.create({
       _id: new Types.ObjectId(),
@@ -98,7 +105,7 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
       name: 'Action User',
       phoneNumber: '123',
       passwordHash: await bcrypt.hash('Current1!', 4),
-      role: Role.END_USER,
+      role,
       status,
       refreshTokenHash: 'live-refresh-session',
       accountActions: {},
@@ -109,6 +116,52 @@ describeWithMongo('UserService account actions (MongoDB)', () => {
     currentUserId = document._id.toString();
     return document;
   };
+
+  it('resends verification to a pending end user and consumes the replacement action', async () => {
+    const user = await createUser(UserStatus.PENDING);
+    await issue(user._id, AccountActionPurpose.EMAIL_VERIFICATION, user.email);
+
+    const result = await service.resendEmailVerification({ email: user.email });
+    const [{ email, token }] = deliveredVerificationTokens;
+
+    expect(result).toMatchObject({ isSuccess: true });
+    expect(email).toBe(user.email);
+    expect((await loadUser(user._id)).status).toBe(UserStatus.PENDING);
+
+    await service.verifyEmail(token);
+
+    const verified = await loadUser(user._id);
+    expect(verified.status).toBe(UserStatus.ACTIVE);
+    expect(verified.accountActions?.EMAIL_VERIFICATION).toBeUndefined();
+  });
+
+  it('returns the same verification resend result without mutation for missing and ineligible accounts', async () => {
+    const activeUser = await createUser(UserStatus.ACTIVE);
+    const pendingAdmin = await createUser(
+      UserStatus.PENDING,
+      `${randomUUID()}@example.com`,
+      Role.BUSINESS_ADMINISTRATOR,
+    );
+    const activeBefore = await loadUser(activeUser._id);
+    const adminBefore = await loadUser(pendingAdmin._id);
+
+    const results = await Promise.all([
+      service.resendEmailVerification({ email: 'missing@example.com' }),
+      service.resendEmailVerification({ email: activeUser.email }),
+      service.resendEmailVerification({ email: pendingAdmin.email }),
+    ]);
+
+    expect(
+      results.map(({ isSuccess, message }) => ({ isSuccess, message })),
+    ).toEqual([
+      { isSuccess: true, message: results[0].message },
+      { isSuccess: true, message: results[0].message },
+      { isSuccess: true, message: results[0].message },
+    ]);
+    expect(deliveredVerificationTokens).toHaveLength(0);
+    expect(await loadUser(activeUser._id)).toEqual(activeBefore);
+    expect(await loadUser(pendingAdmin._id)).toEqual(adminBefore);
+  });
 
   const loadUser = async (userId: Types.ObjectId): Promise<any> =>
     model.findById(userId).lean().exec();

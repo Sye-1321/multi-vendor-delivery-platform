@@ -15,6 +15,8 @@ describe('UserController account-action transport', () => {
     verifyNewEmail: jest.fn(),
     confirmPasswordReset: jest.fn(),
     completeAdminRegistration: jest.fn(),
+    resendEmailVerification: jest.fn(),
+    resendAdminRegistration: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -77,6 +79,25 @@ describe('UserController account-action transport', () => {
         'signed-account-action-token',
         passwordData,
       );
+    },
+  );
+
+  it.each([
+    ['/auth/email-verification/resend', 'resendEmailVerification'],
+    ['/auth/registration-completion/resend', 'resendAdminRegistration'],
+  ] as const)(
+    'POST %s passes its validated email to %s',
+    async (path, method) => {
+      userService[method].mockResolvedValue({ isSuccess: true });
+
+      await request(app.getHttpServer())
+        .post(path)
+        .send({ email: 'user@example.com' })
+        .expect(200);
+
+      expect(userService[method]).toHaveBeenCalledWith({
+        email: 'user@example.com',
+      });
     },
   );
 

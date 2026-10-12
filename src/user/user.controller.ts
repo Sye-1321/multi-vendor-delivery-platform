@@ -63,6 +63,12 @@ export class UserController {
     return this.userService.verifyEmail(request.token);
   }
 
+  @Post('/auth/email-verification/resend')
+  @HttpCode(HttpStatus.OK)
+  async resendEmailVerification(@Body() request: EmailDTO) {
+    return this.userService.resendEmailVerification(request);
+  }
+
   @Post('/auth/login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -161,6 +167,12 @@ export class UserController {
       newPassword,
       confirmPassword,
     });
+  }
+
+  @Post('/auth/registration-completion/resend')
+  @HttpCode(HttpStatus.OK)
+  async resendAdminRegistration(@Body() request: EmailDTO) {
+    return this.userService.resendAdminRegistration(request);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

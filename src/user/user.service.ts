@@ -80,6 +80,60 @@ export class UserService extends AuthService implements IUserService {
     );
   }
 
+  async resendEmailVerification(props: EmailDTO): Promise<Result<void>> {
+    const result = await this.userRepository.findByEmail(props.email);
+    const message =
+      'If the account is eligible, a verification email has been sent.';
+    if (!result.isSuccess) {
+      return Result.ok<void>(undefined, message);
+    }
+    const user = result.getValue();
+    if (user.status !== UserStatus.PENDING || user.role !== Role.END_USER) {
+      return Result.ok<void>(undefined, message);
+    }
+    const token = await this.issueAccountAction(
+      user,
+      AccountActionPurpose.EMAIL_VERIFICATION,
+    );
+    const emailResult = await this.emailService.sendAccountVerificationEmail(
+      user,
+      token,
+    );
+    if (!emailResult.isSuccess) {
+      throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'Failed to send verification email.',
+      );
+    }
+    return Result.ok<void>(undefined, message);
+  }
+
+  async resendAdminRegistration(props: EmailDTO): Promise<Result<void>> {
+    const result = await this.userRepository.findByEmail(props.email);
+    const message =
+      'If the account is eligible, a registration completion email has been sent.';
+    if (!result.isSuccess) {
+      return Result.ok<void>(undefined, message);
+    }
+    const administrator = result.getValue();
+    const eligibleRoles = [
+      Role.BUSINESS_ADMINISTRATOR,
+      Role.RESTAURANT_ADMINISTRATOR,
+    ];
+    if (
+      administrator.status !== UserStatus.PENDING ||
+      !eligibleRoles.includes(administrator.role)
+    ) {
+      return Result.ok<void>(undefined, message);
+    }
+    const token = await this.issueAccountAction(
+      administrator,
+      AccountActionPurpose.ADMIN_REGISTRATION,
+    );
+    await this.sendAdminRegistrationEmail(administrator, token);
+    return Result.ok<void>(undefined, message);
+  }
+
   async createCompanyAdmin(
     props: CreateAdminDTO,
   ): Promise<Result<IUserResponse>> {
