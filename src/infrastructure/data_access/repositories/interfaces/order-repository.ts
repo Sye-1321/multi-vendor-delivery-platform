@@ -17,6 +17,10 @@ export interface IOrderRepository
     pagination?: PaginationOptions,
   ): Promise<Result<Order[]>>;
   getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>>;
+  getOrderByIdempotencyKey(
+    userId: Types.ObjectId,
+    idempotencyKey: string,
+  ): Promise<Result<Order>>;
   getOrderById(
     id: Types.ObjectId,
     scope?: Partial<OrderDataModel>,

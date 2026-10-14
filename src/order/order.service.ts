@@ -40,6 +40,7 @@ import { CancelOrderDTO } from './dtos/cancel-order.dto';
 import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 import { IRestaurantRepository } from 'src/infrastructure/data_access/repositories/interfaces/restaurant-repository.interface';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
+import { createHash } from 'node:crypto';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -69,6 +70,7 @@ export class OrderService implements IOrderService {
   async createOrder(
     restaurantId: Types.ObjectId,
     orderData: CreateOrderDTO,
+    idempotencyKey: string,
   ): Promise<Result<IOrderResponseDTO>> {
     const context = this.contextService.getContext();
     const contextUser = await this.userService.getContextUser();
@@ -79,6 +81,19 @@ export class OrderService implements IOrderService {
     }
 
     const restaurantObjectId = new Types.ObjectId(restaurantIdValue);
+    const idempotencyFingerprint = this.checkoutFingerprint(
+      restaurantIdValue,
+      orderData,
+    );
+    const existing = await this.orderRepository.getOrderByIdempotencyKey(
+      contextUser.id,
+      idempotencyKey,
+    );
+
+    if (existing.isSuccess) {
+      return this.replay(existing.getValue(), idempotencyFingerprint);
+    }
+
     const session = await this.orderRepository.startSession();
     try {
       const savedOrder = await session.withTransaction(async () => {
@@ -213,6 +228,8 @@ export class OrderService implements IOrderService {
           totalPrice,
           cart,
           timeline: [initialTransition],
+          idempotencyKey,
+          idempotencyFingerprint,
           audit,
         }).getValue();
         const savedOrderResult = await this.orderRepository.createOrder(
@@ -245,9 +262,75 @@ export class OrderService implements IOrderService {
 
       this.orderEvents.publish(savedOrder, context.correlationId);
       return Result.ok(OrderParser.createOrderResponse(savedOrder));
+    } catch (error) {
+      if (!this.isIdempotencyDuplicateKey(error)) {
+        throw error;
+      }
+
+      const winner = await this.orderRepository.getOrderByIdempotencyKey(
+        contextUser.id,
+        idempotencyKey,
+      );
+      if (!winner.isSuccess) {
+        throw error;
+      }
+
+      return this.replay(winner.getValue(), idempotencyFingerprint);
     } finally {
       await session.endSession();
     }
+  }
+
+  private checkoutFingerprint(
+    restaurantId: string,
+    orderData: CreateOrderDTO,
+  ): string {
+    const intent = {
+      restaurantId,
+      deliveryAddress: {
+        city: orderData.deliveryAddress.city,
+        subCity: orderData.deliveryAddress.subCity,
+      },
+      cartItems: orderData.cart.cartItems.map((item) => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        customizations: item.customizations ?? null,
+      })),
+    };
+
+    return createHash('sha256').update(JSON.stringify(intent)).digest('hex');
+  }
+
+  private replay(
+    order: Order,
+    expectedFingerprint: string,
+  ): Result<IOrderResponseDTO> {
+    if (order.idempotencyFingerprint !== expectedFingerprint) {
+      throwApplicationError(
+        HttpStatus.CONFLICT,
+        'Idempotency key has already been used for a different checkout request.',
+      );
+    }
+
+    return Result.ok(OrderParser.createOrderResponse(order));
+  }
+
+  private isIdempotencyDuplicateKey(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const mongoError = error as {
+      code?: number;
+      keyPattern?: Record<string, unknown>;
+      index?: string;
+      message?: string;
+    };
+
+    return (
+      mongoError.code === 11000 &&
+      (mongoError.keyPattern?.idempotencyKey === 1 ||
+        mongoError.index === 'orders_user_idempotency_key_unique' ||
+        mongoError.message?.includes('orders_user_idempotency_key_unique') ===
+          true)
+    );
   }
 
   private toMinorUnits(amount: number): number {

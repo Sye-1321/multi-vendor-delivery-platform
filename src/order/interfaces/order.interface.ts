@@ -31,5 +31,7 @@ export interface IOrder {
   deliveryPerson?: DeliveryPerson | null;
   deliveryPersonId?: Types.ObjectId | null;
   timeline?: IOrderTransition[];
+  idempotencyKey?: string;
+  idempotencyFingerprint?: string;
   audit: Audit;
 }

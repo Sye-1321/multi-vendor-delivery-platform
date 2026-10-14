@@ -9,6 +9,7 @@ export interface IOrderService {
   createOrder(
     restaurantId: Types.ObjectId,
     orderData: CreateOrderDTO,
+    idempotencyKey: string,
   ): Promise<Result<IOrderResponseDTO>>;
   cancelOrder(
     orderId: Types.ObjectId,

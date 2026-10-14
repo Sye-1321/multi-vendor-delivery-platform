@@ -77,6 +77,12 @@ export class OrderDataModel extends BaseDocument implements IOrderDataModel {
 
   @Prop({ type: [OrderTransitionSchema], required: true, default: [] })
   timeline: OrderTransitionDataModel[];
+
+  @Prop({ type: String })
+  idempotencyKey?: string;
+
+  @Prop({ type: String })
+  idempotencyFingerprint?: string;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(OrderDataModel);
@@ -84,3 +90,11 @@ export const OrderSchema = SchemaFactory.createForClass(OrderDataModel);
 OrderSchema.index({ userId: 1, auditCreatedDateTime: -1 });
 OrderSchema.index({ restaurantId: 1, status: 1 });
 OrderSchema.index({ status: 1, deliveryPersonId: 1 });
+OrderSchema.index(
+  { userId: 1, idempotencyKey: 1 },
+  {
+    unique: true,
+    name: 'orders_user_idempotency_key_unique',
+    partialFilterExpression: { idempotencyKey: { $type: 'string' } },
+  },
+);

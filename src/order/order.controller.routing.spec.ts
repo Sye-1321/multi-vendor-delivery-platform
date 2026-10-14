@@ -12,6 +12,7 @@ describe('OrderController routing', () => {
   let app: INestApplication;
   const orderService = {
     assignDeliveryPerson: jest.fn(),
+    createOrder: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -68,4 +69,41 @@ describe('OrderController routing', () => {
       expect(orderService.assignDeliveryPerson).not.toHaveBeenCalled();
     },
   );
+
+  it('forwards a trimmed checkout idempotency key', async () => {
+    const restaurantId = '507f1f77bcf86cd799439011';
+    const body = {
+      cart: {
+        cartItems: [{ menuItemId: '507f191e810c19729de860ea', quantity: 1 }],
+      },
+      deliveryAddress: { city: 'Addis Ababa', subCity: 'Bole' },
+    };
+    orderService.createOrder.mockResolvedValue(Result.ok({}));
+
+    await request(app.getHttpServer())
+      .post(`/orders/${restaurantId}`)
+      .set('Idempotency-Key', ' checkout-1 ')
+      .send(body)
+      .expect(201);
+
+    expect(orderService.createOrder).toHaveBeenCalledWith(
+      expect.any(Types.ObjectId),
+      body,
+      'checkout-1',
+    );
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['blank', '   '],
+    ['overlong', 'x'.repeat(129)],
+  ])('rejects a %s checkout idempotency key', async (_, key) => {
+    const call = request(app.getHttpServer()).post(
+      '/orders/507f1f77bcf86cd799439011',
+    );
+    if (key !== undefined) call.set('Idempotency-Key', key);
+
+    await call.send({}).expect(400);
+    expect(orderService.createOrder).not.toHaveBeenCalled();
+  });
 });

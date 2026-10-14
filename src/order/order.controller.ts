@@ -8,6 +8,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Headers,
   UseGuards,
   Query,
 } from '@nestjs/common';
@@ -24,6 +25,7 @@ import { TYPES } from 'src/application/constants/types';
 import { CancelOrderDTO } from './dtos/cancel-order.dto';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
+import { IdempotencyKeyPipe } from './idempotency-key.pipe';
 
 @Controller('orders')
 export class OrderController {
@@ -39,8 +41,16 @@ export class OrderController {
   async createOrder(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() orderData: CreateOrderDTO,
+    @Headers('idempotency-key') idempotencyKeyHeader: unknown,
   ): Promise<Result<IOrderResponseDTO>> {
-    return await this.orderService.createOrder(restaurantId, orderData);
+    const idempotencyKey = new IdempotencyKeyPipe().transform(
+      idempotencyKeyHeader,
+    );
+    return await this.orderService.createOrder(
+      restaurantId,
+      orderData,
+      idempotencyKey,
+    );
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

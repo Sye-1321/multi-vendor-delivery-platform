@@ -27,6 +27,8 @@ export class OrderMapper {
       paymentStatus,
       deliveryPersonId,
       timeline,
+      idempotencyKey,
+      idempotencyFingerprint,
     } = doc;
 
     const populatedDeliveryPerson =
@@ -51,6 +53,8 @@ export class OrderMapper {
         deliveryPersonId: resolvedDeliveryPersonId,
         deliveryPerson: deliveryPersonDomain,
         timeline,
+        idempotencyKey,
+        idempotencyFingerprint,
         audit: this.auditMapper.toDomain(doc),
       },
       _id,
@@ -73,6 +77,8 @@ export class OrderMapper {
       deliveryPerson,
       deliveryPersonId,
       timeline,
+      idempotencyKey,
+      idempotencyFingerprint,
     } = order;
 
     const {
@@ -96,6 +102,8 @@ export class OrderMapper {
         ? deliveryPerson.id
         : (deliveryPersonId ?? null),
       timeline: [...timeline],
+      idempotencyKey,
+      idempotencyFingerprint,
       totalPrice,
       auditCreatedBy,
       auditCreatedDateTime,

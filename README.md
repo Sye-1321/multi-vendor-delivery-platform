@@ -65,6 +65,21 @@ Checkout:
 
 Any failure rolls the complete checkout back.
 
+Checkout is cash-on-delivery only; the server does not collect an online
+payment. New orders start with payment status `PENDING`, meaning payment has not
+yet been collected. A successful delivery changes it to `PAID`.
+
+Clients must give each intended checkout an opaque idempotency key:
+
+```http
+POST /api/v1/orders/<restaurantId>
+Authorization: Bearer <access-token>
+Idempotency-Key: <client-generated-key>
+```
+
+Retry the same checkout with the same key. Use a new key for a newly intended
+order. Reusing a key with a different checkout payload returns `409 Conflict`.
+
 ### Order Lifecycle
 
 ```mermaid

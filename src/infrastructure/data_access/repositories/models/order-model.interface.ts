@@ -16,4 +16,6 @@ export interface IOrderDataModel {
   readonly paymentStatus: PaymentStatus;
   readonly deliveryPersonId: Types.ObjectId | null;
   readonly timeline: IOrderTransition[];
+  readonly idempotencyKey?: string;
+  readonly idempotencyFingerprint?: string;
 }

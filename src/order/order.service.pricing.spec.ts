@@ -8,6 +8,7 @@ import { MenuItem } from 'src/menu-item/menu-item';
 import { CreateOrderDTO } from './dtos/order.dto';
 import { OrderService } from './order.service';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
+import { PaymentStatus } from './constants/constants';
 
 describe('OrderService checkout pricing', () => {
   const restaurantId = new Types.ObjectId();
@@ -39,6 +40,9 @@ describe('OrderService checkout pricing', () => {
       endSession: jest.fn(),
     };
     const orderRepository = {
+      getOrderByIdempotencyKey: jest
+        .fn()
+        .mockResolvedValue(Result.fail('', HttpStatus.NOT_FOUND)),
       startSession: jest.fn().mockResolvedValue(session),
       createOrder: jest.fn(),
     };
@@ -109,6 +113,7 @@ describe('OrderService checkout pricing', () => {
       orderData(
         items.map((item, index) => ({ item, quantity: quantities[index] })),
       ),
+      'pricing-test',
     );
 
     await expect(promise).rejects.toMatchObject({
@@ -132,6 +137,7 @@ describe('OrderService checkout pricing', () => {
         { item: first, quantity: 2 },
         { item: second, quantity: 1 },
       ]),
+      'ordinary-checkout',
     );
 
     expect(result.getValue().totalPrice).toBe(45.48);
@@ -146,6 +152,15 @@ describe('OrderService checkout pricing', () => {
     expect(
       dependencies.orderRepository.createOrder.mock.calls[0][0].totalPrice,
     ).toBe(45.48);
+    expect(
+      dependencies.orderRepository.createOrder.mock.calls[0][0],
+    ).toMatchObject({
+      paymentStatus: PaymentStatus.PENDING,
+      idempotencyKey: 'ordinary-checkout',
+      idempotencyFingerprint: expect.stringMatching(/^[a-f0-9]{64}$/),
+    });
+    expect(result.getValue()).not.toHaveProperty('idempotencyKey');
+    expect(result.getValue()).not.toHaveProperty('idempotencyFingerprint');
   });
 
   it('rejects a finite price whose minor-unit conversion is unsafe', async () => {
@@ -179,6 +194,7 @@ describe('OrderService checkout pricing', () => {
       dependencies.service.createOrder(
         restaurantId,
         orderData([{ item, quantity: 1 }]),
+        'unexpected-error',
       ),
     ).rejects.toBe(unexpected);
     expect(dependencies.session.endSession).toHaveBeenCalledTimes(1);

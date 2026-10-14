@@ -105,6 +105,22 @@ export class OrderRepository
     return Result.ok(order);
   }
 
+  async getOrderByIdempotencyKey(
+    userId: Types.ObjectId,
+    idempotencyKey: string,
+  ): Promise<Result<Order>> {
+    const orderDocument = await this.DocumentModel.findOne({
+      userId,
+      idempotencyKey,
+    })
+      .populate(this.orderPopulation)
+      .exec();
+
+    return orderDocument
+      ? Result.ok(this.orderMapper.toDomain(orderDocument))
+      : Result.fail('Order not found', HttpStatus.NOT_FOUND);
+  }
+
   async transitionOrder(
     orderId: Types.ObjectId,
     expectedStatus: OrderDataModel['status'],

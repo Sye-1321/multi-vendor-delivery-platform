@@ -6,6 +6,7 @@ import { Context } from 'src/infrastructure/context/context';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
 import { CreateOrderDTO } from './dtos/order.dto';
 import { OrderService } from './order.service';
+import { createHash } from 'node:crypto';
 
 describe('OrderService checkout restaurant state', () => {
   const restaurantId = new Types.ObjectId();
@@ -42,6 +43,9 @@ describe('OrderService checkout restaurant state', () => {
     const cartItemRepository = { insertManyWithSession: jest.fn() };
     const cartRepository = { create: jest.fn() };
     const orderRepository = {
+      getOrderByIdempotencyKey: jest
+        .fn()
+        .mockResolvedValue(Result.fail('', HttpStatus.NOT_FOUND)),
       startSession: jest.fn().mockResolvedValue(session),
       createOrder: jest.fn(),
     };
@@ -77,6 +81,47 @@ describe('OrderService checkout restaurant state', () => {
     };
   }
 
+  function fingerprint(data: CreateOrderDTO): string {
+    return createHash('sha256')
+      .update(
+        JSON.stringify({
+          restaurantId: restaurantId.toString(),
+          deliveryAddress: {
+            city: data.deliveryAddress.city,
+            subCity: data.deliveryAddress.subCity,
+          },
+          cartItems: data.cart.cartItems.map((item) => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            customizations: item.customizations ?? null,
+          })),
+        }),
+      )
+      .digest('hex');
+  }
+
+  function persistedOrder(data: CreateOrderDTO) {
+    return {
+      id: new Types.ObjectId(),
+      userId,
+      restaurantId,
+      cart: { id: new Types.ObjectId(), totalPrice: 10, cartItems: [] },
+      deliveryAddress: data.deliveryAddress,
+      status: 'pending',
+      paymentStatus: 'pending',
+      totalPrice: 10,
+      timeline: [],
+      deliveryPersonId: null,
+      deliveryPerson: null,
+      audit: {
+        auditCreatedBy: 'customer@example.com',
+        auditCreatedDateTime: new Date().toISOString(),
+      },
+      idempotencyKey: 'retry-key',
+      idempotencyFingerprint: fingerprint(data),
+    };
+  }
+
   function expectNoCheckoutSideEffects(
     dependencies: ReturnType<typeof buildService>,
   ) {
@@ -98,7 +143,7 @@ describe('OrderService checkout restaurant state', () => {
     const dependencies = buildService(null);
 
     await expect(
-      dependencies.service.createOrder(restaurantId, orderData),
+      dependencies.service.createOrder(restaurantId, orderData, 'unknown'),
     ).rejects.toMatchObject({
       status: HttpStatus.NOT_FOUND,
       response: {
@@ -118,7 +163,7 @@ describe('OrderService checkout restaurant state', () => {
     const dependencies = buildService(RestaurantStatus.INACTIVE);
 
     await expect(
-      dependencies.service.createOrder(restaurantId, orderData),
+      dependencies.service.createOrder(restaurantId, orderData, 'inactive'),
     ).rejects.toMatchObject({
       status: HttpStatus.CONFLICT,
       response: {
@@ -138,7 +183,7 @@ describe('OrderService checkout restaurant state', () => {
     const dependencies = buildService(RestaurantStatus.ACTIVE);
 
     await expect(
-      dependencies.service.createOrder(restaurantId, orderData),
+      dependencies.service.createOrder(restaurantId, orderData, 'active'),
     ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST });
 
     expect(
@@ -157,5 +202,46 @@ describe('OrderService checkout restaurant state', () => {
         .invocationCallOrder[0],
     );
     expect(dependencies.session.endSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a matching persisted checkout before opening a session', async () => {
+    const dependencies = buildService(RestaurantStatus.ACTIVE);
+    const order = persistedOrder(orderData);
+    dependencies.orderRepository.getOrderByIdempotencyKey.mockResolvedValue(
+      Result.ok(order),
+    );
+
+    const result = await dependencies.service.createOrder(
+      restaurantId,
+      orderData,
+      'retry-key',
+    );
+
+    expect(result.getValue().id).toEqual(order.id);
+    expect(dependencies.orderRepository.startSession).not.toHaveBeenCalled();
+    expect(
+      dependencies.restaurantRepository.getStatusById,
+    ).not.toHaveBeenCalled();
+    expectNoCheckoutSideEffects(dependencies);
+  });
+
+  it('rejects a reused key with a different request before side effects', async () => {
+    const dependencies = buildService(RestaurantStatus.ACTIVE);
+    dependencies.orderRepository.getOrderByIdempotencyKey.mockResolvedValue(
+      Result.ok(persistedOrder(orderData)),
+    );
+    const changed = {
+      ...orderData,
+      deliveryAddress: { ...orderData.deliveryAddress, subCity: 'Arada' },
+    };
+
+    await expect(
+      dependencies.service.createOrder(restaurantId, changed, 'retry-key'),
+    ).rejects.toMatchObject({ status: HttpStatus.CONFLICT });
+    expect(dependencies.orderRepository.startSession).not.toHaveBeenCalled();
+    expect(
+      dependencies.restaurantRepository.getStatusById,
+    ).not.toHaveBeenCalled();
+    expectNoCheckoutSideEffects(dependencies);
   });
 });
