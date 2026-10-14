@@ -1,12 +1,42 @@
 import { WsException } from '@nestjs/websockets';
+import { HttpStatus } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { Result } from 'src/domain/result/result';
 import { Role } from 'src/application/constants/constants';
 import { OrderGateway } from './order.gateway';
 import { OrderEventPublisher } from './order-event.publisher';
 import { AccessRevocationPublisher } from 'src/infrastructure/auth/access-revocation.publisher';
+import { Subject } from 'rxjs';
+import { OrderRealtimeEvent } from './order-event.publisher';
+import { OrderStatus, PaymentStatus } from '../constants/constants';
 
 describe('OrderGateway room authorization', () => {
+  const observableOrder = (
+    orderId: Types.ObjectId,
+    overrides: Record<string, unknown> = {},
+  ) => ({
+    id: orderId,
+    userId: new Types.ObjectId(),
+    restaurantId: new Types.ObjectId(),
+    cart: {
+      id: new Types.ObjectId(),
+      totalPrice: 100,
+      cartItems: [],
+    },
+    deliveryAddress: { city: 'Addis Ababa', subCity: 'Bole' },
+    status: 'pending',
+    totalPrice: 100,
+    paymentStatus: 'pending',
+    timeline: [],
+    deliveryPersonId: null,
+    deliveryPerson: undefined,
+    audit: {
+      auditCreatedBy: 'test@example.com',
+      auditCreatedDateTime: new Date().toISOString(),
+    },
+    ...overrides,
+  });
+
   it('does not reveal or join another customer order', async () => {
     const orderId = new Types.ObjectId();
     const orderRepository = {
@@ -45,34 +75,14 @@ describe('OrderGateway room authorization', () => {
       }),
     ).rejects.toBeInstanceOf(WsException);
     expect(client.join).not.toHaveBeenCalled();
+    expect(orderRepository.getOrderById).toHaveBeenCalledTimes(1);
   });
 
   it('uses the persisted role when authorizing a subscription', async () => {
     const orderId = new Types.ObjectId();
+    const order = observableOrder(orderId);
     const orderRepository = {
-      getOrderById: jest.fn().mockResolvedValue(
-        Result.ok({
-          id: orderId,
-          userId: new Types.ObjectId(),
-          restaurantId: new Types.ObjectId(),
-          cart: {
-            id: new Types.ObjectId(),
-            totalPrice: 100,
-            cartItems: [],
-          },
-          deliveryAddress: { city: 'Addis Ababa', subCity: 'Bole' },
-          status: 'pending',
-          totalPrice: 100,
-          paymentStatus: 'pending',
-          timeline: [],
-          deliveryPersonId: null,
-          deliveryPerson: undefined,
-          audit: {
-            auditCreatedBy: 'test@example.com',
-            auditCreatedDateTime: new Date().toISOString(),
-          },
-        }),
-      ),
+      getOrderById: jest.fn().mockResolvedValue(Result.ok(order)),
     };
     const principal = {
       userId: new Types.ObjectId().toString(),
@@ -81,6 +91,7 @@ describe('OrderGateway room authorization', () => {
     const client = {
       data: { principal },
       join: jest.fn(),
+      leave: jest.fn(),
       disconnect: jest.fn(),
     };
     const gateway = new OrderGateway(
@@ -105,6 +116,143 @@ describe('OrderGateway room authorization', () => {
     ).resolves.toMatchObject({ event: 'order:subscribed' });
     expect(principal.role).toBe(Role.SYSTEM_ADMINISTRATOR);
     expect(client.join).toHaveBeenCalledWith(`order:${orderId}`);
+    expect(orderRepository.getOrderById).toHaveBeenCalledTimes(2);
+  });
+
+  it('joins before rereading and acknowledges the refreshed order', async () => {
+    const orderId = new Types.ObjectId();
+    const userId = new Types.ObjectId();
+    const pending = observableOrder(orderId, { userId });
+    const accepted = observableOrder(orderId, {
+      userId,
+      status: 'accepted',
+      timeline: [
+        {
+          from: 'pending',
+          to: 'accepted',
+          actorRole: Role.RESTAURANT_ADMINISTRATOR,
+          occurredAt: new Date().toISOString(),
+        },
+      ],
+    });
+    const getOrderById = jest
+      .fn()
+      .mockResolvedValueOnce(Result.ok(pending))
+      .mockResolvedValueOnce(Result.ok(accepted));
+    const client = {
+      data: { principal: { userId: userId.toString(), role: Role.END_USER } },
+      join: jest.fn().mockResolvedValue(undefined),
+      leave: jest.fn(),
+    };
+    const gateway = new OrderGateway(
+      {} as never,
+      {} as never,
+      {} as never,
+      {
+        resolveActiveUser: jest.fn().mockResolvedValue({ role: Role.END_USER }),
+      } as never,
+      {} as never,
+      { warn: jest.fn() } as never,
+      { getOrderById } as never,
+      {} as never,
+    );
+
+    const response = await gateway.subscribeToOrder(client as never, {
+      orderId: orderId.toString(),
+    });
+
+    expect(getOrderById).toHaveBeenCalledTimes(2);
+    expect(getOrderById.mock.invocationCallOrder[0]).toBeLessThan(
+      client.join.mock.invocationCallOrder[0],
+    );
+    expect(client.join.mock.invocationCallOrder[0]).toBeLessThan(
+      getOrderById.mock.invocationCallOrder[1],
+    );
+    expect(response).toMatchObject({
+      event: 'order:subscribed',
+      data: { status: 'accepted', timeline: [{ to: 'accepted' }] },
+    });
+  });
+
+  it.each([
+    [
+      'failed refreshed read',
+      () => Result.fail('database unavailable', HttpStatus.NOT_FOUND),
+    ],
+    [
+      'thrown refreshed read',
+      () => Promise.reject(new Error('database unavailable')),
+    ],
+  ])('leaves the room after a %s', async (_, refreshed) => {
+    const orderId = new Types.ObjectId();
+    const userId = new Types.ObjectId();
+    const order = observableOrder(orderId, { userId });
+    const getOrderById = jest
+      .fn()
+      .mockResolvedValueOnce(Result.ok(order))
+      .mockImplementationOnce(refreshed);
+    const client = {
+      data: { principal: { userId: userId.toString(), role: Role.END_USER } },
+      join: jest.fn().mockResolvedValue(undefined),
+      leave: jest.fn().mockResolvedValue(undefined),
+    };
+    const gateway = new OrderGateway(
+      {} as never,
+      {} as never,
+      {} as never,
+      {
+        resolveActiveUser: jest.fn().mockResolvedValue({ role: Role.END_USER }),
+      } as never,
+      {} as never,
+      { warn: jest.fn() } as never,
+      { getOrderById } as never,
+      {} as never,
+    );
+
+    await expect(
+      gateway.subscribeToOrder(client as never, {
+        orderId: orderId.toString(),
+      }),
+    ).rejects.toMatchObject({ message: 'Order is unavailable.' });
+    expect(client.leave).toHaveBeenCalledWith(`order:${orderId}`);
+  });
+
+  it('leaves when the refreshed order is no longer observable', async () => {
+    const orderId = new Types.ObjectId();
+    const userId = new Types.ObjectId();
+    const first = observableOrder(orderId, { userId });
+    const refreshed = observableOrder(orderId, {
+      userId: new Types.ObjectId(),
+    });
+    const client = {
+      data: { principal: { userId: userId.toString(), role: Role.END_USER } },
+      join: jest.fn().mockResolvedValue(undefined),
+      leave: jest.fn().mockResolvedValue(undefined),
+    };
+    const gateway = new OrderGateway(
+      {} as never,
+      {} as never,
+      {} as never,
+      {
+        resolveActiveUser: jest.fn().mockResolvedValue({ role: Role.END_USER }),
+      } as never,
+      {} as never,
+      { warn: jest.fn() } as never,
+      {
+        getOrderById: jest
+          .fn()
+          .mockResolvedValueOnce(Result.ok(first))
+          .mockResolvedValueOnce(Result.ok(refreshed)),
+      } as never,
+      {} as never,
+    );
+
+    await expect(
+      gateway.subscribeToOrder(client as never, {
+        orderId: orderId.toString(),
+      }),
+    ).rejects.toMatchObject({ message: 'Order is unavailable.' });
+    expect(client.leave).toHaveBeenCalledWith(`order:${orderId}`);
   });
 });
 
@@ -218,6 +366,48 @@ describe('OrderGateway account revocation', () => {
       userId,
       reason: 'adapter failure',
     });
+    gateway.onModuleDestroy();
+  });
+});
+
+describe('OrderGateway event forwarding', () => {
+  it('emits published updates only to the order room', () => {
+    const events = new Subject<OrderRealtimeEvent>();
+    const emit = jest.fn();
+    const to = jest.fn().mockReturnValue({ emit });
+    const gateway = new OrderGateway(
+      {} as never,
+      {} as never,
+      { events$: events.asObservable() } as never,
+      {} as never,
+      new AccessRevocationPublisher(),
+      { warn: jest.fn() } as never,
+      {} as never,
+      {} as never,
+    );
+    (gateway as unknown as { server: unknown }).server = {
+      to,
+      in: jest.fn().mockReturnValue({ disconnectSockets: jest.fn() }),
+    };
+    gateway.afterInit();
+    const event: OrderRealtimeEvent = {
+      orderId: new Types.ObjectId().toString(),
+      userId: new Types.ObjectId().toString(),
+      restaurantId: new Types.ObjectId().toString(),
+      status: OrderStatus.ACCEPTED,
+      paymentStatus: PaymentStatus.PENDING,
+      transition: {
+        from: OrderStatus.PENDING,
+        to: OrderStatus.ACCEPTED,
+        actorRole: Role.RESTAURANT_ADMINISTRATOR,
+        occurredAt: new Date().toISOString(),
+      },
+    };
+
+    events.next(event);
+
+    expect(to).toHaveBeenCalledWith(`order:${event.orderId}`);
+    expect(emit).toHaveBeenCalledWith('order:updated', event);
     gateway.onModuleDestroy();
   });
 });

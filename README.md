@@ -131,10 +131,23 @@ then emit:
 }
 ```
 
-The server authorizes the room against customer ownership, restaurant
-administration, or operator scope. A successful subscription returns the
-persisted order snapshot for reconnect synchronization. Later committed
-changes are emitted as `order:updated`.
+The server authenticates the socket, revalidates the persisted active account
+and role, and authorizes the room against customer ownership, restaurant
+administration, or operator scope. It then joins the room, reloads and
+reauthorizes the current order, and returns that persisted snapshot as
+`order:subscribed`. Clients should repeat this subscription on reconnect and
+use the snapshot to recover updates missed while disconnected rather than
+assuming earlier live events can be replayed.
+
+Committed order changes are emitted as best-effort `order:updated` events. The
+publisher and default Socket.IO rooms are in-process, so live broadcasts assume
+one application instance: an update on one instance does not reach sockets on
+another instance. Horizontal scaling would require shared Socket.IO/broker
+infrastructure. These events are not a durable stream and are not replayed
+after restart. If MongoDB commits but the process exits before publishing, the
+state remains correct and the live event may be lost; reconnecting and
+subscribing again recovers the current persisted state. The notification
+outbox protects in-app notifications, not WebSocket replay.
 
 ## Business Model
 

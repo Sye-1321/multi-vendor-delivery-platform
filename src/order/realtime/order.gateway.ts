@@ -147,11 +147,39 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
       throw new WsException('Order is unavailable.');
     }
 
-    await client.join(this.roomName(request.orderId));
-    return {
-      event: 'order:subscribed',
-      data: OrderParser.createOrderResponse(order),
-    };
+    const room = this.roomName(request.orderId);
+    await client.join(room);
+
+    try {
+      const refreshedResult = await this.orderRepository.getOrderById(
+        new Types.ObjectId(request.orderId),
+      );
+      if (!refreshedResult.isSuccess) {
+        throw new WsException('Order is unavailable.');
+      }
+
+      const refreshedOrder = refreshedResult.getValue();
+      if (!(await this.canObserveOrder(principal, refreshedOrder))) {
+        throw new WsException('Order is unavailable.');
+      }
+
+      return {
+        event: 'order:subscribed',
+        data: OrderParser.createOrderResponse(refreshedOrder),
+      };
+    } catch {
+      try {
+        await client.leave(room);
+      } catch (leaveError) {
+        this.logger.warn('order_socket_room_cleanup_failed', {
+          socketId: client.id,
+          orderId: request.orderId,
+          reason:
+            leaveError instanceof Error ? leaveError.message : 'unknown_error',
+        });
+      }
+      throw new WsException('Order is unavailable.');
+    }
   }
 
   @SubscribeMessage('order:unsubscribe')
