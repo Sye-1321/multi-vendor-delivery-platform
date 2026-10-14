@@ -152,11 +152,16 @@ All REST endpoints use the `/api/v1` prefix.
 | Health | `GET /health/live`, `GET /health/ready` |
 | Authentication | `POST /auth/register`, `POST /auth/login`, `POST /auth/token/refresh`, `POST /auth/logout` |
 | Profile | `GET /users/me`, `PATCH /users/me`, `PATCH /users/me/password` |
-| Restaurants | `/restaurants` |
-| Catalog | `/menus`, `/menu-items` |
-| Orders | `/orders` |
+| Companies | `GET /companies`, `GET /companies/me` |
+| Restaurants | `GET /restaurants`, `GET /restaurants/me`, `GET /company/restaurants` |
+| Catalog | `GET /:restaurantId/menus`, `GET /me/menus`, `GET /:restaurantId/menu-items`, `GET /me/menu-items` |
+| Orders | `POST /orders/:restaurantId`, `GET /orders/user/orders`, `GET /orders/restaurant/orders` |
 | Notifications | `GET /notifications`, `PATCH /notifications/:notificationId/read` |
-| Reviews | `/restaurant-reviews`, `/system-reviews` |
+| Reviews | `GET /reviews`, `POST /restaurant-reviews/:restaurantId` |
+
+Ordinary collection endpoints accept `limit` from 1 to 100 (default 20) and
+`offset` greater than or equal to 0 (default 0). Notifications accept `limit`
+from 1 to 50 (default 20) and an optional notification ObjectId in `before`.
 
 Protected endpoints require:
 
@@ -248,15 +253,17 @@ It checks:
 3. Production compilation
 4. Focused behavior tests
 
-Run the MongoDB-backed authentication integration tests against the local
-Compose database:
+Run the MongoDB-backed integration suite against the local Compose database:
 
 ```bash
 MONGODB_TEST_URI="mongodb://127.0.0.1:27018/?directConnection=true" npm run test:integration
 ```
 
 CI runs both the focused tests and this integration command against its MongoDB
-service.
+service. The integration suite covers authentication and account lifecycle,
+transactional aggregate workflows, relationship integrity, concurrency,
+operator bootstrap, collection pagination, notification continuation, and
+order history.
 
 The test suite intentionally protects high-risk boundaries rather than pursuing
 a coverage percentage. Current checks cover readiness, request-context
@@ -278,8 +285,6 @@ resolve returned keys against the deployment's configured media base URL.
 - JSON logs are written to the console and daily rotating files.
 - Correlation IDs propagate through HTTP requests, order timelines, real-time
   events, and notification intents.
-- Collection endpoints should be bounded before exposing them to untrusted,
-  high-volume traffic.
 - Online payment processing, route optimization, GPS tracking, and courier
   mobile applications are intentionally not implemented.
 

@@ -20,9 +20,6 @@ export class OrderRepository
       path: 'cart',
       populate: {
         path: 'cartItems',
-        populate: {
-          path: 'menuItemId',
-        },
       },
     },
     {

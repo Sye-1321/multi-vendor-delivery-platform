@@ -55,11 +55,17 @@ describe('OrderGateway room authorization', () => {
           id: orderId,
           userId: new Types.ObjectId(),
           restaurantId: new Types.ObjectId(),
+          cart: {
+            id: new Types.ObjectId(),
+            totalPrice: 100,
+            cartItems: [],
+          },
           deliveryAddress: { city: 'Addis Ababa', subCity: 'Bole' },
           status: 'pending',
           totalPrice: 100,
           paymentStatus: 'pending',
           timeline: [],
+          deliveryPersonId: null,
           deliveryPerson: undefined,
           audit: {
             auditCreatedBy: 'test@example.com',

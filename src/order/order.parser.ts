@@ -9,6 +9,19 @@ export class OrderParser {
       id: order.id,
       userId: order.userId,
       restaurantId: order.restaurantId,
+      cart: {
+        id: order.cart.id,
+        totalPrice: order.cart.totalPrice,
+        cartItems: (order.cart.cartItems ?? []).map((item) => ({
+          id: item.id,
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          subTotal: item.subTotal,
+          ...(item.customizations !== undefined && {
+            customizations: item.customizations,
+          }),
+        })),
+      },
       deliveryAddress: order.deliveryAddress,
       status: order.status,
       totalPrice: order.totalPrice,
@@ -22,6 +35,7 @@ export class OrderParser {
           reason,
         }),
       ),
+      deliveryPersonId: order.deliveryPersonId,
       deliveryPerson: order.deliveryPerson
         ? DeliveryPersonParser.createDeliveryPersonResponse(
             order.deliveryPerson,

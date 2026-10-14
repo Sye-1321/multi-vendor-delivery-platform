@@ -460,7 +460,6 @@ export class OrderService implements IOrderService {
           OrderStatus.OUT_FOR_DELIVERY,
           {
             ...auditUpdate,
-            deliveryPersonId: null,
             status: OrderStatus.DELIVERED,
             paymentStatus: PaymentStatus.PAID,
           },
