@@ -9,6 +9,7 @@ import { DeliveryPerson } from 'src/delivery-person/delivery-person';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { DeliveryPersonMapper } from 'src/delivery-person/delivery-person.mapper';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 import {
   AvailabilityStatus,
   DeliveryPersonOwnership,
@@ -80,8 +81,13 @@ export class DeliveryPersonRepository extends GenericDocumentRepository<
 
   async getDeliveryPersons(
     filter: FilterQuery<DeliveryPerson>,
+    pagination?: PaginationOptions,
   ): Promise<Result<DeliveryPerson[]>> {
-    const docs = await this.DocumentModel.find(filter).exec();
+    const query = this.DocumentModel.find(filter);
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
+    }
+    const docs = await query.exec();
     if (!docs) {
       return Result.fail(
         'Error fetching delivery persons',

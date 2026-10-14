@@ -3,6 +3,7 @@ import { SystemReviewDataModel } from '../schemas/system-review.schema';
 import { Types } from 'mongoose';
 import { Result } from 'src/domain/result/result';
 import { SystemReview } from 'src/system-review/system-review';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface ISystemReviewRepository
   extends IGenericDocument<SystemReview, SystemReviewDataModel> {
@@ -15,7 +16,9 @@ export interface ISystemReviewRepository
     id: Types.ObjectId,
     updateData: Partial<SystemReviewDataModel>,
   ): Promise<Result<SystemReview>>;
-  getAllSystemReviews(): Promise<Result<SystemReview[]>>;
+  getAllSystemReviews(
+    pagination?: PaginationOptions,
+  ): Promise<Result<SystemReview[]>>;
   getSystemReviewByUserId(
     userId: Types.ObjectId,
   ): Promise<Result<SystemReview>>;

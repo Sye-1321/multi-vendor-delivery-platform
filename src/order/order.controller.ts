@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { Result } from 'src/domain/result/result';
@@ -22,6 +23,7 @@ import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { TYPES } from 'src/application/constants/types';
 import { CancelOrderDTO } from './dtos/cancel-order.dto';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller('orders')
 export class OrderController {
@@ -101,16 +103,20 @@ export class OrderController {
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
   @Get('user/orders')
-  async getOrdersByUser(): Promise<Result<IOrderResponseDTO[]>> {
-    return await this.orderService.getOrdersByUser();
+  async getOrdersByUser(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IOrderResponseDTO[]>> {
+    return await this.orderService.getOrdersByUser(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('restaurant/orders')
-  async getRestaurantOrders(): Promise<Result<IOrderResponseDTO[]>> {
-    return await this.orderService.getRestaurantOrders();
+  async getRestaurantOrders(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IOrderResponseDTO[]>> {
+    return await this.orderService.getRestaurantOrders(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
@@ -127,8 +133,10 @@ export class OrderController {
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('all')
-  async getAllOrders(): Promise<Result<IOrderResponseDTO[]>> {
-    return await this.orderService.getAllOrders();
+  async getAllOrders(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IOrderResponseDTO[]>> {
+    return await this.orderService.getAllOrders(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

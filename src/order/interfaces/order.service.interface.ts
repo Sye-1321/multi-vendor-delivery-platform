@@ -3,6 +3,7 @@ import { Result } from 'src/domain/result/result';
 import { IOrderResponseDTO } from '../dtos/order-response.dto';
 import { CreateOrderDTO } from '../dtos/order.dto';
 import { CancelOrderDTO } from '../dtos/cancel-order.dto';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IOrderService {
   createOrder(
@@ -20,12 +21,18 @@ export interface IOrderService {
     orderId: Types.ObjectId,
     deliveryPersonId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>>;
-  getOrdersByUser(): Promise<Result<IOrderResponseDTO[]>>;
-  getRestaurantOrders(): Promise<Result<IOrderResponseDTO[]>>;
+  getOrdersByUser(
+    pagination: PaginationOptions,
+  ): Promise<Result<IOrderResponseDTO[]>>;
+  getRestaurantOrders(
+    pagination: PaginationOptions,
+  ): Promise<Result<IOrderResponseDTO[]>>;
   getRestaurantOrderById(
     orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>>;
-  getAllOrders(): Promise<Result<IOrderResponseDTO[]>>;
+  getAllOrders(
+    pagination: PaginationOptions,
+  ): Promise<Result<IOrderResponseDTO[]>>;
   getOrderById(orderId: Types.ObjectId): Promise<Result<IOrderResponseDTO>>;
   getOrderByIdForCurrentUser(
     orderId: Types.ObjectId,

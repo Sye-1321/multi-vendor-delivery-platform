@@ -9,6 +9,7 @@ import {
 import { Menu } from 'src/menu/menu';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class MenuRepository extends GenericDocumentRepository<
@@ -100,10 +101,15 @@ export class MenuRepository extends GenericDocumentRepository<
 
   async getMenusByRestaurantId(
     restaurantId: Types.ObjectId,
+    pagination?: PaginationOptions,
   ): Promise<Result<Menu[]>> {
-    const menus = await this.DocumentModel.find({ restaurantId })
-      .populate('menuItems')
-      .exec();
+    const query = this.DocumentModel.find({ restaurantId }).populate(
+      'menuItems',
+    );
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
+    }
+    const menus = await query.exec();
     if (!menus) {
       return Result.fail(
         'No menus found for the specified restaurant',

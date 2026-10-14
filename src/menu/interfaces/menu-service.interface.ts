@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import { Result } from 'src/domain/result/result';
 import { IMenuResponse } from './menu-reponse.interface';
 import { CreateMenuDTO, UpdateMenuDTO } from '../dtos/menu.dto';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IMenuService {
   createMenu(
@@ -23,6 +24,7 @@ export interface IMenuService {
 
   getRestaurantMenus(
     restaurantId: Types.ObjectId,
+    pagination: PaginationOptions,
   ): Promise<Result<IMenuResponse[]>>;
 
   getRestaurantMenuById(
@@ -30,7 +32,7 @@ export interface IMenuService {
     id: Types.ObjectId,
   ): Promise<Result<IMenuResponse>>;
 
-  getMyMenus(): Promise<Result<IMenuResponse[]>>;
+  getMyMenus(pagination: PaginationOptions): Promise<Result<IMenuResponse[]>>;
 
   getRestaurantMenuById(
     restaurantId: Types.ObjectId,

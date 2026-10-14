@@ -10,6 +10,7 @@ import {
   Post,
   Delete,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { GetCurrentUserId } from '../infrastructure/decorators/get-user-id.decorator';
@@ -39,6 +40,7 @@ import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
 import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller()
 export class UserController {
@@ -206,8 +208,10 @@ export class UserController {
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get('/admin/users')
   @HttpCode(HttpStatus.OK)
-  async getAllUsers(): Promise<Result<IUserResponse[]>> {
-    return this.userService.getUsers();
+  async getAllUsers(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IUserResponse[]>> {
+    return this.userService.getUsers(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

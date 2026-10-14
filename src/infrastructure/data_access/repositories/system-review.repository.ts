@@ -10,6 +10,7 @@ import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/g
 import { Result } from 'src/domain/result/result';
 import { SystemReviewMapper } from 'src/system-review/system-review.mapper';
 import { ISystemReviewRepository } from './interfaces/system-review-repository.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class SystemReviewRepository
@@ -81,13 +82,14 @@ export class SystemReviewRepository
     return Result.ok(systemReview);
   }
 
-  async getAllSystemReviews(): Promise<Result<SystemReview[]>> {
-    const documents = await this.DocumentModel.find({})
-      .populate('userDetails')
-      .exec();
-    if (!documents || documents.length === 0) {
-      return Result.fail('No system reviews found', HttpStatus.NOT_FOUND);
+  async getAllSystemReviews(
+    pagination?: PaginationOptions,
+  ): Promise<Result<SystemReview[]>> {
+    const query = this.DocumentModel.find({}).populate('userDetails');
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
     }
+    const documents = await query.exec();
     const systemReviews = documents.map((doc) => this.mapper.toDomain(doc));
     return Result.ok(systemReviews);
   }

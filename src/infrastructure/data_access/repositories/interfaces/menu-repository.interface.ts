@@ -3,6 +3,7 @@ import { MenuDataModel, MenuDocument } from '../schemas/menu.schema';
 import { Types } from 'mongoose';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IMenuRepository extends IGenericDocument<Menu, MenuDocument> {
   getMenuById(
@@ -18,7 +19,10 @@ export interface IMenuRepository extends IGenericDocument<Menu, MenuDocument> {
     restaurantId: Types.ObjectId,
     id: Types.ObjectId,
   ): Promise<Result<void>>;
-  getMenusByRestaurantId(restaurantId: Types.ObjectId): Promise<Result<Menu[]>>;
+  getMenusByRestaurantId(
+    restaurantId: Types.ObjectId,
+    pagination?: PaginationOptions,
+  ): Promise<Result<Menu[]>>;
   updateMenuById(
     restaurantId: Types.ObjectId,
     id: Types.ObjectId,

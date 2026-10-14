@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { TYPES } from 'src/application/constants/types';
@@ -18,6 +19,7 @@ import {
   NotificationOutboxService,
   NotificationView,
 } from './notification-outbox.service';
+import { NotificationQueryDTO } from 'src/shared/dtos/notification-query.dto';
 
 @Controller('notifications')
 @UseGuards(AccessAuthGuard)
@@ -29,9 +31,16 @@ export class NotificationController {
   ) {}
 
   @Get()
-  async getNotifications(): Promise<Result<NotificationView[]>> {
+  async getNotifications(
+    @Query() query: NotificationQueryDTO,
+  ): Promise<Result<NotificationView[]>> {
     const recipientId = this.getRecipientId();
-    return Result.ok(await this.notifications.getForRecipient(recipientId));
+    return Result.ok(
+      await this.notifications.getForRecipient(recipientId, {
+        limit: query.limit,
+        before: query.before ? new Types.ObjectId(query.before) : undefined,
+      }),
+    );
   }
 
   @Patch(':notificationId/read')

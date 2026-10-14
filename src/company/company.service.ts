@@ -18,6 +18,7 @@ import {
   UpdateCompanyDTO,
 } from './dtos/company.dto';
 import { Role } from 'src/application/constants/constants';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 import { User } from 'src/user/user';
 import {
   IUpdateCompany,
@@ -125,8 +126,10 @@ export class CompanyService implements ICompanyService {
     }
   }
 
-  async getCompanies(): Promise<Result<ICompanyResponse[]>> {
-    const companies = await this.companyRepository.getCompanies({});
+  async getCompanies(
+    pagination: PaginationOptions,
+  ): Promise<Result<ICompanyResponse[]>> {
+    const companies = await this.companyRepository.getCompanies({}, pagination);
     if (!companies.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,

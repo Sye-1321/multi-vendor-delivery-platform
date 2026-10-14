@@ -7,6 +7,7 @@ import { UserDocument, UserDataModel } from './schemas/user.schema';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { IUserRepository } from './interfaces/user-repository.interface';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class UserRepository
@@ -83,8 +84,15 @@ export class UserRepository
     return Result.ok(user);
   }
 
-  async getUsers(filterQuery: FilterQuery<User>): Promise<Result<User[]>> {
-    const userDocs = await this.DocumentModel.find(filterQuery);
+  async getUsers(
+    filterQuery: FilterQuery<User>,
+    pagination?: PaginationOptions,
+  ): Promise<Result<User[]>> {
+    const query = this.DocumentModel.find(filterQuery);
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
+    }
+    const userDocs = await query.exec();
     if (!userDocs) {
       return Result.fail(
         'Error getting document from database',

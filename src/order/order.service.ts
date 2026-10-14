@@ -37,6 +37,7 @@ import { IOrderTransition } from './interfaces/order.interface';
 import { OrderEventPublisher } from './realtime/order-event.publisher';
 import { NotificationOutboxService } from 'src/notifications/notification-outbox.service';
 import { CancelOrderDTO } from './dtos/cancel-order.dto';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 import { IRestaurantRepository } from 'src/infrastructure/data_access/repositories/interfaces/restaurant-repository.interface';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
 
@@ -699,11 +700,14 @@ export class OrderService implements IOrderService {
     };
   }
 
-  async getOrdersByUser(): Promise<Result<IOrderResponseDTO[]>> {
+  async getOrdersByUser(
+    pagination: PaginationOptions,
+  ): Promise<Result<IOrderResponseDTO[]>> {
     const user = await this.userService.getContextUser();
-    const ordersResult = await this.orderRepository.getOrders({
-      userId: user.id,
-    });
+    const ordersResult = await this.orderRepository.getOrders(
+      { userId: user.id },
+      pagination,
+    );
     if (!ordersResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'you have no order history');
     }
@@ -714,12 +718,15 @@ export class OrderService implements IOrderService {
     return Result.ok(response);
   }
 
-  async getRestaurantOrders(): Promise<Result<IOrderResponseDTO[]>> {
+  async getRestaurantOrders(
+    pagination: PaginationOptions,
+  ): Promise<Result<IOrderResponseDTO[]>> {
     const restaurant = await this.restaurantService.getRestaurantByRAdmin();
     const adminRestaurantId = restaurant.id;
-    const ordersResult = await this.orderRepository.getOrders({
-      restaurantId: adminRestaurantId,
-    });
+    const ordersResult = await this.orderRepository.getOrders(
+      { restaurantId: adminRestaurantId },
+      pagination,
+    );
     if (!ordersResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'something went wrong');
     }
@@ -747,7 +754,9 @@ export class OrderService implements IOrderService {
     return Result.ok(response);
   }
 
-  async getAllOrders(): Promise<Result<IOrderResponseDTO[]>> {
+  async getAllOrders(
+    pagination: PaginationOptions,
+  ): Promise<Result<IOrderResponseDTO[]>> {
     const contextUser = await this.userService.getContextUser();
     if (contextUser.role !== Role.DELIVERY_COMPANY_ADMINISTRATOR) {
       throwApplicationError(
@@ -755,7 +764,10 @@ export class OrderService implements IOrderService {
         "You don't have sufficient privileges to watch this",
       );
     }
-    const ordersResult = await this.orderRepository.getOrders();
+    const ordersResult = await this.orderRepository.getOrders(
+      undefined,
+      pagination,
+    );
     if (!ordersResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'something went wrong');
     }

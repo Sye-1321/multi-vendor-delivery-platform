@@ -10,6 +10,7 @@ import {
   UpdateRestaurantDTO,
 } from '../dtos/create-restaurant.dto';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IRestaurantService {
   createRestaurant(
@@ -18,7 +19,9 @@ export interface IRestaurantService {
     coverImageFile: Express.Multer.File,
   ): Promise<Result<IRestaurantResponse>>;
 
-  getRestaurants(): Promise<Result<IPublicRestaurantResponse[]>>;
+  getRestaurants(
+    pagination: PaginationOptions,
+  ): Promise<Result<IPublicRestaurantResponse[]>>;
 
   getRestaurantById(
     restaurantId: Types.ObjectId,
@@ -42,7 +45,9 @@ export interface IRestaurantService {
     restaurantAdminData: RestaurantAdminDTO,
   ): Promise<Result<IRestaurantResponse>>;
 
-  getRestaurantsByCompany(): Promise<Result<IRestaurantResponse[]>>;
+  getRestaurantsByCompany(
+    pagination: PaginationOptions,
+  ): Promise<Result<IRestaurantResponse[]>>;
 
   getCompanyRestaurantById(
     restaurantId: Types.ObjectId,

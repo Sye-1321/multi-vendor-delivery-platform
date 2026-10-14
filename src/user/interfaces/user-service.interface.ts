@@ -16,6 +16,7 @@ import { ResetPasswordDTO } from '../dtos/auth/reset-password.dto';
 import { AdminUpdateUserDTO } from '../dtos/user/admin-update-user.dto';
 import { Role } from 'src/application/constants/constants';
 import { ISignUpTokens } from 'src/infrastructure/auth/interfaces/auth.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IUserService {
   createEndUser(props: CreateUserDTO): Promise<Result<IUserResponse>>;
@@ -54,7 +55,7 @@ export interface IUserService {
     props: ResetPasswordDTO,
   ): Promise<Result<IUserResponse>>;
   resendAdminRegistration(props: EmailDTO): Promise<Result<void>>;
-  getUsers(): Promise<Result<IUserResponse[]>>;
+  getUsers(pagination: PaginationOptions): Promise<Result<IUserResponse[]>>;
   adminUpdateUser(
     userId: Types.ObjectId,
     props: AdminUpdateUserDTO,

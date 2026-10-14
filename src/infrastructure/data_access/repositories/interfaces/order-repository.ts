@@ -4,6 +4,7 @@ import { ClientSession, Types } from 'mongoose';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 import { Result } from 'src/domain/result/result';
 import { IOrderTransition } from 'src/order/interfaces/order.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IOrderRepository
   extends IGenericDocument<Order, OrderDocument> {
@@ -11,7 +12,10 @@ export interface IOrderRepository
     orderData: OrderDataModel,
     options?: { session?: ClientSession },
   ): Promise<Result<Order>>;
-  getOrders(filter?: Partial<OrderDataModel>): Promise<Result<Order[]>>;
+  getOrders(
+    filter?: Partial<OrderDataModel>,
+    pagination?: PaginationOptions,
+  ): Promise<Result<Order[]>>;
   getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>>;
   getOrderById(
     id: Types.ObjectId,

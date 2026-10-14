@@ -8,6 +8,7 @@ import {
   AvailabilityStatus,
 } from 'src/delivery-person/constants/constants';
 import { ISavedAddress } from 'src/delivery-person/interfaces/deliveryperson.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export type DeliveryPersonProfileUpdate = {
   name?: string;
@@ -35,6 +36,7 @@ export interface IDeliveryPersonRepository
   ): Promise<Result<DeliveryPerson>>;
   getDeliveryPersons(
     filter: FilterQuery<DeliveryPerson>,
+    pagination?: PaginationOptions,
   ): Promise<Result<DeliveryPerson[]>>;
   deleteDeliveryPerson(id: Types.ObjectId): Promise<Result<void>>;
   getDeliveryPersonsByRestaurantId(

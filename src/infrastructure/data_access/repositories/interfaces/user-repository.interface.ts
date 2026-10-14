@@ -3,6 +3,7 @@ import { UserDataModel } from '../schemas/user.schema';
 import { ClientSession, FilterQuery, Types } from 'mongoose';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IUserRepository extends IGenericDocument<User, UserDataModel> {
   createUser(
@@ -16,5 +17,8 @@ export interface IUserRepository extends IGenericDocument<User, UserDataModel> {
     updateData: any,
     options?: { session?: ClientSession },
   ): Promise<Result<User>>;
-  getUsers(filterQuery: FilterQuery<User>): Promise<Result<User[]>>;
+  getUsers(
+    filterQuery: FilterQuery<User>,
+    pagination?: PaginationOptions,
+  ): Promise<Result<User[]>>;
 }

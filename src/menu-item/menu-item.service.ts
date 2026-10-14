@@ -21,6 +21,7 @@ import {
   DeleteFileLocally,
   SaveFileLocally,
 } from 'src/application/saveFileLocally';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class MenuItemService implements IMenuItemService {
@@ -197,10 +198,15 @@ export class MenuItemService implements IMenuItemService {
     return Result.ok(undefined, 'Menu item deleted successfully');
   }
 
-  async getMenuItems(): Promise<Result<IMenuItemResponse[]>> {
+  async getMenuItems(
+    pagination: PaginationOptions,
+  ): Promise<Result<IMenuItemResponse[]>> {
     const restaurant = await this.restaurantService.getRestaurantByRAdmin();
     const restaurantId = restaurant.id;
-    const result = await this.menuItemRepository.getMenuItems(restaurantId);
+    const result = await this.menuItemRepository.getMenuItems(
+      restaurantId,
+      pagination,
+    );
     if (!result.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -236,8 +242,12 @@ export class MenuItemService implements IMenuItemService {
 
   async getRestaurantMenuItems(
     restaurantId: Types.ObjectId,
+    pagination: PaginationOptions,
   ): Promise<Result<IMenuItemResponse[]>> {
-    const result = await this.menuItemRepository.getMenuItems(restaurantId);
+    const result = await this.menuItemRepository.getMenuItems(
+      restaurantId,
+      pagination,
+    );
     if (!result.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,

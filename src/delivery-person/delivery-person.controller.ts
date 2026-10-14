@@ -11,6 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from 'mongoose';
@@ -29,6 +30,7 @@ import { Roles } from 'src/infrastructure/decorators/roles.decorators';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller('delivery-person')
 export class DeliveryPersonController {
@@ -77,20 +79,20 @@ export class DeliveryPersonController {
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get('system/delivery-persons')
   @HttpCode(HttpStatus.OK)
-  async getSystemWideDeliveryPersons(): Promise<
-    Result<IDeliveryPersonResponse[]>
-  > {
-    return this.deliveryPersonService.getSystemWideDeliveryPersons();
+  async getSystemWideDeliveryPersons(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IDeliveryPersonResponse[]>> {
+    return this.deliveryPersonService.getSystemWideDeliveryPersons(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('restaurant/delivery-persons')
   @HttpCode(HttpStatus.OK)
-  async getDeliveryPersonsByRestaurantId(): Promise<
-    Result<IDeliveryPersonResponse[]>
-  > {
-    return this.deliveryPersonService.getRestaurantDeliveryPersons();
+  async getDeliveryPersonsByRestaurantId(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IDeliveryPersonResponse[]>> {
+    return this.deliveryPersonService.getRestaurantDeliveryPersons(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

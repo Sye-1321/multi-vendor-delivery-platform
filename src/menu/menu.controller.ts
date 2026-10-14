@@ -12,6 +12,7 @@ import {
   UploadedFile,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from 'mongoose';
@@ -27,6 +28,7 @@ import { IMenuResponse } from './interfaces/menu-reponse.interface';
 import { CreateMenuDTO, UpdateMenuDTO } from './dtos/menu.dto';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller()
 export class MenuController {
@@ -63,8 +65,10 @@ export class MenuController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('me/menus')
-  async getMyMenus(): Promise<Result<IMenuResponse[]>> {
-    return this.menuService.getMyMenus();
+  async getMyMenus(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IMenuResponse[]>> {
+    return this.menuService.getMyMenus(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
@@ -87,8 +91,9 @@ export class MenuController {
   @Get(':restaurantId/menus')
   async getRestaurantMenus(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
+    @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IMenuResponse[]>> {
-    return this.menuService.getRestaurantMenus(restaurantId);
+    return this.menuService.getRestaurantMenus(restaurantId, pagination);
   }
 
   @Get(':restaurantId/menus/:id')

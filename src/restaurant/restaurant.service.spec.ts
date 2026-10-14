@@ -37,6 +37,21 @@ describe('RestaurantService media lifecycle', () => {
     );
   }
 
+  it('passes requested pagination to the populated restaurant query', async () => {
+    const repository = {
+      getRestaurantsWithFilters: jest.fn().mockResolvedValue(Result.ok([])),
+    };
+    const pagination = { limit: 7, offset: 14 };
+
+    await expect(build(repository).getRestaurants(pagination)).resolves.toEqual(
+      expect.objectContaining({ isSuccess: true }),
+    );
+    expect(repository.getRestaurantsWithFilters).toHaveBeenCalledWith(
+      undefined,
+      pagination,
+    );
+  });
+
   it('cleans the first file when the second create save fails', async () => {
     const unexpected = new Error('cover write failed');
     saveFile.mockResolvedValueOnce(newLogo).mockRejectedValueOnce(unexpected);

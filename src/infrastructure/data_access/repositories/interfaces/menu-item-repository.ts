@@ -6,6 +6,7 @@ import {
   MenuItemDocument,
 } from '../schemas/menu-item.schema';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IMenuItemRepository
   extends IGenericDocument<MenuItem, MenuItemDocument> {
@@ -22,7 +23,10 @@ export interface IMenuItemRepository
     restaurantId: Types.ObjectId,
     id: Types.ObjectId,
   ): Promise<Result<void>>;
-  getMenuItems(restaurantId: Types.ObjectId): Promise<Result<MenuItem[]>>;
+  getMenuItems(
+    restaurantId: Types.ObjectId,
+    pagination?: PaginationOptions,
+  ): Promise<Result<MenuItem[]>>;
   updateMenuItemById(
     restaurantId: Types.ObjectId,
     id: Types.ObjectId,

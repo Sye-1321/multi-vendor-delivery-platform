@@ -20,6 +20,7 @@ import { MenuItem } from 'src/menu-item/menu-item';
 import { IMenuResponse } from './interfaces/menu-reponse.interface';
 import { CreateMenuDTO, UpdateMenuDTO } from './dtos/menu.dto';
 import { APIResponseMessage } from 'src/application/constants/constants';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class MenuService implements IMenuService {
@@ -40,10 +41,14 @@ export class MenuService implements IMenuService {
     return restaurant.id;
   }
 
-  async getMyMenus(): Promise<Result<IMenuResponse[]>> {
+  async getMyMenus(
+    pagination: PaginationOptions,
+  ): Promise<Result<IMenuResponse[]>> {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
-    const result =
-      await this.menuRepository.getMenusByRestaurantId(restaurantId);
+    const result = await this.menuRepository.getMenusByRestaurantId(
+      restaurantId,
+      pagination,
+    );
     if (!result.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -227,9 +232,12 @@ export class MenuService implements IMenuService {
 
   async getRestaurantMenus(
     restaurantId: Types.ObjectId,
+    pagination: PaginationOptions,
   ): Promise<Result<IMenuResponse[]>> {
-    const result =
-      await this.menuRepository.getMenusByRestaurantId(restaurantId);
+    const result = await this.menuRepository.getMenusByRestaurantId(
+      restaurantId,
+      pagination,
+    );
     const list = result
       .getValue()
       .map((menu) => MenuParser.createMenuResponse(menu));

@@ -33,6 +33,7 @@ import { ChangeEmailDTO } from './dtos/auth/change-email.dto';
 import { EmailDTO } from './dtos/shared/email.dto';
 import { ResetPasswordDTO } from './dtos/auth/reset-password.dto';
 import { AdminUpdateUserDTO } from './dtos/user/admin-update-user.dto';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 import { CreateAdminDTO } from './dtos/user/create-admin.dto';
 import { CreateUserDTO } from './dtos/user/create-user.dto';
 import { LoginDTO } from './dtos/auth/login.dto';
@@ -435,8 +436,13 @@ export class UserService extends AuthService implements IUserService {
     );
   }
 
-  async getUsers(): Promise<Result<IUserResponse[]>> {
-    const users = await this.userRepository.getUsers({ role: Role.END_USER });
+  async getUsers(
+    pagination: PaginationOptions,
+  ): Promise<Result<IUserResponse[]>> {
+    const users = await this.userRepository.getUsers(
+      { role: Role.END_USER },
+      pagination,
+    );
     if (!users.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,

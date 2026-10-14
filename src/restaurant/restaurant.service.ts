@@ -30,6 +30,7 @@ import {
 } from 'src/application/saveFileLocally';
 import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { RestaurantStatus } from './constants/constants';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class RestaurantService implements IRestaurantService {
@@ -48,9 +49,14 @@ export class RestaurantService implements IRestaurantService {
     return this.contextService.getContext();
   }
 
-  async getRestaurants(): Promise<Result<IPublicRestaurantResponse[]>> {
+  async getRestaurants(
+    pagination: PaginationOptions,
+  ): Promise<Result<IPublicRestaurantResponse[]>> {
     const restaurantsResult =
-      await this.restaurantRepository.getRestaurantsWithFilters();
+      await this.restaurantRepository.getRestaurantsWithFilters(
+        undefined,
+        pagination,
+      );
     if (!restaurantsResult.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -166,13 +172,18 @@ export class RestaurantService implements IRestaurantService {
     }
   }
 
-  async getRestaurantsByCompany(): Promise<Result<IRestaurantResponse[]>> {
+  async getRestaurantsByCompany(
+    pagination: PaginationOptions,
+  ): Promise<Result<IRestaurantResponse[]>> {
     const companyAdmin: User = await this.userService.getContextUser();
     const company = await this.companyService.getCompanyByCompanyAdmin(
       companyAdmin.id,
     );
     const restaurantsResult =
-      await this.restaurantRepository.getRestaurantsByCompanyId(company.id);
+      await this.restaurantRepository.getRestaurantsByCompanyId(
+        company.id,
+        pagination,
+      );
     if (!restaurantsResult.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,

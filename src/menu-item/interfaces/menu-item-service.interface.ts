@@ -6,6 +6,7 @@ import {
   UpdateMenuItemDTO,
 } from '../dtos/create-menu-item.dto';
 import { MenuItem } from '../menu-item';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IMenuItemService {
   createMenuItem(
@@ -13,7 +14,9 @@ export interface IMenuItemService {
     image?: Express.Multer.File,
   ): Promise<Result<IMenuItemResponse>>;
 
-  getMenuItems(): Promise<Result<IMenuItemResponse[]>>;
+  getMenuItems(
+    pagination: PaginationOptions,
+  ): Promise<Result<IMenuItemResponse[]>>;
 
   getMenuItemById(id: Types.ObjectId): Promise<Result<IMenuItemResponse>>;
 
@@ -27,6 +30,7 @@ export interface IMenuItemService {
 
   getRestaurantMenuItems(
     restaurantId: Types.ObjectId,
+    pagination: PaginationOptions,
   ): Promise<Result<IMenuItemResponse[]>>;
 
   getRestaurantMenuItemById(

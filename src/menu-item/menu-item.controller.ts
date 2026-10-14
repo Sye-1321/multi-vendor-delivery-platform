@@ -12,6 +12,7 @@ import {
   UploadedFile,
   HttpStatus,
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { TYPES } from '../application/constants/types';
 import { Result } from '../domain/result/result';
@@ -30,6 +31,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller()
 export class MenuItemController {
@@ -57,8 +59,10 @@ export class MenuItemController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('me/menu-items')
   @HttpCode(HttpStatus.OK)
-  async getItems(): Promise<Result<IMenuItemResponse[]>> {
-    return await this.itemService.getMenuItems();
+  async getItems(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IMenuItemResponse[]>> {
+    return await this.itemService.getMenuItems(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
@@ -101,8 +105,12 @@ export class MenuItemController {
   @HttpCode(HttpStatus.OK)
   async getRestaurantItems(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
+    @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IMenuItemResponse[]>> {
-    return await this.itemService.getRestaurantMenuItems(restaurantId);
+    return await this.itemService.getRestaurantMenuItems(
+      restaurantId,
+      pagination,
+    );
   }
 
   @Get(':restaurantId/menu-items/:id')

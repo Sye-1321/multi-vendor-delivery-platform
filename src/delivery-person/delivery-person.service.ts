@@ -24,6 +24,7 @@ import {
   SaveFileLocally,
 } from 'src/application/saveFileLocally';
 import { DeliveryPersonProfileUpdate } from 'src/infrastructure/data_access/repositories/interfaces/deliveryperson-repository.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class DeliveryPersonService implements IDeliveryPersonService {
@@ -52,17 +53,20 @@ export class DeliveryPersonService implements IDeliveryPersonService {
     return this.createDeliveryPerson(props, profileImageFile, restaurantId);
   }
 
-  async getSystemWideDeliveryPersons(): Promise<
-    Result<IDeliveryPersonResponse[]>
-  > {
-    return this.getDeliveryPersonsByFilter({ deliveryType: 'SYSTEM' });
+  async getSystemWideDeliveryPersons(
+    pagination: PaginationOptions,
+  ): Promise<Result<IDeliveryPersonResponse[]>> {
+    return this.getDeliveryPersonsByFilter(
+      { deliveryType: 'SYSTEM' },
+      pagination,
+    );
   }
 
-  async getRestaurantDeliveryPersons(): Promise<
-    Result<IDeliveryPersonResponse[]>
-  > {
+  async getRestaurantDeliveryPersons(
+    pagination: PaginationOptions,
+  ): Promise<Result<IDeliveryPersonResponse[]>> {
     const restaurantId = await this.getRestaurantIdForCurrentAdmin();
-    return this.getDeliveryPersonsByFilter({ restaurantId });
+    return this.getDeliveryPersonsByFilter({ restaurantId }, pagination);
   }
 
   async getSystemWideDeliveryPersonById(
@@ -175,9 +179,12 @@ export class DeliveryPersonService implements IDeliveryPersonService {
 
   private async getDeliveryPersonsByFilter(
     filter: Record<string, any>,
+    pagination: PaginationOptions,
   ): Promise<Result<IDeliveryPersonResponse[]>> {
-    const result =
-      await this.deliveryPersonRepository.getDeliveryPersons(filter);
+    const result = await this.deliveryPersonRepository.getDeliveryPersons(
+      filter,
+      pagination,
+    );
     if (!result.isSuccess) {
       throwApplicationError(
         HttpStatus.INTERNAL_SERVER_ERROR,

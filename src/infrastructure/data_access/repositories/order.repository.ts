@@ -8,6 +8,7 @@ import { OrderDataModel, OrderDocument } from './schemas/order.schema';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { Result } from 'src/domain/result/result';
 import { IOrderTransition } from 'src/order/interfaces/order.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class OrderRepository
@@ -56,17 +57,19 @@ export class OrderRepository
     return Result.ok(order);
   }
 
-  async getOrders(filter?: Partial<OrderDataModel>): Promise<Result<Order[]>> {
-    const documents = await this.DocumentModel.find(filter || {})
-      .populate(this.orderPopulation)
-      .exec();
-
-    if (documents.length > 0) {
-      const orders = documents.map((doc) => this.orderMapper.toDomain(doc));
-      return Result.ok(orders);
+  async getOrders(
+    filter?: Partial<OrderDataModel>,
+    pagination?: PaginationOptions,
+  ): Promise<Result<Order[]>> {
+    const query = this.DocumentModel.find(filter || {}).populate(
+      this.orderPopulation,
+    );
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
     }
-
-    return Result.fail('No orders found', HttpStatus.NOT_FOUND);
+    const documents = await query.exec();
+    const orders = documents.map((doc) => this.orderMapper.toDomain(doc));
+    return Result.ok(orders);
   }
 
   async getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>> {

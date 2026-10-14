@@ -5,6 +5,7 @@ import {
 } from './system-review-response.interface';
 import { CreateReviewDTO, UpdateReviewDTO } from '../dtos/system-review.dto';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface ISystemReviewService {
   createReview(props: CreateReviewDTO): Promise<Result<ISystemReviewResponse>>;
@@ -12,7 +13,9 @@ export interface ISystemReviewService {
     reviewId: Types.ObjectId,
     props: UpdateReviewDTO,
   ): Promise<Result<ISystemReviewResponse>>;
-  getAllSystemReviews(): Promise<Result<IPublicSystemReviewResponse[]>>;
+  getAllSystemReviews(
+    pagination: PaginationOptions,
+  ): Promise<Result<IPublicSystemReviewResponse[]>>;
   getSystemReviewById(
     reviewId: Types.ObjectId,
   ): Promise<Result<ISystemReviewResponse>>;

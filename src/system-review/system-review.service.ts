@@ -18,6 +18,7 @@ import { CreateReviewDTO, UpdateReviewDTO } from './dtos/system-review.dto';
 import { IUserUpdateReview } from './interfaces/system-review.interface';
 import { SystemReviewMapper } from './system-review.mapper';
 import { UserMapper } from 'src/user/user.mapper';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class SystemReviewService {
@@ -115,9 +116,11 @@ export class SystemReviewService {
     );
   }
 
-  async getAllSystemReviews(): Promise<Result<IPublicSystemReviewResponse[]>> {
+  async getAllSystemReviews(
+    pagination: PaginationOptions,
+  ): Promise<Result<IPublicSystemReviewResponse[]>> {
     const systemReviewsResult =
-      await this.systemReviewRepository.getAllSystemReviews();
+      await this.systemReviewRepository.getAllSystemReviews(pagination);
 
     if (!systemReviewsResult.isSuccess) {
       throwApplicationError(HttpStatus.NOT_FOUND, 'No reviews found');

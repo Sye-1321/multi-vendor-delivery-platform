@@ -7,6 +7,7 @@ import {
 import { Result } from 'src/domain/result/result';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface IRestaurantRepository
   extends IGenericDocument<Restaurant, RestaurantDocument> {
@@ -15,6 +16,7 @@ export interface IRestaurantRepository
   ): Promise<Result<Restaurant>>;
   getRestaurantsByCompanyId(
     companyAdminId: Types.ObjectId,
+    pagination?: PaginationOptions,
   ): Promise<Result<Restaurant[]>>;
   getRestaurantById(restaurantId: Types.ObjectId): Promise<Result<Restaurant>>;
   existsById(restaurantId: Types.ObjectId): Promise<boolean>;
@@ -37,6 +39,6 @@ export interface IRestaurantRepository
   ): Promise<Result<Restaurant>>;
   getRestaurantsWithFilters(
     filter?: any,
-    pagination?: { limit: number; skip: number },
+    pagination?: PaginationOptions,
   ): Promise<Result<Restaurant[]>>;
 }

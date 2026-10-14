@@ -3,6 +3,7 @@ import { Company } from 'src/company/company';
 import { CompanyDataModel } from '../schemas/company.schema';
 import { Result } from 'src/domain/result/result';
 import { IGenericDocument } from 'src/infrastructure/database/mongoDB/generic-document.interface';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface ICompanyRepository
   extends IGenericDocument<Company, CompanyDataModel> {
@@ -17,5 +18,8 @@ export interface ICompanyRepository
     updateData: any,
     options?: { session?: ClientSession },
   ): Promise<Result<Company>>;
-  getCompanies(filterQuery: any): Promise<Result<Company[]>>;
+  getCompanies(
+    filterQuery: any,
+    pagination?: PaginationOptions,
+  ): Promise<Result<Company[]>>;
 }

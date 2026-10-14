@@ -11,6 +11,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from 'mongoose';
@@ -30,6 +31,7 @@ import { ICompanyResponse } from './interfaces/company-response.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller('companies')
 export class CompanyController {
@@ -78,8 +80,10 @@ export class CompanyController {
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getAllCompanies(): Promise<Result<ICompanyResponse[]>> {
-    return this.companyService.getCompanies();
+  async getAllCompanies(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<ICompanyResponse[]>> {
+    return this.companyService.getCompanies(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

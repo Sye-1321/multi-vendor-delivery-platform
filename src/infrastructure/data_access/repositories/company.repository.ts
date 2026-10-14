@@ -7,6 +7,7 @@ import { CompanyDataModel } from './schemas/company.schema';
 import { CompanyDocument } from './schemas/company.schema';
 import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/generic-document.repository';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class CompanyRepository extends GenericDocumentRepository<
@@ -94,9 +95,13 @@ export class CompanyRepository extends GenericDocumentRepository<
 
   async getCompanies(
     filterQuery: FilterQuery<Company>,
+    pagination?: PaginationOptions,
   ): Promise<Result<Company[]>> {
-    const companyDocs =
-      await this.DocumentModel.find(filterQuery).populate('ownerDetails');
+    const query = this.DocumentModel.find(filterQuery).populate('ownerDetails');
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
+    }
+    const companyDocs = await query.exec();
     if (!companyDocs) {
       return Result.fail(
         'Error fetching companies from database',

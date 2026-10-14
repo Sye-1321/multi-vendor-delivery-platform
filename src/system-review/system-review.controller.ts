@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { AccessAuthGuard } from '../infrastructure/guards/access-auth.guard';
@@ -22,6 +23,7 @@ import {
   ISystemReviewResponse,
 } from './interfaces/system-review-response.interface';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller('reviews')
 export class SystemReviewController {
@@ -50,8 +52,10 @@ export class SystemReviewController {
 
   @Get()
   @HttpCode(HttpStatus.OK)
-  async getAllReviews(): Promise<Result<IPublicSystemReviewResponse[]>> {
-    return this.systemReviewService.getAllSystemReviews();
+  async getAllReviews(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IPublicSystemReviewResponse[]>> {
+    return this.systemReviewService.getAllSystemReviews(pagination);
   }
 
   @UseGuards(AccessAuthGuard)

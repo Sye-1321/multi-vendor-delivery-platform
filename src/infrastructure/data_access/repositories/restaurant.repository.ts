@@ -11,6 +11,7 @@ import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/g
 import { Result } from 'src/domain/result/result';
 import { IRestaurantRepository } from './interfaces/restaurant-repository.interface';
 import { RestaurantStatus } from 'src/restaurant/constants/constants';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class RestaurantRepository
@@ -53,8 +54,9 @@ export class RestaurantRepository
 
   async getRestaurantsByCompanyId(
     companyId: Types.ObjectId,
+    pagination?: PaginationOptions,
   ): Promise<Result<Restaurant[]>> {
-    const restaurantDocuments = await this.restaurantModel
+    const query = this.restaurantModel
       .find({ companyId: companyId })
       .populate({ path: 'menusDetail', populate: { path: 'menuItems' } })
       .populate({
@@ -63,12 +65,10 @@ export class RestaurantRepository
       })
       .populate('restaurantAdminDetails')
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
-    if (!restaurantDocuments || restaurantDocuments.length === 0) {
-      return Result.fail(
-        'No restaurants found for the given company admin',
-        HttpStatus.NOT_FOUND,
-      );
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
     }
+    const restaurantDocuments = await query.exec();
     const restaurants = restaurantDocuments.map((doc) =>
       this.restaurantMapper.toDomain(doc),
     );
@@ -204,7 +204,7 @@ export class RestaurantRepository
 
   async getRestaurantsWithFilters(
     filter?: any,
-    pagination?: { limit: number; skip: number },
+    pagination?: PaginationOptions,
   ): Promise<Result<Restaurant[]>> {
     const query = this.restaurantModel
       .find(filter || {})
@@ -217,17 +217,11 @@ export class RestaurantRepository
       .populate({ path: 'companyDetails', populate: { path: 'ownerDetails' } });
 
     if (pagination) {
-      query.limit(pagination.limit).skip(pagination.skip);
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
     }
 
     const restaurantDocs = await query.exec();
 
-    if (!restaurantDocs || restaurantDocs.length === 0) {
-      return Result.fail(
-        'No restaurants found with the given filters',
-        HttpStatus.NOT_FOUND,
-      );
-    }
     const restaurants = restaurantDocs.map((doc) =>
       this.restaurantMapper.toDomain(doc),
     );

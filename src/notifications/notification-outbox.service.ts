@@ -171,12 +171,16 @@ export class NotificationOutboxService {
 
   async getForRecipient(
     recipientId: Types.ObjectId,
-    limit = 20,
+    query: { limit: number; before?: Types.ObjectId } = { limit: 20 },
   ): Promise<NotificationView[]> {
+    const filter: FilterQuery<NotificationDocument> = {
+      recipientId,
+      ...(query.before && { _id: { $lt: query.before } }),
+    };
     const documents = await this.notificationModel
-      .find({ recipientId })
-      .sort({ createdAt: -1 })
-      .limit(Math.min(limit, 50))
+      .find(filter)
+      .sort({ _id: -1 })
+      .limit(Math.min(query.limit, 50))
       .lean()
       .exec();
 

@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
+  Query,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -32,6 +33,7 @@ import { IRestaurantService } from './interfaces/restaurant-service.interface';
 import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/ParseStringifiedJsonInterceptor';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
+import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
 @Controller()
 export class RestaurantController {
@@ -41,8 +43,10 @@ export class RestaurantController {
   ) {}
 
   @Get('restaurants')
-  async getAllRestaurants(): Promise<Result<IPublicRestaurantResponse[]>> {
-    return this.restaurantService.getRestaurants();
+  async getAllRestaurants(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IPublicRestaurantResponse[]>> {
+    return this.restaurantService.getRestaurants(pagination);
   }
 
   //RAdmin
@@ -91,8 +95,10 @@ export class RestaurantController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Get('company/restaurants')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
-  async getRestaurantsByCompany(): Promise<Result<IRestaurantResponse[]>> {
-    return this.restaurantService.getRestaurantsByCompany();
+  async getRestaurantsByCompany(
+    @Query() pagination: PaginationQueryDTO,
+  ): Promise<Result<IRestaurantResponse[]>> {
+    return this.restaurantService.getRestaurantsByCompany(pagination);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)

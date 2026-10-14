@@ -10,6 +10,7 @@ import { GenericDocumentRepository } from 'src/infrastructure/database/mongoDB/g
 import { MenuItem } from 'src/menu-item/menu-item';
 import { MenuItemMapper } from 'src/menu-item/menu-item.mapper';
 import { Result } from 'src/domain/result/result';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 @Injectable()
 export class MenuItemRepository
@@ -95,8 +96,13 @@ export class MenuItemRepository
 
   async getMenuItems(
     restaurantId: Types.ObjectId,
+    pagination?: PaginationOptions,
   ): Promise<Result<MenuItem[]>> {
-    const menuItems = await this.DocumentModel.find({ restaurantId }).exec();
+    const query = this.DocumentModel.find({ restaurantId });
+    if (pagination) {
+      query.sort({ _id: 1 }).skip(pagination.offset).limit(pagination.limit);
+    }
+    const menuItems = await query.exec();
     if (!menuItems) {
       return Result.fail(
         'No menu items found for the specified restaurant',

@@ -7,13 +7,16 @@ import {
   CreateCompanyDTO,
   UpdateCompanyDTO,
 } from '../dtos/company.dto';
+import { PaginationOptions } from 'src/shared/interfaces/shared.interface';
 
 export interface ICompanyService {
   createCompany(
     dto: CreateCompanyDTO,
     logoFile: Express.Multer.File,
   ): Promise<Result<ICompanyResponse>>;
-  getCompanies(): Promise<Result<ICompanyResponse[]>>;
+  getCompanies(
+    pagination: PaginationOptions,
+  ): Promise<Result<ICompanyResponse[]>>;
   getCompanyById(companyId: Types.ObjectId): Promise<Result<ICompanyResponse>>;
   changeCompanyAdmin(
     companyId: Types.ObjectId,
