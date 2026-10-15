@@ -493,8 +493,9 @@ describe('OrderGateway access-token expiration', () => {
       email: 'user@example.com',
       exp: Math.floor(now.getTime() / 1000) + 60,
     });
-    client.join.mockImplementation(async () => {
+    client.join.mockImplementation(() => {
       gateway.handleDisconnect(client as never);
+      return Promise.resolve();
     });
 
     await gateway.handleConnection(client as never);
