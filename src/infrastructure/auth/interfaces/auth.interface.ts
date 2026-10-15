@@ -17,6 +17,7 @@ export interface IUserPayload extends IPayload {
 export interface IJwtPayload extends IPayload {
   sub: Types.ObjectId;
   sid?: string;
+  exp?: number;
 }
 export interface ISignUpTokens {
   refreshToken: string;

@@ -131,6 +131,10 @@ then emit:
 }
 ```
 
+The socket disconnects when that access token expires. Clients must obtain a
+fresh token through the HTTP refresh endpoint, reconnect, and resubscribe to
+the required orders.
+
 The server authenticates the socket, revalidates the persisted active account
 and role, and authorizes the room against customer ownership, restaurant
 administration, or operator scope. It then joins the room, reloads and

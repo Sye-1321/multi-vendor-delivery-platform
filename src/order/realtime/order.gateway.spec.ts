@@ -335,6 +335,7 @@ describe('OrderGateway account revocation', () => {
           sub: userId,
           role: Role.END_USER,
           email: 'user@example.com',
+          exp: Math.floor(Date.now() / 1000) + 60,
         }),
       } as never,
       { getOrThrow: jest.fn().mockReturnValue('access-secret') } as never,
@@ -367,6 +368,164 @@ describe('OrderGateway account revocation', () => {
       reason: 'adapter failure',
     });
     gateway.onModuleDestroy();
+  });
+});
+
+describe('OrderGateway access-token expiration', () => {
+  const now = new Date('2026-01-01T00:00:00.000Z');
+
+  function build(payload: Record<string, unknown>) {
+    const gateway = new OrderGateway(
+      { verifyAsync: jest.fn().mockResolvedValue(payload) } as never,
+      { getOrThrow: jest.fn().mockReturnValue('access-secret') } as never,
+      new OrderEventPublisher(),
+      {
+        resolveActiveUser: jest.fn().mockResolvedValue({ role: Role.END_USER }),
+      } as never,
+      new AccessRevocationPublisher(),
+      { warn: jest.fn() } as never,
+      {} as never,
+      {} as never,
+    );
+    const client = {
+      id: 'authenticated-socket',
+      handshake: { auth: { token: 'signed-access-token' }, headers: {} },
+      data: {},
+      join: jest.fn().mockResolvedValue(undefined),
+      disconnect: jest.fn(),
+    };
+    return { gateway, client };
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(now);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('disconnects an authenticated socket when its access token expires', async () => {
+    const userId = new Types.ObjectId().toString();
+    const { gateway, client } = build({
+      sub: userId,
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp: Math.floor(now.getTime() / 1000) + 10,
+    });
+
+    await gateway.handleConnection(client as never);
+    expect(client.data).toHaveProperty('principal.userId', userId);
+
+    jest.advanceTimersByTime(10_000);
+
+    expect(client.disconnect).toHaveBeenCalledWith(true);
+    expect(client.data).not.toHaveProperty('principal');
+  });
+
+  it('keeps a socket connected until an expiration beyond the maximum timer delay', async () => {
+    const lifetime = 30 * 24 * 60 * 60 * 1000;
+    const maximumTimerDelay = 2_147_483_647;
+    const { gateway, client } = build({
+      sub: new Types.ObjectId().toString(),
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp: Math.floor((now.getTime() + lifetime) / 1000),
+    });
+
+    await gateway.handleConnection(client as never);
+
+    jest.advanceTimersByTime(maximumTimerDelay);
+    expect(client.disconnect).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(lifetime - maximumTimerDelay - 1);
+    expect(client.disconnect).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(1);
+    expect(client.disconnect).toHaveBeenCalledWith(true);
+    expect(client.data).not.toHaveProperty('principal');
+  });
+
+  it.each([
+    ['missing', undefined],
+    ['malformed', 'later'],
+    ['expired', Math.floor(now.getTime() / 1000)],
+  ])('rejects a token with %s expiration metadata', async (_, exp) => {
+    const { gateway, client } = build({
+      sub: new Types.ObjectId().toString(),
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp,
+    });
+
+    await gateway.handleConnection(client as never);
+
+    expect(client.disconnect).toHaveBeenCalledWith(true);
+    expect(client.join).not.toHaveBeenCalled();
+    expect(client.data).not.toHaveProperty('principal');
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('clears the expiration timer when the socket disconnects early', async () => {
+    const { gateway, client } = build({
+      sub: new Types.ObjectId().toString(),
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp: Math.floor(now.getTime() / 1000) + 60,
+    });
+
+    await gateway.handleConnection(client as never);
+    expect(jest.getTimerCount()).toBe(1);
+
+    gateway.handleDisconnect(client as never);
+
+    expect(jest.getTimerCount()).toBe(0);
+    jest.advanceTimersByTime(60_000);
+    expect(client.disconnect).not.toHaveBeenCalled();
+    expect(client.data).not.toHaveProperty('principal');
+  });
+
+  it('does not authenticate a socket that disconnects during the handshake', async () => {
+    const { gateway, client } = build({
+      sub: new Types.ObjectId().toString(),
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp: Math.floor(now.getTime() / 1000) + 60,
+    });
+    client.join.mockImplementation(async () => {
+      gateway.handleDisconnect(client as never);
+    });
+
+    await gateway.handleConnection(client as never);
+
+    expect(client.disconnect).toHaveBeenCalledWith(true);
+    expect(client.data).not.toHaveProperty('principal');
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('authenticates a new connection with a fresh access token', async () => {
+    const userId = new Types.ObjectId().toString();
+    const expired = build({
+      sub: userId,
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp: Math.floor(now.getTime() / 1000),
+    });
+    await expired.gateway.handleConnection(expired.client as never);
+
+    const fresh = build({
+      sub: userId,
+      role: Role.END_USER,
+      email: 'user@example.com',
+      exp: Math.floor(now.getTime() / 1000) + 60,
+    });
+    await fresh.gateway.handleConnection(fresh.client as never);
+
+    expect(fresh.client.disconnect).not.toHaveBeenCalled();
+    expect(fresh.client.join).toHaveBeenCalledWith(`user:${userId}`);
+    expect(fresh.client.data).toHaveProperty('principal.userId', userId);
+    fresh.gateway.handleDisconnect(fresh.client as never);
   });
 });
 

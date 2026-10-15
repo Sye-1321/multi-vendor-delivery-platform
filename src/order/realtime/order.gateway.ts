@@ -2,6 +2,7 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
@@ -34,16 +35,25 @@ interface OrderSubscriptionRequest {
   orderId: string;
 }
 
+const MAX_TIMEOUT_DELAY = 2_147_483_647;
+
 @WebSocketGateway({
   namespace: '/orders',
   transports: ['websocket'],
 })
-export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
+export class OrderGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
+{
   @WebSocketServer()
   private readonly server: Server;
 
   private eventSubscription?: Subscription;
   private revocationSubscription?: Subscription;
+  private readonly expirationTimers = new Map<
+    Socket,
+    ReturnType<typeof setTimeout>
+  >();
+  private readonly disconnectedClients = new WeakSet<Socket>();
 
   constructor(
     private readonly jwtService: JwtService,
@@ -84,6 +94,7 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
           'JWT_ACCESS_TOKEN_SECRET',
         ),
       });
+      const expiresAt = this.getExpirationTime(payload);
 
       const userId = payload.sub?.toString();
       if (!userId || !(await this.accountAccess.resolveActiveUser(userId))) {
@@ -95,11 +106,15 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
       if (!user) {
         throw new WsException('Authentication is required.');
       }
+      if (this.disconnectedClients.has(client) || expiresAt <= Date.now()) {
+        throw new WsException('Authentication is required.');
+      }
 
       client.data.principal = {
         userId,
         role: user.role,
       } satisfies SocketPrincipal;
+      this.scheduleExpiration(client, expiresAt);
     } catch (error) {
       this.logger.warn('order_socket_authentication_rejected', {
         socketId: client.id,
@@ -107,6 +122,12 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
       });
       client.disconnect(true);
     }
+  }
+
+  handleDisconnect(client: Socket): void {
+    this.disconnectedClients.add(client);
+    this.clearExpirationTimer(client);
+    delete client.data.principal;
   }
 
   @SubscribeMessage('order:subscribe')
@@ -195,6 +216,49 @@ export class OrderGateway implements OnGatewayConnection, OnGatewayInit {
   onModuleDestroy(): void {
     this.eventSubscription?.unsubscribe();
     this.revocationSubscription?.unsubscribe();
+    for (const timer of this.expirationTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.expirationTimers.clear();
+  }
+
+  private getExpirationTime(payload: IJwtPayload): number {
+    const expiresAt =
+      typeof payload.exp === 'number' ? payload.exp * 1000 : NaN;
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+      throw new WsException('Authentication is required.');
+    }
+    return expiresAt;
+  }
+
+  private scheduleExpiration(client: Socket, expiresAt: number): void {
+    this.clearExpirationTimer(client);
+    const remainingTime = expiresAt - Date.now();
+    if (!Number.isFinite(expiresAt) || remainingTime <= 0) {
+      delete client.data.principal;
+      client.disconnect(true);
+      return;
+    }
+
+    const timer = setTimeout(
+      () => {
+        this.expirationTimers.delete(client);
+        if (!this.disconnectedClients.has(client)) {
+          this.scheduleExpiration(client, expiresAt);
+        }
+      },
+      Math.min(remainingTime, MAX_TIMEOUT_DELAY),
+    );
+    timer.unref();
+    this.expirationTimers.set(client, timer);
+  }
+
+  private clearExpirationTimer(client: Socket): void {
+    const timer = this.expirationTimers.get(client);
+    if (timer) {
+      clearTimeout(timer);
+      this.expirationTimers.delete(client);
+    }
   }
 
   private async canObserveOrder(
