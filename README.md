@@ -151,11 +151,13 @@ outbox protects in-app notifications, not WebSocket replay.
 
 ## Business Model
 
-The platform supports three operating arrangements:
+The platform supports these operating arrangements:
 
-- A company can manage several restaurant branches.
-- An independent restaurant can operate without a parent company.
+- A company can manage one or more restaurant branches.
+- Restaurant administrators manage restaurants that belong to a company.
 - A restaurant can use its own couriers or request a courier from the shared delivery operator.
+
+Standalone restaurants without company ownership are outside the current implemented scope.
 
 Delivery personnel are coordinated by restaurant or delivery-company administrators. Direct courier accounts and GPS tracking are outside the current scope.
 
