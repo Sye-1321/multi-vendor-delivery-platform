@@ -75,10 +75,7 @@ export class UserRepository
       { new: true, runValidators: true, session: options?.session },
     );
     if (!updatedUserDocument) {
-      return Result.fail(
-        'Error while updating user',
-        HttpStatus.NOT_FOUND,
-      );
+      return Result.fail('Error while updating user', HttpStatus.NOT_FOUND);
     }
     const user: User = this.userMapper.toDomain(updatedUserDocument);
     return Result.ok(user);

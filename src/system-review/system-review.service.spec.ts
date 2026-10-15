@@ -7,9 +7,7 @@ describe('SystemReviewService update failures', () => {
   it('returns the repository 404 when the review disappears during update', async () => {
     const userId = new Types.ObjectId();
     const repository = {
-      getSystemReviewById: jest
-        .fn()
-        .mockResolvedValue(Result.ok({ userId })),
+      getSystemReviewById: jest.fn().mockResolvedValue(Result.ok({ userId })),
       updateSystemReviewById: jest
         .fn()
         .mockResolvedValue(
