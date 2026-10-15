@@ -122,7 +122,7 @@ export class RestaurantController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
-  @Post()
+  @Post('company/restaurants')
   @UseInterceptors(
     FileFieldsInterceptor(
       [

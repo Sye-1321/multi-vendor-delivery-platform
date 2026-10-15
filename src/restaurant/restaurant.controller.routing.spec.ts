@@ -11,6 +11,7 @@ import { Types } from 'mongoose';
 describe('RestaurantController routing', () => {
   let app: INestApplication;
   const restaurantService = {
+    createRestaurant: jest.fn(),
     getRestaurantById: jest.fn(),
     getRestaurantByRestaurantAdmin: jest.fn(),
   };
@@ -37,6 +38,61 @@ describe('RestaurantController routing', () => {
 
   beforeEach(() => jest.clearAllMocks());
   afterAll(async () => app.close());
+
+  it('routes POST /company/restaurants to restaurant creation', async () => {
+    const restaurantData = {
+      name: 'Test Restaurant',
+      savedAddress: { city: 'Addis Ababa', subCity: 'Bole' },
+      phoneNumber: '251911111111',
+      openingHours: '08:00',
+      closingHours: '22:00',
+      description: 'Test description',
+      deliveryPersonAvailability: true,
+      restaurantAdminData: {
+        name: 'Test Admin',
+        email: 'admin@example.com',
+        phoneNumber: '251922222222',
+        savedAddress: { city: 'Addis Ababa', subCity: 'Bole' },
+      },
+    };
+    restaurantService.createRestaurant.mockResolvedValue(Result.ok({}));
+
+    await request(app.getHttpServer())
+      .post('/company/restaurants')
+      .field('name', restaurantData.name)
+      .field('savedAddress', JSON.stringify(restaurantData.savedAddress))
+      .field('phoneNumber', restaurantData.phoneNumber)
+      .field('openingHours', restaurantData.openingHours)
+      .field('closingHours', restaurantData.closingHours)
+      .field('description', restaurantData.description)
+      .field(
+        'deliveryPersonAvailability',
+        String(restaurantData.deliveryPersonAvailability),
+      )
+      .field(
+        'restaurantAdminData',
+        JSON.stringify(restaurantData.restaurantAdminData),
+      )
+      .attach('logo', Buffer.from('logo'), {
+        filename: 'logo.png',
+        contentType: 'image/png',
+      })
+      .attach('image', Buffer.from('image'), {
+        filename: 'image.png',
+        contentType: 'image/png',
+      })
+      .expect(201);
+
+    expect(restaurantService.createRestaurant).toHaveBeenCalledTimes(1);
+    expect(restaurantService.createRestaurant).toHaveBeenCalledWith(
+      restaurantData,
+      expect.objectContaining({ fieldname: 'logo', originalname: 'logo.png' }),
+      expect.objectContaining({
+        fieldname: 'image',
+        originalname: 'image.png',
+      }),
+    );
+  });
 
   it('routes GET /restaurants/me to the current restaurant administrator', async () => {
     restaurantService.getRestaurantByRestaurantAdmin.mockResolvedValue(
