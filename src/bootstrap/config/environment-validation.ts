@@ -33,6 +33,12 @@ export const environmentValidationSchema = Joi.object({
   SMTP_SERVICE: Joi.string().default('gmail'),
   SMTP_USER: Joi.string().allow('').optional(),
   SMTP_PASSWORD: Joi.string().allow('').optional(),
+  ACCOUNT_ACTION_BASE_URL: Joi.string()
+    .trim()
+    .uri({ scheme: ['http', 'https'] })
+    .pattern(/^[^?#]*$/)
+    .allow('')
+    .optional(),
 
   LOG_LEVEL: Joi.string()
     .valid('error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')

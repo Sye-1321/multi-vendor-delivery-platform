@@ -42,8 +42,6 @@ export const EmailSubjects = {
   completeRegistration: 'Complete Your Registration',
 };
 
-export const BASE_URL = 'http://localhost:5173/almost-there';
-
 export const URLPaths = {
   verifyEmail: '/verify-email',
   completeRegistration: '/registration-completion',

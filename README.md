@@ -236,6 +236,13 @@ cp .env.example .env
 The committed values are local-development examples. Replace all JWT secrets
 and SMTP credentials outside local development.
 
+Set `ACCOUNT_ACTION_BASE_URL` to the HTTP or HTTPS base URL of the client that
+handles account actions, optionally including a path prefix (for example,
+`http://localhost:5173/almost-there`). The client must implement the email
+verification, registration completion, password reset, and email-change
+callback pages. The API can start without this setting, but account emails
+cannot be sent until it is configured.
+
 For a fresh database, temporarily set both privileged-operator credential
 groups documented in `.env.example`, then run:
 

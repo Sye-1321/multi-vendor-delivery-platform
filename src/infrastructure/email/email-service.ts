@@ -7,7 +7,6 @@ import { HttpStatus } from '@nestjs/common';
 import { throwApplicationError } from '../utilities/exception-instance';
 import {
   APIResponseMessage,
-  BASE_URL,
   EmailSubjects,
   URLPaths,
 } from 'src/application/constants/constants';
@@ -32,7 +31,17 @@ export class EmailService implements IEmailService {
   }
 
   private generateVerificationUrl(token: string, path: string): string {
-    return `${BASE_URL}${path}#token=${encodeURIComponent(token)}`;
+    const configuredBaseUrl = this.configService
+      .get<string>('ACCOUNT_ACTION_BASE_URL')
+      ?.trim();
+    if (!configuredBaseUrl) {
+      return throwApplicationError(
+        HttpStatus.SERVICE_UNAVAILABLE,
+        'ACCOUNT_ACTION_BASE_URL is required to send account emails',
+      );
+    }
+    const baseUrl = configuredBaseUrl.replace(/\/+$/, '');
+    return `${baseUrl}${path}#token=${encodeURIComponent(token)}`;
   }
 
   async sendAccountVerificationEmail(
@@ -40,7 +49,7 @@ export class EmailService implements IEmailService {
     token: string,
   ): Promise<Result<void>> {
     const url = this.generateVerificationUrl(token, URLPaths.verifyEmail);
-    const message = `Dear ${user.name},\n\nPlease verify your email address by clicking the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
+    const message = `Dear ${user.name},\n\nPlease verify your email address by clicking the link below:\n${url}\n\nBest regards,\nMulti-Vendor Delivery Platform`;
     const result = await this.sendEmail(
       user.email,
       EmailSubjects.emailVerification,
@@ -65,7 +74,7 @@ export class EmailService implements IEmailService {
       token,
       URLPaths.completeRegistration,
     );
-    const message = `Dear ${user.name},\n\nTo complete your registration, please click the link below to set a secure password:\n${url}\nIf you did not register, please disregard this email.\n\nBest regards,\nAlmostThere Delivery Company.`;
+    const message = `Dear ${user.name},\n\nTo complete your registration, please click the link below to set a secure password:\n${url}\nIf you did not register, please disregard this email.\n\nBest regards,\nMulti-Vendor Delivery Platform`;
     const result = await this.sendEmail(
       user.email,
       EmailSubjects.completeRegistration,
@@ -90,7 +99,7 @@ export class EmailService implements IEmailService {
       token,
       URLPaths.passwordResetConfirm,
     );
-    const message = `Dear ${user.name},\n\nTo reset your password, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
+    const message = `Dear ${user.name},\n\nTo reset your password, please click the link below:\n${url}\n\nBest regards,\nMulti-Vendor Delivery Platform`;
     const result = await this.sendEmail(
       user.email,
       EmailSubjects.passwordReset,
@@ -113,7 +122,7 @@ export class EmailService implements IEmailService {
     token: string,
   ): Promise<Result<void>> {
     const url = this.generateVerificationUrl(token, URLPaths.verifyNewEmail);
-    const message = `Dear ${user.name},\n\nTo confirm your email change, please click the link below:\n${url}\n\nBest regards,\nAlmostThere Delivery Company.`;
+    const message = `Dear ${user.name},\n\nTo confirm your email change, please click the link below:\n${url}\n\nBest regards,\nMulti-Vendor Delivery Platform`;
     const result = await this.sendEmail(
       newEmail,
       EmailSubjects.emailChange,
