@@ -243,8 +243,32 @@ verification, registration completion, password reset, and email-change
 callback pages. The API can start without this setting, but account emails
 cannot be sent until it is configured.
 
-For a fresh database, temporarily set both privileged-operator credential
-groups documented in `.env.example`, then run:
+Start the MongoDB replica set:
+
+```bash
+docker compose up -d
+```
+
+Before provisioning operators, confirm that MongoDB has elected a writable
+primary:
+
+```bash
+docker compose exec -T mongodb mongosh --quiet --eval 'db.hello().isWritablePrimary'
+```
+
+Continue when the command returns `true`.
+
+For a fresh database, temporarily add both privileged-operator credential
+groups to `.env`:
+
+- System administrator: `BOOTSTRAP_SYSTEM_ADMIN_NAME`,
+  `BOOTSTRAP_SYSTEM_ADMIN_EMAIL`, `BOOTSTRAP_SYSTEM_ADMIN_PHONE`, and
+  `BOOTSTRAP_SYSTEM_ADMIN_PASSWORD`.
+- Delivery-company administrator: `BOOTSTRAP_DELIVERY_ADMIN_NAME`,
+  `BOOTSTRAP_DELIVERY_ADMIN_EMAIL`, `BOOTSTRAP_DELIVERY_ADMIN_PHONE`, and
+  `BOOTSTRAP_DELIVERY_ADMIN_PASSWORD`.
+
+Then run:
 
 ```bash
 npm run bootstrap:operators
@@ -254,12 +278,6 @@ This explicit CLI command creates only missing system and delivery-company
 administrator roles as active users, hashes their passwords, and never
 overwrites an existing role. It does not expose an HTTP bootstrap route. Remove
 or unset the bootstrap password variables after provisioning.
-
-Start the MongoDB replica set:
-
-```bash
-docker compose up -d
-```
 
 Start the API:
 
