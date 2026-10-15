@@ -34,12 +34,6 @@ export interface IGenericDocument<TEntity, T> {
     options?: { session: ClientSession },
   ): Promise<Result<TEntity | null>>;
 
-  upsert(
-    filterQuery: FilterQuery<T>,
-    document: Partial<T>,
-    options?: QueryOptions<T>,
-  ): Promise<Result<TEntity | null>>;
-
   deleteMany(filterQuery: FilterQuery<T>): Promise<boolean>;
 
   startSession(): Promise<ClientSession>;
@@ -51,12 +45,6 @@ export interface IGenericDocument<TEntity, T> {
   objectIdToString(objectId: Types.ObjectId): string;
 
   stringToObjectId(prop: string): Types.ObjectId;
-
-  updateMany(
-    query: FilterQuery<T>,
-    updateBody: UpdateQuery<T>,
-    options?: QueryOptions<T>,
-  ): Promise<Result<TEntity[]>>;
 
   insertManyWithSession(
     docs: any,

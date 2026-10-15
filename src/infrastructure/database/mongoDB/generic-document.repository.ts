@@ -43,14 +43,6 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
   async count(query: FilterQuery<T>, limit?: number): Promise<number> {
     return this.DocumentModel.countDocuments(query, { limit });
   }
-  async aggregate(
-    query: any[],
-    options: { readPeference?: 'secondaryPreferred' | 'primaryPreferred' } = {},
-  ): Promise<any> {
-    return await this.DocumentModel.aggregate(query).read(
-      options.readPeference || 'primary',
-    );
-  }
 
   async findOne(
     filterQuery: FilterQuery<T>,
@@ -109,25 +101,6 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
     }
   }
 
-  pagination(
-    query: FilterQuery<T>,
-    select: ProjectionType<T | null>,
-    options: QueryOptions<T>,
-  ) {
-    const pageSize = 500;
-    const page = options.page || 1;
-    const skip = (page - 1) * pageSize;
-    const limit = options.limit || pageSize;
-    const documents = this.DocumentModel.find(query, select, {
-      ...options,
-      skip,
-      limit,
-    })
-      .batchSize(pageSize)
-      .cursor();
-    return documents.map((doc) => this.mapper.toDomain(doc));
-  }
-
   async create(document: any, options?: SaveOptions): Promise<Result<TEntity>> {
     // If options?.session is null or undefined, we don't want to pass it to createDocument
     const saveOptions =
@@ -168,35 +141,6 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
     if (!result) {
       return Result.fail(
         'An Error occured, unable to update the database',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-    const entity = this.mapper.toDomain(result);
-    return Result.ok(entity);
-  }
-
-  async upsert(
-    filterQuery: FilterQuery<T>,
-    document: Partial<T>,
-    options?: { session?: ClientSession },
-  ): Promise<Result<TEntity | null>> {
-    const queryOption: any = {
-      lean: true,
-      upsert: true,
-      new: true,
-    };
-    if (options?.session) {
-      queryOption.session = options.session;
-    }
-    const result = await this.DocumentModel.findOneAndUpdate(
-      filterQuery,
-      document,
-      queryOption,
-    );
-
-    if (!result) {
-      return Result.fail(
-        'Unable to update the database',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -265,46 +209,6 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
     } catch {
       return Result.fail(
         'Error inserting documents with session',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async updateMany(
-    query: FilterQuery<T>,
-    updateBody: UpdateQuery<T>,
-    options?: { session?: ClientSession },
-  ): Promise<Result<TEntity[]>> {
-    try {
-      const updateOptions: { multi: boolean; session?: ClientSession } = {
-        multi: true,
-      };
-
-      // Add session only if it's defined (not null or undefined)
-      if (options?.session) {
-        updateOptions.session = options.session;
-      }
-
-      const saved = await this.DocumentModel.updateMany(
-        query,
-        updateBody,
-        updateOptions,
-      );
-      if (saved.matchedCount < 1) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Unable to update documents in the database',
-        );
-      }
-
-      const updatedDocuments = await this.DocumentModel.find(query);
-      const entities: TEntity[] = updatedDocuments.map((doc) =>
-        this.mapper.toDomain(doc),
-      );
-      return Result.ok(entities);
-    } catch {
-      return Result.fail(
-        'Error updating documents in the database',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
