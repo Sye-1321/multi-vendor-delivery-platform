@@ -113,22 +113,6 @@ export class AuthService implements IAuthService {
     return newTokens;
   }
 
-  async nullifyRefreshToken(
-    model: GenericDocumentRepository<any, any>,
-    userId: Types.ObjectId,
-  ) {
-    const docResult: Result<any> = await model.findById(userId);
-
-    if (docResult) {
-      await model.findOneAndUpdate(
-        {
-          _id: userId,
-        },
-        { refreshTokenHash: null },
-      );
-    }
-  }
-
   async logOut(
     model: GenericDocumentRepository<any, any>,
     userId: Types.ObjectId,

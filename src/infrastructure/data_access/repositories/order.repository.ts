@@ -69,22 +69,6 @@ export class OrderRepository
     return Result.ok(orders);
   }
 
-  async getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>> {
-    const documents = await this.DocumentModel.find({ restaurantId })
-      .populate(this.orderPopulation)
-      .exec();
-
-    if (documents.length > 0) {
-      const orders = documents.map((doc) => this.orderMapper.toDomain(doc));
-      return Result.ok(orders);
-    }
-
-    return Result.fail(
-      'No orders found for this restaurant',
-      HttpStatus.NOT_FOUND,
-    );
-  }
-
   async getOrderById(
     id: Types.ObjectId,
     scope: Partial<OrderDataModel> = {},

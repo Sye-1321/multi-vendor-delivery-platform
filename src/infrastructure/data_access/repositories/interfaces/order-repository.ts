@@ -16,7 +16,6 @@ export interface IOrderRepository
     filter?: Partial<OrderDataModel>,
     pagination?: PaginationOptions,
   ): Promise<Result<Order[]>>;
-  getOrderByRestaurant(restaurantId: string): Promise<Result<Order[]>>;
   getOrderByIdempotencyKey(
     userId: Types.ObjectId,
     idempotencyKey: string,
