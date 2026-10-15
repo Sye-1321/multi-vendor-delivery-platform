@@ -13,7 +13,6 @@ export const TYPES = {
   IAuthService: Symbol('AuthService'),
   IEmailService: Symbol('IEmailService'),
   IContextService: Symbol('IContextService'),
-  IValidateUser: Symbol('IValidateUser'),
   IMapper: Symbol('IMapper'),
   IaddonRepository: Symbol('IaddonRepository'),
   ICategoryService: Symbol('ICategoryService'),
