@@ -270,27 +270,6 @@ export abstract class GenericDocumentRepository<TEntity, T extends Document>
     }
   }
 
-  async updateOne(filter: any, query: any): Promise<Result<TEntity>> {
-    try {
-      const document = await this.DocumentModel.updateOne(filter, {
-        $set: query,
-      });
-      if (!document) {
-        throwApplicationError(
-          HttpStatus.INTERNAL_SERVER_ERROR,
-          'Unable to update document in the database',
-        );
-      }
-      const entity: TEntity = this.mapper.toDomain(document as any);
-      return Result.ok(entity);
-    } catch {
-      return Result.fail(
-        'Error updating document in the database',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
   async updateMany(
     query: FilterQuery<T>,
     updateBody: UpdateQuery<T>,

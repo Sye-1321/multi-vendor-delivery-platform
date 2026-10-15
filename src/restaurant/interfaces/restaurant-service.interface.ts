@@ -27,13 +27,6 @@ export interface IRestaurantService {
     restaurantId: Types.ObjectId,
   ): Promise<Result<IPublicRestaurantResponse>>;
 
-  updateRestaurant(
-    restaurantId: Types.ObjectId,
-    updateData: UpdateRestaurantDTO,
-    logo?: Express.Multer.File,
-    coverImage?: Express.Multer.File,
-  ): Promise<Result<IRestaurantResponse>>;
-
   updateMyRestaurant(
     restaurantData: UpdateRestaurantDTO,
     logoFile?: Express.Multer.File,

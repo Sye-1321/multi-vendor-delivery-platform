@@ -18,7 +18,7 @@ export abstract class BaseDocument implements IBaseDocument {
   @Prop({ type: String })
   auditModifiedDateTime?: string;
 
-  @Prop({ type: Date })
+  @Prop({ type: String })
   auditDeletedBy?: string;
 
   @Prop({ type: String })

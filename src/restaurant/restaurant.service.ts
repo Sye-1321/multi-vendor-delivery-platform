@@ -380,57 +380,6 @@ export class RestaurantService implements IRestaurantService {
     );
   }
 
-  async updateRestaurant(
-    restaurantId: Types.ObjectId,
-    restaurantData: UpdateRestaurantDTO,
-    logoFile?: Express.Multer.File,
-    coverImageFile?: Express.Multer.File,
-  ): Promise<Result<IRestaurantResponse>> {
-    const restaurantAdmin: User = await this.userService.getContextUser();
-    const restaurantsResult =
-      await this.restaurantRepository.getRestaurantByRestaurantAdmin(
-        restaurantAdmin.id,
-      );
-
-    if (!restaurantsResult.isSuccess) {
-      throwApplicationError(HttpStatus.NOT_FOUND, 'Restaurant not found');
-    }
-
-    const restaurant = restaurantsResult.getValue();
-    const data: any = {
-      auditModifiedBy: this.context.email,
-      auditModifiedDateTime: new Date().toISOString(),
-      ...restaurantData,
-    };
-
-    if (logoFile) {
-      data.logo = await SaveFileLocally(logoFile, 'restaurant-logos');
-    }
-
-    if (coverImageFile) {
-      data.image = await SaveFileLocally(coverImageFile, 'restaurant-covers');
-    }
-
-    this.updateRestaurantData(data, restaurant);
-    await this.updateRestaurantById(restaurantId, data);
-
-    const updatedRestaurantResult =
-      await this.restaurantRepository.getRestaurantById(restaurantId);
-    if (!updatedRestaurantResult.isSuccess) {
-      throwApplicationError(
-        HttpStatus.INTERNAL_SERVER_ERROR,
-        'Could not retrieve updated restaurant',
-      );
-    }
-
-    return Result.ok(
-      RestaurantParser.createRestaurantResponse(
-        updatedRestaurantResult.getValue(),
-      ),
-      'Restaurant updated successfully',
-    );
-  }
-
   private updateRestaurantData(data: any, restaurant: Restaurant) {
     Object.entries(data).forEach(([key, value]) => {
       if (value !== undefined && key in restaurant) {

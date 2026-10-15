@@ -7,7 +7,7 @@ import { BaseDocument } from 'src/infrastructure/database/mongoDB/base-document'
 
 export type CartItemDocument = CartItemDataModel & Document;
 
-@Schema({ versionKey: 'false' })
+@Schema({ versionKey: false })
 export class CartItemDataModel
   extends BaseDocument
   implements ICartItemDataModel

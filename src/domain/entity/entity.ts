@@ -11,19 +11,12 @@ export abstract class Entity<T> {
   }
 
   equals(object?: Entity<T>): boolean {
-    if (object == null || object === undefined) {
+    if (!(object instanceof Entity)) {
       return false;
     }
     if (this === object) {
       return true;
     }
-    if (!this.entityInstance) {
-      return false;
-    }
-    return this._id === object._id;
-  }
-
-  entityInstance(v: any) {
-    return v instanceof Entity;
+    return this._id.equals(object._id);
   }
 }
