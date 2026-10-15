@@ -504,7 +504,7 @@ export class UserService extends AuthService implements IUserService {
     );
     if (!updated.isSuccess) {
       throwApplicationError(
-        HttpStatus.NOT_MODIFIED,
+        updated.errorCode ?? HttpStatus.INTERNAL_SERVER_ERROR,
         'User could not be updated',
       );
     }
@@ -701,7 +701,7 @@ export class UserService extends AuthService implements IUserService {
     );
     if (!updatedUserResult.isSuccess) {
       throwApplicationError(
-        HttpStatus.NOT_MODIFIED,
+        updatedUserResult.errorCode ?? HttpStatus.INTERNAL_SERVER_ERROR,
         'User could not be updated',
       );
     }

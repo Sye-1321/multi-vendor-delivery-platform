@@ -104,7 +104,7 @@ export class SystemReviewService {
 
     if (!updateSystemReviewResult.isSuccess) {
       throwApplicationError(
-        HttpStatus.NOT_MODIFIED,
+        updateSystemReviewResult.errorCode ?? HttpStatus.INTERNAL_SERVER_ERROR,
         'System review could not be updated',
       );
     }

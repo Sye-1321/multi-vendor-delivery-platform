@@ -77,7 +77,7 @@ export class UserRepository
     if (!updatedUserDocument) {
       return Result.fail(
         'Error while updating user',
-        HttpStatus.INTERNAL_SERVER_ERROR,
+        HttpStatus.NOT_FOUND,
       );
     }
     const user: User = this.userMapper.toDomain(updatedUserDocument);

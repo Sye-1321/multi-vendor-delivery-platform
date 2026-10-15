@@ -102,7 +102,8 @@ export class RestaurantReviewService implements IRestaurantReviewService {
       );
     if (!updateRestaurantReviewResult.isSuccess) {
       throwApplicationError(
-        HttpStatus.NOT_MODIFIED,
+        updateRestaurantReviewResult.errorCode ??
+          HttpStatus.INTERNAL_SERVER_ERROR,
         'restaurant could not be updated',
       );
     }
