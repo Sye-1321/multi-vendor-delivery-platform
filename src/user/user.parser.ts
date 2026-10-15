@@ -1,4 +1,3 @@
-import { tokenExpiresIn } from '../application/constants/constants';
 import { ISignUpTokens } from '../infrastructure/auth/interfaces/auth.interface';
 import { AuditParser } from '../audit/audit.parser';
 import { User } from './user';
@@ -35,12 +34,31 @@ export class UserParser {
       ...AuditParser.createAuditResponse(user.audit),
     };
     if (signedIn) {
+      if (!tokens?.accessToken) {
+        throw new Error('Access token is required for a signed-in response');
+      }
       userResponse = {
         ...userResponse,
-        tokenExpiresIn,
+        tokenExpiresIn: this.getAccessTokenLifetime(tokens.accessToken),
       };
     }
     return userResponse;
+  }
+
+  private static getAccessTokenLifetime(accessToken: string): number {
+    const payload = JSON.parse(
+      Buffer.from(accessToken.split('.')[1], 'base64url').toString('utf8'),
+    ) as { exp: number; iat: number };
+
+    if (
+      !Number.isFinite(payload.iat) ||
+      !Number.isFinite(payload.exp) ||
+      payload.exp <= payload.iat
+    ) {
+      throw new Error('Access token has invalid expiration claims');
+    }
+
+    return (payload.exp - payload.iat) * 1000;
   }
 
   static usersResponse(users: User[]): IUserResponseDTO[] {

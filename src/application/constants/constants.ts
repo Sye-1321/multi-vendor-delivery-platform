@@ -17,8 +17,6 @@ export const APIResponseMessage = {
 
 export const saltRounds = 10;
 
-export const tokenExpiresIn = 3600000;
-
 export enum Role {
   SYSTEM_ADMINISTRATOR = 'SYSTEM_ADMINISTRATOR',
   DELIVERY_COMPANY_ADMINISTRATOR = 'DELIVERY_COMPANY_ADMINISTRATOR',
