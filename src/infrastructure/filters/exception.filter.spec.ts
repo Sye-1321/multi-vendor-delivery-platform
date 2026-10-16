@@ -2,7 +2,7 @@ import { ArgumentsHost, BadRequestException } from '@nestjs/common';
 import { ApplicationExceptionsFilter } from './exception.filter';
 
 describe('ApplicationExceptionsFilter', () => {
-  it('redacts a historical URL credential from logs and response paths', () => {
+  it('uses a safe fallback for unmatched request paths', () => {
     const secret = 'eyJhbGciOiJIUzI1NiJ9.payload.signature';
     const warn = jest.fn();
     const json = jest.fn();
@@ -25,12 +25,12 @@ describe('ApplicationExceptionsFilter', () => {
 
     expect(warn).toHaveBeenCalledWith('http.request.rejected', {
       method: 'GET',
-      path: '/auth/password-reset/confirm/[REDACTED]',
+      path: '/[unmatched]',
       statusCode: 400,
     });
     expect(json).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: '/auth/password-reset/confirm/[REDACTED]',
+        path: '/[unmatched]',
       }),
     );
     expect(JSON.stringify([warn.mock.calls, json.mock.calls])).not.toContain(
