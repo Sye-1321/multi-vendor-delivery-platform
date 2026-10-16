@@ -88,7 +88,7 @@ export class CompanyController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
-  @Put(':companyId/change-admin')
+  @Put(':companyId/administrator')
   @HttpCode(HttpStatus.OK)
   async changeCompanyAdmin(
     @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,

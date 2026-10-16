@@ -27,7 +27,7 @@ import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 import { IdempotencyKeyPipe } from './idempotency-key.pipe';
 
-@Controller('orders')
+@Controller()
 export class OrderController {
   constructor(
     @Inject(TYPES.IOrderService)
@@ -37,7 +37,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.CREATED)
-  @Post(':restaurantId')
+  @Post('restaurants/:restaurantId/orders')
   async createOrder(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() orderData: CreateOrderDTO,
@@ -56,7 +56,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
-  @Patch(':orderId/cancel')
+  @Patch('orders/:orderId/cancel')
   async cancelOrder(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
     @Body() request: CancelOrderDTO,
@@ -67,7 +67,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Patch(':orderId/accept')
+  @Patch('orders/:orderId/accept')
   async acceptOrder(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -77,7 +77,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Patch(':orderId/prepared')
+  @Patch('orders/:orderId/prepared')
   async orderPrepared(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -87,7 +87,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR, Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Patch(':orderId/delivered')
+  @Patch('orders/:orderId/delivered')
   async markDelivered(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -97,7 +97,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR, Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Patch(':orderId/assign-delivery-person/:deliveryPersonId')
+  @Patch('orders/:orderId/delivery-person/:deliveryPersonId')
   async assignDeliveryPerson(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
     @Param('deliveryPersonId', ParseObjectIdPipe)
@@ -112,7 +112,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
-  @Get('user/orders')
+  @Get('users/me/orders')
   async getOrdersByUser(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IOrderResponseDTO[]>> {
@@ -122,7 +122,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Get('restaurant/orders')
+  @Get('restaurants/me/orders')
   async getRestaurantOrders(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IOrderResponseDTO[]>> {
@@ -132,7 +132,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Get('restaurant/orders/:orderId')
+  @Get('restaurants/me/orders/:orderId')
   async getRestaurantOrderById(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -142,7 +142,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Get('all')
+  @Get('orders')
   async getAllOrders(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IOrderResponseDTO[]>> {
@@ -152,7 +152,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Get(':orderId')
+  @Get('orders/:orderId')
   async getOrderById(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -162,7 +162,7 @@ export class OrderController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
-  @Get('user/orders/:orderId')
+  @Get('users/me/orders/:orderId')
   async getOrderByIdForCurrentUser(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {

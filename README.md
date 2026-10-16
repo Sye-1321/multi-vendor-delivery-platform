@@ -72,7 +72,7 @@ yet been collected. A successful delivery changes it to `PAID`.
 Clients must give each intended checkout an opaque idempotency key:
 
 ```http
-POST /api/v1/orders/<restaurantId>
+POST /api/v1/restaurants/:restaurantId/orders
 Authorization: Bearer <access-token>
 Idempotency-Key: <client-generated-key>
 ```
@@ -184,14 +184,14 @@ All REST endpoints use the `/api/v1` prefix.
 | Area | Example routes |
 | --- | --- |
 | Health | `GET /health/live`, `GET /health/ready` |
-| Authentication | `POST /auth/register`, `POST /auth/login`, `POST /auth/token/refresh`, `POST /auth/logout` |
+| Authentication | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout` |
 | Profile | `GET /users/me`, `PATCH /users/me`, `PATCH /users/me/password` |
 | Companies | `GET /companies`, `GET /companies/me` |
-| Restaurants | `GET /restaurants`, `GET /restaurants/me`, `GET /company/restaurants` |
-| Catalog | `GET /:restaurantId/menus`, `GET /me/menus`, `GET /:restaurantId/menu-items`, `GET /me/menu-items` |
-| Orders | `POST /orders/:restaurantId`, `GET /orders/user/orders`, `GET /orders/restaurant/orders` |
+| Restaurants | `GET /restaurants`, `GET /restaurants/me`, `GET /companies/me/restaurants` |
+| Catalog | `GET /restaurants/:restaurantId/menus`, `GET /restaurants/me/menus`, `GET /restaurants/:restaurantId/menu-items`, `GET /restaurants/me/menu-items` |
+| Orders | `POST /restaurants/:restaurantId/orders`, `GET /users/me/orders`, `GET /restaurants/me/orders` |
 | Notifications | `GET /notifications`, `PATCH /notifications/:notificationId/read` |
-| Reviews | `GET /reviews`, `POST /restaurant-reviews/:restaurantId` |
+| Reviews | `GET /system-reviews`, `POST /restaurants/:restaurantId/reviews` |
 
 Ordinary collection endpoints accept `limit` from 1 to 100 (default 20) and
 `offset` greater than or equal to 0 (default 0). Notifications accept `limit`

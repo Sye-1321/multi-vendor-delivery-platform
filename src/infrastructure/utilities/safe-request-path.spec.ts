@@ -6,49 +6,39 @@ describe('getSafeRequestPath', () => {
 
   it('uses a matched route template instead of parameter values', () => {
     const request = {
-      baseUrl: '',
+      baseUrl: '/api/v1',
       originalUrl: '/admin/users/68db123?verbose=true',
       route: { path: '/admin/users/:id' },
     } as Request;
 
-    expect(getSafeRequestPath(request)).toBe('/admin/users/:id');
+    expect(getSafeRequestPath(request)).toBe('/api/v1/admin/users/:id');
   });
 
-  it.each([
-    '/auth/email-verification',
-    '/users/new-email-verification',
-    '/auth/password-reset/confirm',
-    '/auth/registration-completion',
-  ])('redacts historical credential paths under %s', (prefix) => {
+  it('does not expose tokens in unmatched historical account-action URLs', () => {
     const safePath = getSafeRequestPath({
-      originalUrl: `${prefix}/${secret}`,
+      originalUrl: `/api/v1/auth/email-verification/${secret}`,
     } as Request);
 
-    expect(safePath).toBe(`${prefix}/[REDACTED]`);
+    expect(safePath).toBe('/[unmatched]');
     expect(safePath).not.toContain(secret);
   });
 
-  it.each([
-    '/auth/email-verification',
-    '/users/new-email-verification',
-    '/auth/password-reset/confirm',
-    '/auth/registration-completion',
-  ])('redacts historical credential paths under /api/v1%s', (prefix) => {
-    const prefixedRoute = `/api/v1${prefix}`;
+  it('does not expose tokens in unmatched current confirmation URLs', () => {
     const safePath = getSafeRequestPath({
-      originalUrl: `${prefixedRoute}/${secret}`,
+      originalUrl: `/api/v1/auth/email-verification/confirm/${secret}`,
     } as Request);
 
-    expect(safePath).toBe(`${prefixedRoute}/[REDACTED]`);
+    expect(safePath).toBe('/[unmatched]');
     expect(safePath).not.toContain(secret);
   });
 
-  it('strips all query names and values from unmatched paths', () => {
+  it('does not expose arbitrary unmatched path segments or query values', () => {
     const safePath = getSafeRequestPath({
-      originalUrl: `/some/path?token=${secret}&page=1`,
+      originalUrl: `/private/customer/${secret}?token=${secret}&page=1`,
     } as Request);
 
-    expect(safePath).toBe('/some/path');
+    expect(safePath).toBe('/[unmatched]');
+    expect(safePath).not.toContain('private');
     expect(safePath).not.toContain(secret);
     expect(safePath).not.toContain('page=1');
   });

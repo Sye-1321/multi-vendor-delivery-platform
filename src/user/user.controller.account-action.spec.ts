@@ -43,8 +43,8 @@ describe('UserController account-action transport', () => {
   afterAll(async () => app.close());
 
   it.each([
-    ['/auth/email-verification', 'verifyEmail'],
-    ['/users/new-email-verification', 'verifyNewEmail'],
+    ['/auth/email-verification/confirm', 'verifyEmail'],
+    ['/auth/email-change/confirm', 'verifyNewEmail'],
   ] as const)('POST %s passes its body token to %s', async (path, method) => {
     userService[method].mockResolvedValue({ isSuccess: true });
 
@@ -60,7 +60,7 @@ describe('UserController account-action transport', () => {
 
   it.each([
     ['/auth/password-reset/confirm', 'confirmPasswordReset'],
-    ['/auth/registration-completion', 'completeAdminRegistration'],
+    ['/auth/registration-completion/confirm', 'completeAdminRegistration'],
   ] as const)(
     'POST %s passes token and validated password data to %s',
     async (path, method) => {
@@ -102,8 +102,8 @@ describe('UserController account-action transport', () => {
   );
 
   it.each([
-    ['/auth/email-verification', 'verifyEmail'],
-    ['/users/new-email-verification', 'verifyNewEmail'],
+    ['/auth/email-verification/confirm', 'verifyEmail'],
+    ['/auth/email-change/confirm', 'verifyNewEmail'],
   ] as const)(
     'rejects an absent token before invoking %s',
     async (path, method) => {
@@ -125,21 +125,14 @@ describe('UserController account-action transport', () => {
   });
 
   it.each([
-    ['GET', '/auth/email-verification/old-secret', 'verifyEmail'],
-    ['GET', '/users/new-email-verification/old-secret', 'verifyNewEmail'],
+    ['POST', '/auth/email-verification', 'verifyEmail'],
+    ['POST', '/users/new-email-verification', 'verifyNewEmail'],
     ['POST', '/auth/password-reset/confirm/old-secret', 'confirmPasswordReset'],
-    [
-      'POST',
-      '/auth/registration-completion/old-secret',
-      'completeAdminRegistration',
-    ],
+    ['POST', '/auth/registration-completion', 'completeAdminRegistration'],
   ] as const)(
     'does not expose the historical %s route %s',
     async (method, path, serviceMethod) => {
-      const server = request(app.getHttpServer());
-      const response =
-        method === 'GET' ? server.get(path) : server.post(path).send({});
-      await response.expect(404);
+      await request(app.getHttpServer()).post(path).send({}).expect(404);
       expect(userService[serviceMethod]).not.toHaveBeenCalled();
     },
   );

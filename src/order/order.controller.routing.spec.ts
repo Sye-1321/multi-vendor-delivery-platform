@@ -13,6 +13,9 @@ describe('OrderController routing', () => {
   const orderService = {
     assignDeliveryPerson: jest.fn(),
     createOrder: jest.fn(),
+    getAllOrders: jest.fn(),
+    getOrderById: jest.fn(),
+    getRestaurantOrders: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -44,7 +47,7 @@ describe('OrderController routing', () => {
     orderService.assignDeliveryPerson.mockResolvedValue(Result.ok({}));
 
     await request(app.getHttpServer())
-      .patch(`/orders/${orderId}/assign-delivery-person/${deliveryPersonId}`)
+      .patch(`/orders/${orderId}/delivery-person/${deliveryPersonId}`)
       .expect(200);
 
     expect(orderService.assignDeliveryPerson).toHaveBeenCalledTimes(1);
@@ -63,7 +66,7 @@ describe('OrderController routing', () => {
     'rejects an invalid %s before calling the service',
     async (_, orderId, deliveryPersonId) => {
       await request(app.getHttpServer())
-        .patch(`/orders/${orderId}/assign-delivery-person/${deliveryPersonId}`)
+        .patch(`/orders/${orderId}/delivery-person/${deliveryPersonId}`)
         .expect(400);
 
       expect(orderService.assignDeliveryPerson).not.toHaveBeenCalled();
@@ -81,7 +84,7 @@ describe('OrderController routing', () => {
     orderService.createOrder.mockResolvedValue(Result.ok({}));
 
     await request(app.getHttpServer())
-      .post(`/orders/${restaurantId}`)
+      .post(`/restaurants/${restaurantId}/orders`)
       .set('Idempotency-Key', ' checkout-1 ')
       .send(body)
       .expect(201);
@@ -99,11 +102,47 @@ describe('OrderController routing', () => {
     ['overlong', 'x'.repeat(129)],
   ])('rejects a %s checkout idempotency key', async (_, key) => {
     const call = request(app.getHttpServer()).post(
-      '/orders/507f1f77bcf86cd799439011',
+      '/restaurants/507f1f77bcf86cd799439011/orders',
     );
     if (key !== undefined) call.set('Idempotency-Key', key);
 
     await call.send({}).expect(400);
     expect(orderService.createOrder).not.toHaveBeenCalled();
+  });
+
+  it('routes GET /orders to the collection handler, not the id handler', async () => {
+    orderService.getAllOrders.mockResolvedValue(Result.ok([]));
+
+    await request(app.getHttpServer()).get('/orders').expect(200);
+
+    expect(orderService.getAllOrders).toHaveBeenCalledTimes(1);
+    expect(orderService.getOrderById).not.toHaveBeenCalled();
+  });
+
+  it('routes GET /restaurants/me/orders to the current restaurant', async () => {
+    orderService.getRestaurantOrders.mockResolvedValue(Result.ok([]));
+
+    await request(app.getHttpServer())
+      .get('/restaurants/me/orders')
+      .expect(200);
+
+    expect(orderService.getRestaurantOrders).toHaveBeenCalledTimes(1);
+    expect(orderService.getOrderById).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['POST', '/orders/507f1f77bcf86cd799439011'],
+    ['GET', '/orders/user/orders'],
+    ['GET', '/orders/restaurant/orders'],
+  ] as const)('does not register replaced %s %s', async (method, path) => {
+    const client = request(app.getHttpServer());
+    const response = method === 'POST' ? client.post(path) : client.get(path);
+    await response.expect(404);
+  });
+
+  it('does not retain the old /orders/all collection handler', async () => {
+    await request(app.getHttpServer()).get('/orders/all').expect(400);
+    expect(orderService.getAllOrders).not.toHaveBeenCalled();
+    expect(orderService.getOrderById).not.toHaveBeenCalled();
   });
 });

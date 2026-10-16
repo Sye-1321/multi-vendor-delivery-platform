@@ -25,7 +25,7 @@ import {
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
-@Controller('reviews')
+@Controller('system-reviews')
 export class SystemReviewController {
   constructor(
     @Inject(TYPES.ISystemReviewService)
@@ -41,10 +41,10 @@ export class SystemReviewController {
   }
 
   @UseGuards(AccessAuthGuard)
-  @Patch(':id')
+  @Patch(':reviewId')
   @HttpCode(HttpStatus.OK)
   async updateReview(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('reviewId', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateReviewDTO,
   ): Promise<Result<ISystemReviewResponse>> {
     return this.systemReviewService.updateSystemReview(id, body);
@@ -59,10 +59,10 @@ export class SystemReviewController {
   }
 
   @UseGuards(AccessAuthGuard)
-  @Delete(':id')
+  @Delete(':reviewId')
   @HttpCode(HttpStatus.OK)
   async deleteReview(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('reviewId', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<void>> {
     return this.systemReviewService.deleteSystemReviewById(id);
   }

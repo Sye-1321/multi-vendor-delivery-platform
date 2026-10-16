@@ -42,7 +42,7 @@ export class MenuItemController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Post('me/menu-items')
+  @Post('restaurants/me/menu-items')
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(
     FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
@@ -57,7 +57,7 @@ export class MenuItemController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Get('me/menu-items')
+  @Get('restaurants/me/menu-items')
   @HttpCode(HttpStatus.OK)
   async getItems(
     @Query() pagination: PaginationQueryDTO,
@@ -67,24 +67,24 @@ export class MenuItemController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Get('me/menu-items/:id')
+  @Get('restaurants/me/menu-items/:menuItemId')
   @HttpCode(HttpStatus.OK)
   async getItemById(
-    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
+    @Param('menuItemId', ParseObjectIdPipe) itemId: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse>> {
     return await this.itemService.getMenuItemById(itemId);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Put('me/menu-items/:id')
+  @Put('restaurants/me/menu-items/:menuItemId')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(
     FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
   async updateItem(
-    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
+    @Param('menuItemId', ParseObjectIdPipe) itemId: Types.ObjectId,
     @Body() request: UpdateMenuItemDTO,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<Result<IMenuItemResponse>> {
@@ -93,15 +93,15 @@ export class MenuItemController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Delete('me/menu-items/:id')
+  @Delete('restaurants/me/menu-items/:menuItemId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteItem(
-    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
+    @Param('menuItemId', ParseObjectIdPipe) itemId: Types.ObjectId,
   ): Promise<Result<void>> {
     return await this.itemService.deleteMenuItem(itemId);
   }
 
-  @Get(':restaurantId/menu-items')
+  @Get('restaurants/:restaurantId/menu-items')
   @HttpCode(HttpStatus.OK)
   async getRestaurantItems(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
@@ -113,11 +113,11 @@ export class MenuItemController {
     );
   }
 
-  @Get(':restaurantId/menu-items/:id')
+  @Get('restaurants/:restaurantId/menu-items/:menuItemId')
   @HttpCode(HttpStatus.OK)
   async getRestaurantItemById(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
-    @Param('id', ParseObjectIdPipe) itemId: Types.ObjectId,
+    @Param('menuItemId', ParseObjectIdPipe) itemId: Types.ObjectId,
   ): Promise<Result<IMenuItemResponse>> {
     return await this.itemService.getRestaurantMenuItemById(
       restaurantId,

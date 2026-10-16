@@ -43,7 +43,7 @@ export class MenuController {
     ParseStringifiedJsonInterceptor,
   )
   @HttpCode(HttpStatus.CREATED)
-  @Post('me/menus')
+  @Post('restaurants/me/menus')
   async createMenu(
     @Body() props: CreateMenuDTO,
     @UploadedFile() image: Express.Multer.File,
@@ -54,9 +54,9 @@ export class MenuController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Delete('me/menus/:id')
+  @Delete('restaurants/me/menus/:menuId')
   async deleteMenu(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('menuId', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<void>> {
     return this.menuService.deleteMenu(id);
   }
@@ -64,7 +64,7 @@ export class MenuController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
-  @Get('me/menus')
+  @Get('restaurants/me/menus')
   async getMyMenus(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IMenuResponse[]>> {
@@ -78,9 +78,9 @@ export class MenuController {
     ParseStringifiedJsonInterceptor,
   )
   @HttpCode(HttpStatus.OK)
-  @Put('me/menus/:id')
+  @Put('restaurants/me/menus/:menuId')
   async updateMenu(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('menuId', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() props: UpdateMenuDTO,
     @UploadedFile() image: Express.Multer.File,
   ): Promise<Result<IMenuResponse>> {
@@ -88,7 +88,7 @@ export class MenuController {
   }
 
   // public
-  @Get(':restaurantId/menus')
+  @Get('restaurants/:restaurantId/menus')
   async getRestaurantMenus(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Query() pagination: PaginationQueryDTO,
@@ -96,10 +96,10 @@ export class MenuController {
     return this.menuService.getRestaurantMenus(restaurantId, pagination);
   }
 
-  @Get(':restaurantId/menus/:id')
+  @Get('restaurants/:restaurantId/menus/:menuId')
   async getMenuById(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('menuId', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<IMenuResponse>> {
     return this.menuService.getRestaurantMenuById(restaurantId, id);
   }

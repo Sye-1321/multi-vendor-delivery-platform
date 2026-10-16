@@ -32,7 +32,7 @@ import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 
-@Controller('delivery-person')
+@Controller()
 export class DeliveryPersonController {
   constructor(
     @Inject(TYPES.IDeliveryPersonService)
@@ -45,7 +45,7 @@ export class DeliveryPersonController {
     FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
-  @Post('system/delivery-persons')
+  @Post('delivery-persons')
   @HttpCode(HttpStatus.CREATED)
   async createSystemWideDeliveryPerson(
     @Body() body: CreateDeliveryPersonDTO,
@@ -63,7 +63,7 @@ export class DeliveryPersonController {
     FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
-  @Post('restaurant/delivery-persons')
+  @Post('restaurants/me/delivery-persons')
   @HttpCode(HttpStatus.CREATED)
   async createRestaurantDeliveryPerson(
     @Body() body: CreateDeliveryPersonDTO,
@@ -77,7 +77,7 @@ export class DeliveryPersonController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
-  @Get('system/delivery-persons')
+  @Get('delivery-persons')
   @HttpCode(HttpStatus.OK)
   async getSystemWideDeliveryPersons(
     @Query() pagination: PaginationQueryDTO,
@@ -87,7 +87,7 @@ export class DeliveryPersonController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Get('restaurant/delivery-persons')
+  @Get('restaurants/me/delivery-persons')
   @HttpCode(HttpStatus.OK)
   async getDeliveryPersonsByRestaurantId(
     @Query() pagination: PaginationQueryDTO,
@@ -97,20 +97,20 @@ export class DeliveryPersonController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
-  @Get('system/delivery-persons/:id')
+  @Get('delivery-persons/:deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async getSystemWideDeliveryPersonById(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<IDeliveryPersonResponse>> {
     return this.deliveryPersonService.getSystemWideDeliveryPersonById(id);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
-  @Get('restaurant/delivery-persons/:id')
+  @Get('restaurants/me/delivery-persons/:deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async getRestaurantDeliveryPersonById(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
   ): Promise<Result<IDeliveryPersonResponse>> {
     return this.deliveryPersonService.getRestaurantDeliveryPersonById(id);
   }
@@ -121,10 +121,10 @@ export class DeliveryPersonController {
     FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
-  @Patch('system/delivery-persons/:id')
+  @Patch('delivery-persons/:deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async updateSystemWideDeliveryPerson(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {
@@ -141,10 +141,10 @@ export class DeliveryPersonController {
     FileInterceptor('profileImage', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
-  @Patch('restaurant/delivery-persons/:id')
+  @Patch('restaurants/me/delivery-persons/:deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async updateRestaurantDeliveryPerson(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateDeliveryPersonDTO,
     @UploadedFile() profileImage: Express.Multer.File,
   ): Promise<Result<IDeliveryPersonResponse>> {

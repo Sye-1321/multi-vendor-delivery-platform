@@ -57,9 +57,9 @@ export class RestaurantController {
     return this.restaurantService.getRestaurantByRestaurantAdmin();
   }
 
-  @Get('restaurants/:id')
+  @Get('restaurants/:restaurantId')
   async getRestaurantById(
-    @Param('id', ParseObjectIdPipe) restaurantId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
   ): Promise<Result<IPublicRestaurantResponse>> {
     return this.restaurantService.getRestaurantById(restaurantId);
   }
@@ -93,7 +93,7 @@ export class RestaurantController {
 
   // CAdmin
   @UseGuards(AccessAuthGuard, RoleGuard)
-  @Get('company/restaurants')
+  @Get('companies/me/restaurants')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async getRestaurantsByCompany(
     @Query() pagination: PaginationQueryDTO,
@@ -102,19 +102,19 @@ export class RestaurantController {
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
-  @Get('company/restaurants/:id')
+  @Get('companies/me/restaurants/:restaurantId')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async getCompanyRestaurantById(
-    @Param('id', ParseObjectIdPipe) restaurantId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
   ): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.getCompanyRestaurantById(restaurantId);
   }
 
   @UseGuards(AccessAuthGuard, RoleGuard)
-  @Put('company/restaurants/:id')
+  @Put('companies/me/restaurants/:restaurantId/administrator')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async changeRestaurantAdmin(
-    @Param('id', ParseObjectIdPipe) restaurantId: Types.ObjectId,
+    @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() data: RestaurantAdminDTO,
   ): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.changeRestaurantAdmin(restaurantId, data);
@@ -122,7 +122,7 @@ export class RestaurantController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
-  @Post('company/restaurants')
+  @Post('companies/me/restaurants')
   @UseInterceptors(
     FileFieldsInterceptor(
       [

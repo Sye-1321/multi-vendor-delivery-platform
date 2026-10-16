@@ -39,7 +39,7 @@ describe('RestaurantController routing', () => {
   beforeEach(() => jest.clearAllMocks());
   afterAll(async () => app.close());
 
-  it('routes POST /company/restaurants to restaurant creation', async () => {
+  it('routes POST /companies/me/restaurants to restaurant creation', async () => {
     const restaurantData = {
       name: 'Test Restaurant',
       savedAddress: { city: 'Addis Ababa', subCity: 'Bole' },
@@ -58,7 +58,7 @@ describe('RestaurantController routing', () => {
     restaurantService.createRestaurant.mockResolvedValue(Result.ok({}));
 
     await request(app.getHttpServer())
-      .post('/company/restaurants')
+      .post('/companies/me/restaurants')
       .field('name', restaurantData.name)
       .field('savedAddress', JSON.stringify(restaurantData.savedAddress))
       .field('phoneNumber', restaurantData.phoneNumber)
@@ -92,6 +92,11 @@ describe('RestaurantController routing', () => {
         originalname: 'image.png',
       }),
     );
+  });
+
+  it('does not register the replaced company restaurant path', async () => {
+    await request(app.getHttpServer()).post('/company/restaurants').expect(404);
+    expect(restaurantService.createRestaurant).not.toHaveBeenCalled();
   });
 
   it('routes GET /restaurants/me to the current restaurant administrator', async () => {

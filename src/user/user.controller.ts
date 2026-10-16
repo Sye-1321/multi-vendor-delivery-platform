@@ -57,7 +57,7 @@ export class UserController {
     return this.userService.createEndUser(request);
   }
 
-  @Post('/auth/email-verification')
+  @Post('/auth/email-verification/confirm')
   @HttpCode(HttpStatus.OK)
   async verifyEmail(
     @Body() request: AccountActionTokenDTO,
@@ -87,7 +87,7 @@ export class UserController {
   }
 
   @UseGuards(RefreshAuthGuard)
-  @Post('/auth/token/refresh')
+  @Post('/auth/refresh')
   @HttpCode(HttpStatus.OK)
   async refreshToken(
     @GetCurrentUser() user: any,
@@ -137,7 +137,7 @@ export class UserController {
     return this.userService.requestToChangeEmail(userId, request);
   }
 
-  @Post('/users/new-email-verification')
+  @Post('/auth/email-change/confirm')
   @HttpCode(HttpStatus.OK)
   async verifyNewEmail(@Body() request: AccountActionTokenDTO) {
     return this.userService.verifyNewEmail(request.token);
@@ -159,7 +159,7 @@ export class UserController {
     });
   }
 
-  @Post('/auth/registration-completion')
+  @Post('/auth/registration-completion/confirm')
   @HttpCode(HttpStatus.OK)
   async completeAdminRegistration(
     @Body() request: AccountActionPasswordDTO,
@@ -186,7 +186,7 @@ export class UserController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.SYSTEM_ADMINISTRATOR)
-  @Post('/admin/users/company')
+  @Post('/admin/users/business-administrators')
   @HttpCode(HttpStatus.CREATED)
   async createCompanyAdmin(
     @Body() request: CreateAdminDTO,
@@ -196,7 +196,7 @@ export class UserController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
-  @Post('/admin/users/restaurant')
+  @Post('/admin/users/restaurant-administrators')
   @HttpCode(HttpStatus.CREATED)
   async createRestaurantAdmin(
     @Body() request: CreateAdminDTO,
@@ -216,10 +216,10 @@ export class UserController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.SYSTEM_ADMINISTRATOR)
-  @Patch('/admin/users/:id')
+  @Patch('/admin/users/:userId')
   @HttpCode(HttpStatus.OK)
   async updateUser(
-    @Param('id', ParseObjectIdPipe) userId: Types.ObjectId,
+    @Param('userId', ParseObjectIdPipe) userId: Types.ObjectId,
     @Body() request: AdminUpdateUserDTO,
   ) {
     return this.userService.adminUpdateUser(userId, request);

@@ -22,14 +22,14 @@ import { IRestaurantReviewService } from './interfaces/restaurant-review-service
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 
 @UseGuards(AccessAuthGuard)
-@Controller('restaurant-reviews')
+@Controller()
 export class RestaurantReviewController {
   constructor(
     @Inject(TYPES.IRestaurantReviewService)
     private readonly restaurantReviewService: IRestaurantReviewService,
   ) {}
 
-  @Post(':restaurantId')
+  @Post('restaurants/:restaurantId/reviews')
   @HttpCode(HttpStatus.CREATED)
   async createReview(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
@@ -38,10 +38,10 @@ export class RestaurantReviewController {
     return this.restaurantReviewService.createReview(restaurantId, body);
   }
 
-  @Patch(':id')
+  @Patch('restaurant-reviews/:reviewId')
   @HttpCode(HttpStatus.OK)
   async updateReview(
-    @Param('id', ParseObjectIdPipe) id: Types.ObjectId,
+    @Param('reviewId', ParseObjectIdPipe) id: Types.ObjectId,
     @Body() body: UpdateReviewDTO,
   ): Promise<Result<IRestaurantReviewResponse>> {
     return this.restaurantReviewService.updateRestaurantReview(id, body);
