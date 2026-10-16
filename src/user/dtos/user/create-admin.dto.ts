@@ -1,4 +1,4 @@
-import { OmitType } from '@nestjs/mapped-types';
+import { OmitType } from '@nestjs/swagger';
 import { CreateUserDTO } from './create-user.dto';
 
 export class CreateAdminDTO extends OmitType(CreateUserDTO, [

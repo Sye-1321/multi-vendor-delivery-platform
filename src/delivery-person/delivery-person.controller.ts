@@ -31,7 +31,20 @@ import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/Pa
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  ApiResultResponse,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
 
+@ApiTags('Delivery personnel')
+@ApiBearerAuth('access-token')
 @Controller()
 export class DeliveryPersonController {
   constructor(
@@ -46,6 +59,24 @@ export class DeliveryPersonController {
     ParseStringifiedJsonInterceptor,
   )
   @Post('delivery-persons')
+  @ApiOperation({ summary: 'Create a system-wide delivery person' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['name', 'phoneNumber', 'savedAddress', 'profileImage'],
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        savedAddress: {
+          type: 'string',
+          example: '{"city":"Nairobi","subCity":"Westlands"}',
+        },
+        profileImage: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.CREATED)
   @HttpCode(HttpStatus.CREATED)
   async createSystemWideDeliveryPerson(
     @Body() body: CreateDeliveryPersonDTO,
@@ -64,6 +95,23 @@ export class DeliveryPersonController {
     ParseStringifiedJsonInterceptor,
   )
   @Post('restaurants/me/delivery-persons')
+  @ApiOperation({
+    summary: 'Create a delivery person for the managed restaurant',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['name', 'phoneNumber', 'savedAddress', 'profileImage'],
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        savedAddress: { type: 'string' },
+        profileImage: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.CREATED)
   @HttpCode(HttpStatus.CREATED)
   async createRestaurantDeliveryPerson(
     @Body() body: CreateDeliveryPersonDTO,
@@ -78,6 +126,8 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get('delivery-persons')
+  @ApiOperation({ summary: 'List system-wide delivery personnel' })
+  @ApiResultResponse(HttpStatus.OK)
   @HttpCode(HttpStatus.OK)
   async getSystemWideDeliveryPersons(
     @Query() pagination: PaginationQueryDTO,
@@ -88,6 +138,10 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('restaurants/me/delivery-persons')
+  @ApiOperation({
+    summary: 'List delivery personnel for the managed restaurant',
+  })
+  @ApiResultResponse(HttpStatus.OK)
   @HttpCode(HttpStatus.OK)
   async getDeliveryPersonsByRestaurantId(
     @Query() pagination: PaginationQueryDTO,
@@ -98,6 +152,9 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get('delivery-persons/:deliveryPersonId')
+  @ApiOperation({ summary: 'Get a system-wide delivery person by ID' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async getSystemWideDeliveryPersonById(
     @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
@@ -108,6 +165,9 @@ export class DeliveryPersonController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('restaurants/me/delivery-persons/:deliveryPersonId')
+  @ApiOperation({ summary: 'Get a restaurant delivery person by ID' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async getRestaurantDeliveryPersonById(
     @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
@@ -122,6 +182,21 @@ export class DeliveryPersonController {
     ParseStringifiedJsonInterceptor,
   )
   @Patch('delivery-persons/:deliveryPersonId')
+  @ApiOperation({ summary: 'Update a system-wide delivery person' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        savedAddress: { type: 'string' },
+        profileImage: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async updateSystemWideDeliveryPerson(
     @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,
@@ -142,6 +217,21 @@ export class DeliveryPersonController {
     ParseStringifiedJsonInterceptor,
   )
   @Patch('restaurants/me/delivery-persons/:deliveryPersonId')
+  @ApiOperation({ summary: 'Update a restaurant delivery person' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        savedAddress: { type: 'string' },
+        profileImage: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('deliveryPersonId')
   @HttpCode(HttpStatus.OK)
   async updateRestaurantDeliveryPerson(
     @Param('deliveryPersonId', ParseObjectIdPipe) id: Types.ObjectId,

@@ -179,6 +179,22 @@ Authorization combines role checks with resource ownership. Customer and restaur
 
 ## API Overview
 
+### OpenAPI documentation
+
+Start the service in development with `npm run start:dev`, then open the
+Swagger UI at `http://localhost:4000/docs`. The generated OpenAPI document is
+available at `http://localhost:4000/docs-json`.
+
+Use an access JWT with the `access-token` authorization scheme for ordinary
+protected operations. `POST /api/v1/auth/refresh` has a separate
+`refresh-token` scheme because it accepts only a refresh JWT, even though both
+tokens use the HTTP Bearer header.
+
+The documentation routes are registered only when `NODE_ENV=development`, so
+they are unavailable in test and production environments. Socket.IO events and
+room authorization are documented separately in the real-time section of this
+README; they are not part of the OpenAPI document.
+
 All REST endpoints use the `/api/v1` prefix.
 
 | Area | Example routes |

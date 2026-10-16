@@ -20,7 +20,14 @@ import { IRestaurantReviewResponse } from './interfaces/restaurant-review-respon
 import { TYPES } from 'src/application/constants/types';
 import { IRestaurantReviewService } from './interfaces/restaurant-review-service.interface';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiResultResponse,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
 
+@ApiTags('Restaurant reviews')
+@ApiBearerAuth('access-token')
 @UseGuards(AccessAuthGuard)
 @Controller()
 export class RestaurantReviewController {
@@ -30,6 +37,9 @@ export class RestaurantReviewController {
   ) {}
 
   @Post('restaurants/:restaurantId/reviews')
+  @ApiOperation({ summary: 'Create a review for a restaurant' })
+  @ApiResultResponse(HttpStatus.CREATED)
+  @mongoIdParam('restaurantId')
   @HttpCode(HttpStatus.CREATED)
   async createReview(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
@@ -39,6 +49,9 @@ export class RestaurantReviewController {
   }
 
   @Patch('restaurant-reviews/:reviewId')
+  @ApiOperation({ summary: 'Update the current user’s restaurant review' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('reviewId')
   @HttpCode(HttpStatus.OK)
   async updateReview(
     @Param('reviewId', ParseObjectIdPipe) id: Types.ObjectId,

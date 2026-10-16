@@ -20,7 +20,18 @@ import {
   NotificationView,
 } from './notification-outbox.service';
 import { NotificationQueryDTO } from 'src/shared/dtos/notification-query.dto';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiResultResponse,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
+import {
+  NotificationReadSchema,
+  NotificationSchema,
+} from 'src/infrastructure/swagger/swagger.schemas';
 
+@ApiTags('Notifications')
+@ApiBearerAuth('access-token')
 @Controller('notifications')
 @UseGuards(AccessAuthGuard)
 export class NotificationController {
@@ -31,6 +42,8 @@ export class NotificationController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'List notifications for the current user' })
+  @ApiResultResponse(HttpStatus.OK, { model: NotificationSchema, array: true })
   async getNotifications(
     @Query() query: NotificationQueryDTO,
   ): Promise<Result<NotificationView[]>> {
@@ -44,6 +57,9 @@ export class NotificationController {
   }
 
   @Patch(':notificationId/read')
+  @ApiOperation({ summary: 'Mark a notification as read' })
+  @ApiResultResponse(HttpStatus.OK, { model: NotificationReadSchema })
+  @mongoIdParam('notificationId')
   async markRead(
     @Param('notificationId', ParseObjectIdPipe) notificationId: Types.ObjectId,
   ): Promise<Result<{ read: true }>> {

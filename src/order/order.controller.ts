@@ -26,7 +26,14 @@ import { CancelOrderDTO } from './dtos/cancel-order.dto';
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
 import { IdempotencyKeyPipe } from './idempotency-key.pipe';
+import { ApiConflictResponse, ApiHeader, ApiTags } from '@nestjs/swagger';
+import {
+  ApiEndpoint,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
+import { OrderSchema } from 'src/infrastructure/swagger/swagger.schemas';
 
+@ApiTags('Orders')
 @Controller()
 export class OrderController {
   constructor(
@@ -38,6 +45,23 @@ export class OrderController {
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.CREATED)
   @Post('restaurants/:restaurantId/orders')
+  @ApiEndpoint('Create an order for a restaurant', {
+    status: 201,
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('restaurantId')
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    required: true,
+    description:
+      'Opaque key (1–128 trimmed characters). Reuse it when retrying the same checkout.',
+    schema: { type: 'string', minLength: 1, maxLength: 128 },
+  })
+  @ApiConflictResponse({
+    description:
+      'The idempotency key was already used with a different checkout payload.',
+  })
   async createOrder(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
     @Body() orderData: CreateOrderDTO,
@@ -57,6 +81,11 @@ export class OrderController {
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
   @Patch('orders/:orderId/cancel')
+  @ApiEndpoint('Cancel the current customer’s order', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async cancelOrder(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
     @Body() request: CancelOrderDTO,
@@ -68,6 +97,11 @@ export class OrderController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Patch('orders/:orderId/accept')
+  @ApiEndpoint('Accept an order for the managed restaurant', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async acceptOrder(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -78,6 +112,11 @@ export class OrderController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Patch('orders/:orderId/prepared')
+  @ApiEndpoint('Mark an order as prepared', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async orderPrepared(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -88,6 +127,11 @@ export class OrderController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR, Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Patch('orders/:orderId/delivered')
+  @ApiEndpoint('Mark an order as delivered', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async markDelivered(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -98,6 +142,12 @@ export class OrderController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR, Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Patch('orders/:orderId/delivery-person/:deliveryPersonId')
+  @ApiEndpoint('Assign a delivery person to an order', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
+  @mongoIdParam('deliveryPersonId')
   async assignDeliveryPerson(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
     @Param('deliveryPersonId', ParseObjectIdPipe)
@@ -113,6 +163,11 @@ export class OrderController {
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
   @Get('users/me/orders')
+  @ApiEndpoint('List the current customer’s orders', {
+    model: OrderSchema,
+    array: true,
+    auth: 'access-token',
+  })
   async getOrdersByUser(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IOrderResponseDTO[]>> {
@@ -123,6 +178,11 @@ export class OrderController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('restaurants/me/orders')
+  @ApiEndpoint('List orders for the managed restaurant', {
+    model: OrderSchema,
+    array: true,
+    auth: 'access-token',
+  })
   async getRestaurantOrders(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IOrderResponseDTO[]>> {
@@ -133,6 +193,11 @@ export class OrderController {
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('restaurants/me/orders/:orderId')
+  @ApiEndpoint('Get an order for the managed restaurant', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async getRestaurantOrderById(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -143,6 +208,11 @@ export class OrderController {
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('orders')
+  @ApiEndpoint('List all orders', {
+    model: OrderSchema,
+    array: true,
+    auth: 'access-token',
+  })
   async getAllOrders(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IOrderResponseDTO[]>> {
@@ -153,6 +223,11 @@ export class OrderController {
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @HttpCode(HttpStatus.OK)
   @Get('orders/:orderId')
+  @ApiEndpoint('Get any order by ID', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async getOrderById(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {
@@ -163,6 +238,11 @@ export class OrderController {
   @Roles(Role.END_USER)
   @HttpCode(HttpStatus.OK)
   @Get('users/me/orders/:orderId')
+  @ApiEndpoint('Get an order belonging to the current customer', {
+    model: OrderSchema,
+    auth: 'access-token',
+  })
+  @mongoIdParam('orderId')
   async getOrderByIdForCurrentUser(
     @Param('orderId', ParseObjectIdPipe) orderId: Types.ObjectId,
   ): Promise<Result<IOrderResponseDTO>> {

@@ -1,8 +1,10 @@
 import { IsString, Matches, MinLength } from 'class-validator';
 import { ResetPasswordDTO } from './reset-password.dto';
 import { passwordStrengthRegEx } from 'src/user/constants/constants';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdatePasswordDTO extends ResetPasswordDTO {
+  @ApiProperty({ format: 'password', minLength: 8, writeOnly: true })
   @IsString()
   @MinLength(8, {
     message: 'Current password must be at least 8 characters long.',

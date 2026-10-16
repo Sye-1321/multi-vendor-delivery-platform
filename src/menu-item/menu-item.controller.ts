@@ -32,7 +32,20 @@ import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/Pa
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  ApiNoContentResponse,
+  ApiResultResponse,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
 
+@ApiTags('Menu items')
 @Controller()
 export class MenuItemController {
   constructor(
@@ -48,6 +61,23 @@ export class MenuItemController {
     FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
     ParseStringifiedJsonInterceptor,
   )
+  @ApiOperation({ summary: 'Create a menu item for the managed restaurant' })
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['name', 'price', 'availability', 'image'],
+      properties: {
+        name: { type: 'string' },
+        price: { type: 'number', minimum: 0 },
+        availability: { type: 'boolean' },
+        description: { type: 'string' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.CREATED)
   async createItem(
     @Body() request: CreateMenuItemDTO,
     @UploadedFile() image: Express.Multer.File,
@@ -58,6 +88,9 @@ export class MenuItemController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('restaurants/me/menu-items')
+  @ApiOperation({ summary: 'List menu items for the managed restaurant' })
+  @ApiBearerAuth('access-token')
+  @ApiResultResponse(HttpStatus.OK)
   @HttpCode(HttpStatus.OK)
   async getItems(
     @Query() pagination: PaginationQueryDTO,
@@ -68,6 +101,10 @@ export class MenuItemController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Get('restaurants/me/menu-items/:menuItemId')
+  @ApiOperation({ summary: 'Get a managed menu item by ID' })
+  @ApiBearerAuth('access-token')
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('menuItemId')
   @HttpCode(HttpStatus.OK)
   async getItemById(
     @Param('menuItemId', ParseObjectIdPipe) itemId: Types.ObjectId,
@@ -78,6 +115,23 @@ export class MenuItemController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Put('restaurants/me/menu-items/:menuItemId')
+  @ApiOperation({ summary: 'Update a menu item for the managed restaurant' })
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        price: { type: 'number', minimum: 0 },
+        availability: { type: 'boolean' },
+        description: { type: 'string' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('menuItemId')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(
     FileInterceptor('image', IMAGE_UPLOAD_OPTIONS),
@@ -94,6 +148,10 @@ export class MenuItemController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @Delete('restaurants/me/menu-items/:menuItemId')
+  @ApiOperation({ summary: 'Delete a menu item from the managed restaurant' })
+  @ApiBearerAuth('access-token')
+  @ApiNoContentResponse()
+  @mongoIdParam('menuItemId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteItem(
     @Param('menuItemId', ParseObjectIdPipe) itemId: Types.ObjectId,
@@ -102,6 +160,9 @@ export class MenuItemController {
   }
 
   @Get('restaurants/:restaurantId/menu-items')
+  @ApiOperation({ summary: 'List a restaurant’s public menu items' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('restaurantId')
   @HttpCode(HttpStatus.OK)
   async getRestaurantItems(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
@@ -114,6 +175,10 @@ export class MenuItemController {
   }
 
   @Get('restaurants/:restaurantId/menu-items/:menuItemId')
+  @ApiOperation({ summary: 'Get a restaurant menu item by ID' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('restaurantId')
+  @mongoIdParam('menuItemId')
   @HttpCode(HttpStatus.OK)
   async getRestaurantItemById(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,

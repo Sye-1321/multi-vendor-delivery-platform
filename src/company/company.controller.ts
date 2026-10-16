@@ -32,7 +32,20 @@ import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/Pa
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  ApiResultResponse,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
 
+@ApiTags('Companies')
+@ApiBearerAuth('access-token')
 @Controller('companies')
 export class CompanyController {
   constructor(
@@ -47,6 +60,35 @@ export class CompanyController {
     ParseStringifiedJsonInterceptor,
   )
   @Post()
+  @ApiOperation({ summary: 'Create a delivery company' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: [
+        'name',
+        'phoneNumber',
+        'savedAddress',
+        'companyAdminData',
+        'logo',
+      ],
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        savedAddress: {
+          type: 'string',
+          example: '{"city":"Nairobi","subCity":"Westlands"}',
+        },
+        companyAdminData: {
+          type: 'string',
+          example:
+            '{"name":"Admin User","email":"admin@example.com","phoneNumber":"251911234567","savedAddress":{"city":"Nairobi","subCity":"Westlands"}}',
+        },
+        logo: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.CREATED)
   createCompany(
     @Body() body: CreateCompanyDTO,
     @UploadedFile() logo: Express.Multer.File,
@@ -57,6 +99,8 @@ export class CompanyController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   @Get('me')
+  @ApiOperation({ summary: 'Get the current administrator’s company' })
+  @ApiResultResponse(HttpStatus.OK)
   @HttpCode(HttpStatus.OK)
   async getMyCompany(): Promise<Result<ICompanyResponse>> {
     return this.companyService.getMyCompany();
@@ -69,6 +113,23 @@ export class CompanyController {
     ParseStringifiedJsonInterceptor,
   )
   @Put('me')
+  @ApiOperation({ summary: 'Update the current administrator’s company' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        savedAddress: {
+          type: 'string',
+          example: '{"city":"Nairobi","subCity":"Westlands"}',
+        },
+        logo: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.OK)
   async updateMyCompany(
     @UploadedFile() logoFile: Express.Multer.File,
     @Body() updateCompanyDto: UpdateCompanyDTO,
@@ -79,6 +140,8 @@ export class CompanyController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get()
+  @ApiOperation({ summary: 'List delivery companies' })
+  @ApiResultResponse(HttpStatus.OK)
   @HttpCode(HttpStatus.OK)
   async getAllCompanies(
     @Query() pagination: PaginationQueryDTO,
@@ -89,6 +152,9 @@ export class CompanyController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Put(':companyId/administrator')
+  @ApiOperation({ summary: 'Change a company administrator' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('companyId')
   @HttpCode(HttpStatus.OK)
   async changeCompanyAdmin(
     @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,
@@ -100,6 +166,9 @@ export class CompanyController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.DELIVERY_COMPANY_ADMINISTRATOR)
   @Get(':companyId')
+  @ApiOperation({ summary: 'Get a delivery company by ID' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('companyId')
   @HttpCode(HttpStatus.OK)
   async getCompanyById(
     @Param('companyId', ParseObjectIdPipe) companyId: Types.ObjectId,

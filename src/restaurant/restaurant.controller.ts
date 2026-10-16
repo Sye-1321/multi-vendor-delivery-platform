@@ -34,7 +34,19 @@ import { ParseStringifiedJsonInterceptor } from 'src/infrastructure/utilities/Pa
 import { ParseObjectIdPipe } from 'src/infrastructure/utilities/parse-object-id.pipe';
 import { IMAGE_UPLOAD_OPTIONS } from 'src/application/image-upload.options';
 import { PaginationQueryDTO } from 'src/shared/dtos/pagination-query.dto';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  ApiResultResponse,
+  mongoIdParam,
+} from 'src/infrastructure/swagger/swagger.decorators';
 
+@ApiTags('Restaurants')
 @Controller()
 export class RestaurantController {
   constructor(
@@ -43,6 +55,8 @@ export class RestaurantController {
   ) {}
 
   @Get('restaurants')
+  @ApiOperation({ summary: 'List public restaurants' })
+  @ApiResultResponse(HttpStatus.OK)
   async getAllRestaurants(
     @Query() pagination: PaginationQueryDTO,
   ): Promise<Result<IPublicRestaurantResponse[]>> {
@@ -52,12 +66,20 @@ export class RestaurantController {
   //RAdmin
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Get('restaurants/me')
+  @ApiOperation({
+    summary: 'Get the restaurant managed by the current administrator',
+  })
+  @ApiBearerAuth('access-token')
+  @ApiResultResponse(HttpStatus.OK)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   async getRestaurantByRestaurantAdmin(): Promise<Result<IRestaurantResponse>> {
     return this.restaurantService.getRestaurantByRestaurantAdmin();
   }
 
   @Get('restaurants/:restaurantId')
+  @ApiOperation({ summary: 'Get a public restaurant by ID' })
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('restaurantId')
   async getRestaurantById(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
   ): Promise<Result<IPublicRestaurantResponse>> {
@@ -66,6 +88,29 @@ export class RestaurantController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Put('restaurants/me')
+  @ApiOperation({ summary: 'Update the managed restaurant' })
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        openingHours: { type: 'string' },
+        closingHours: { type: 'string' },
+        description: { type: 'string' },
+        deliveryPersonAvailability: { type: 'boolean' },
+        savedAddress: {
+          type: 'string',
+          example: '{"city":"Nairobi","subCity":"Westlands"}',
+        },
+        logo: { type: 'string', format: 'binary' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.OK)
   @Roles(Role.RESTAURANT_ADMINISTRATOR)
   @UseInterceptors(
     FileFieldsInterceptor(
@@ -94,6 +139,11 @@ export class RestaurantController {
   // CAdmin
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Get('companies/me/restaurants')
+  @ApiOperation({
+    summary: 'List restaurants belonging to the current company',
+  })
+  @ApiBearerAuth('access-token')
+  @ApiResultResponse(HttpStatus.OK)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async getRestaurantsByCompany(
     @Query() pagination: PaginationQueryDTO,
@@ -103,6 +153,10 @@ export class RestaurantController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Get('companies/me/restaurants/:restaurantId')
+  @ApiOperation({ summary: 'Get a company restaurant by ID' })
+  @ApiBearerAuth('access-token')
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('restaurantId')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async getCompanyRestaurantById(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
@@ -112,6 +166,10 @@ export class RestaurantController {
 
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Put('companies/me/restaurants/:restaurantId/administrator')
+  @ApiOperation({ summary: 'Change a restaurant administrator' })
+  @ApiBearerAuth('access-token')
+  @ApiResultResponse(HttpStatus.OK)
+  @mongoIdParam('restaurantId')
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   async changeRestaurantAdmin(
     @Param('restaurantId', ParseObjectIdPipe) restaurantId: Types.ObjectId,
@@ -123,6 +181,45 @@ export class RestaurantController {
   @UseGuards(AccessAuthGuard, RoleGuard)
   @Roles(Role.BUSINESS_ADMINISTRATOR)
   @Post('companies/me/restaurants')
+  @ApiOperation({ summary: 'Create a restaurant for the current company' })
+  @ApiBearerAuth('access-token')
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: [
+        'name',
+        'phoneNumber',
+        'openingHours',
+        'closingHours',
+        'deliveryPersonAvailability',
+        'savedAddress',
+        'restaurantAdminData',
+        'logo',
+        'image',
+      ],
+      properties: {
+        name: { type: 'string' },
+        phoneNumber: { type: 'string' },
+        openingHours: { type: 'string' },
+        closingHours: { type: 'string' },
+        description: { type: 'string' },
+        deliveryPersonAvailability: { type: 'boolean' },
+        savedAddress: {
+          type: 'string',
+          example: '{"city":"Nairobi","subCity":"Westlands"}',
+        },
+        restaurantAdminData: {
+          type: 'string',
+          example:
+            '{"name":"Admin User","email":"admin@example.com","phoneNumber":"251911234567","savedAddress":{"city":"Nairobi","subCity":"Westlands"}}',
+        },
+        logo: { type: 'string', format: 'binary' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiResultResponse(HttpStatus.CREATED)
   @UseInterceptors(
     FileFieldsInterceptor(
       [
