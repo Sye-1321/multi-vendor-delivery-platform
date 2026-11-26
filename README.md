@@ -2,16 +2,16 @@
 
 [![CI](https://github.com/Sye-1321/multi-vendor-delivery-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/Sye-1321/multi-vendor-delivery-platform/actions/workflows/ci.yml)
 
-A tenant-aware NestJS backend for multi-vendor food ordering and delivery, designed around transactional ordering, concurrency-safe fulfilment, resource-scoped authorization, durable notifications, and authenticated real-time updates.
+A NestJS backend for multi-vendor food ordering and delivery. It supports restaurant companies, branch administrators, customers, and both restaurant-owned and shared delivery personnel.
 
-## Engineering Highlights
+## Features
 
-- **Atomic, server-authoritative checkout:** menu items and prices are resolved by the server; cart, order, timeline, and notification-outbox state commit in one MongoDB transaction.
-- **Concurrency-safe fulfilment:** lifecycle changes use compare-and-set updates, while courier availability and assignment change atomically to prevent competing claims.
+- **Transactional checkout:** menu items and prices are resolved by the server; cart, order, timeline, and notification-outbox state commit in one MongoDB transaction.
+- **Order and courier assignment:** lifecycle changes use compare-and-set updates, while courier availability and assignment change atomically to prevent competing claims.
 - **Durable notifications:** the outbox processor atomically claims events, deduplicates delivery, recovers stale locks, retries with exponential backoff, and dead-letters repeated failures.
-- **Authorized real-time updates:** Socket.IO connections are authenticated and order-room subscriptions are checked against customer ownership, restaurant administration, or delivery-operator scope.
-- **Refresh-token replay controls:** refresh tokens are stored as digests and atomically rotated; stale tokens are rejected without invalidating their successfully rotated replacements.
-- **Operational visibility:** structured JSON logs carry correlation IDs and redact sensitive fields; separate liveness and database-readiness endpoints distinguish process health from MongoDB availability.
+- **Real-time order tracking:** Socket.IO connections are authenticated and order-room subscriptions are checked against customer ownership, restaurant administration, or delivery-operator scope.
+- **Refresh token rotation:** refresh tokens are stored as digests and atomically rotated; stale tokens are rejected without invalidating their successfully rotated replacements.
+- **Logging and health checks:** structured JSON logs carry correlation IDs and redact sensitive fields; separate liveness and database-readiness endpoints distinguish process health from MongoDB availability.
 
 ## Architecture
 
@@ -27,7 +27,7 @@ flowchart LR
     WORKER --> INAPP["In-app notifications"]
 ```
 
-The application is a modular monolith: one deployable service with HTTP and WebSocket entry points, MongoDB persistence, and a durable notification processor. Internal module boundaries protect business behavior without adding unnecessary network boundaries.
+The application is a modular monolith: one deployable service with HTTP and WebSocket entry points, MongoDB persistence, and a durable notification processor.
 
 ### Main Modules
 
@@ -47,7 +47,7 @@ src/
 `-- system-review/      platform feedback
 ```
 
-## Critical Workflows
+## Order workflows
 
 ### Transactional Checkout
 
@@ -63,7 +63,7 @@ Checkout:
    transaction.
 5. Publishes real-time state only after the transaction commits.
 
-Any failure rolls the complete checkout back.
+If an operation within the checkout transaction fails, its database changes are rolled back.
 
 Checkout is cash-on-delivery only; the server does not collect an online
 payment. New orders start with payment status `PENDING`, meaning payment has not
@@ -113,7 +113,7 @@ An order transition and its outbox intent commit together. The processor:
 - retries failures with exponential backoff;
 - moves repeated failures to dead-letter state.
 
-This prevents committed order changes from silently losing their notification.
+Notification events are persisted alongside order changes, with retries and dead-letter handling for delivery failures.
 
 ### Real-Time Order Updates
 
@@ -313,7 +313,7 @@ Stop local infrastructure without deleting data:
 docker compose stop
 ```
 
-## Verification
+## Testing
 
 Run the same quality gate used by CI:
 
@@ -340,8 +340,7 @@ transactional aggregate workflows, relationship integrity, concurrency,
 operator bootstrap, collection pagination, notification continuation, and
 order history.
 
-The test suite intentionally protects high-risk boundaries rather than pursuing
-a coverage percentage. Current checks cover readiness, request-context
+Current checks cover readiness, request-context
 isolation, cross-restaurant catalog selection, refresh-token replay, and
 cross-customer WebSocket subscription.
 
